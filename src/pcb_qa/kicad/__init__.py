@@ -1,0 +1,1 @@
+"""KiCad integration utilities for schematic and netlist processing."""
