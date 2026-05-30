@@ -1,4 +1,4 @@
-import json_helpers
+import file_helpers
 import kicad_cli_helpers
 import os
 
@@ -327,7 +327,7 @@ class KiCadSPICECircuitProcesser:
             True when the expected voltage value (for the chosen net) matches average of the last 10 values, and False otherwise 
         """
 
-        json_file_operations = json_helpers.JSONFileOperator()
+        json_file_operations = file_helpers.JSONFileOperator()
         spice_circuit_contents = json_file_operations.read_from_json_file(spice_json_file)
 
         for entry in spice_circuit_contents:

@@ -1,9 +1,9 @@
-import csv
-
-import project_files
-
 import json
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
+
+import file_helpers
+from file_helpers import CSVFileOperator, JSONFileOperator
+import project_files
 
 class EvaluateResults:
     def __init__(self):
@@ -11,14 +11,10 @@ class EvaluateResults:
         self.actual_responses = []
         self.predicted_responses = []
 
-        with open("project_files.json", 'r', encoding='utf-8') as pf:
-            self.project_files_dict = json.load(pf)
+        self.csv_file_operator = CSVFileOperator()
+        self.json_file_operator = JSONFileOperator()
 
-    def _create_header_csv_for_model_with_mode(self, output_file: str, model: str, mode: str):
-        with open(output_file, 'w', newline='') as file:
-            fields = ['Model', 'Question', 'Category', 'Actual_Response', 'Predicted_Response']
-            writer = csv.DictWriter(file, fieldnames=fields)
-            writer.writeheader()  # Writes the header row
+        self.project_files_dict = self.json_file_operator.read_from_json_file(read_file="project_files.json")
 
     def _evaluate_n_responses_for_mode(self, num_questions: int, mode: str, models: list = None):
         if models is None:
@@ -35,7 +31,7 @@ class EvaluateResults:
                 project = self.project_files_dict[project_key]
 
                 target_csv = f'{project["parent_directory"]}/results/{mode}/{model}_{project_key}.csv'
-                self._create_header_csv_for_model_with_mode(target_csv, model, mode)
+                self.csv_file_operator.create_header_for_csv(csv_file=target_csv, fields = ['Model', 'Question', 'Category', 'Actual_Response', 'Predicted_Response'])
 
                 # Load the questions JSON file
                 questions = self._load_questions_from_file(project["questions_json_file"])
@@ -50,7 +46,7 @@ class EvaluateResults:
                     self._read_response_from_file(results_file)
 
                     row = [f'{model}', f'Q{idx+1}', f'{category}', f'{questions[idx]["answer"]}', f'{self.predicted_responses[idx]}']
-                    self._write_row_to_csv(target_csv, row)
+                    self.csv_file_operator.write_row_to_csv(target_csv, row)
 
                 cm = confusion_matrix(self.actual_responses[:num_questions], self.predicted_responses[:num_questions])
 
@@ -65,29 +61,21 @@ class EvaluateResults:
                 print(f'Recall: {recall}')
                 print(f'F1 Score: {f1}')
 
-                self._write_row_to_csv(target_csv, ['Accuracy', 'Precision', 'Recall', 'F1 Score'])
+                self.csv_file_operator.write_row_to_csv(csv_file=target_csv, row=['Accuracy', 'Precision', 'Recall', 'F1 Score'])
                 row = [f'{accuracy}', f'{precision}', f'{recall}', f'{f1}']
-                self._write_row_to_csv(target_csv, row)
+                self.csv_file_operator.write_row_to_csv(target_csv, row)
 
     def _load_questions_from_file(self, questions_file_path: str) -> dict: 
-        with open(questions_file_path, 'r', encoding='utf-8') as qf:
-            return json.load(qf)
-        return {}
+        return self.json_file_operator.read_from_json_file(questions_file_path)
 
     def _read_response_from_file(self, results_file: str):
         try:
-            with open(results_file, 'r', encoding='utf-8') as rf:
-                result = json.load(rf)
-                self.predicted_responses.append(result["response"]["answer"])
+            result = self.json_file_operator.read_from_json_file(results_file)
+            self.predicted_responses.append(result["response"]["answer"])
 
         except FileNotFoundError as e:
             print(e)
             self.predicted_responses.append("N/A")
-
-    def _write_row_to_csv(self, csv_file: str, row: list):
-        with open(csv_file, 'a', newline='\n') as file:
-            writer = csv.writer(file)
-            writer.writerow(row)
 
     def write_nnet_and_ncir_responses_to_csv(self, num_questions: int = 60, mode: str = "NNet&NCir", models: list = None):
         """

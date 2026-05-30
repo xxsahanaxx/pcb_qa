@@ -1,6 +1,6 @@
 # Current package imports 
 import hierarchical_reader 
-import json_helpers
+import file_helpers
 import kicad_cli_helpers 
 import netlist_sexp
 from netlist_sexp import SheetSexp
@@ -25,7 +25,7 @@ class KiCadNetlistProcesser:
         if project_name is not None:
             self.export_project_netlist()
         
-        self.json_file_operations = json_helpers.JSONFileOperator()
+        self.json_file_operations = file_helpers.JSONFileOperator()
 
         self._top_sheet_attributes = {}
 

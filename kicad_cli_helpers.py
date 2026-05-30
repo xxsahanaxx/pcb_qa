@@ -11,7 +11,7 @@ import subprocess
 import time
 import glob
 import kicad_netlist_processer
-import json_helpers
+import file_helpers
 from skidl.netlist_to_skidl import legalize_name, NetSexp, PartSexp
 from pathlib import Path
 import json
