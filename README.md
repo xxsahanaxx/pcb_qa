@@ -159,10 +159,10 @@ evaluator.write_nnet_and_ncir_responses_to_csv()
 
 | Mode | Description |
 |------|-------------|
-| `NNet&NCir` | Normalised Netlist & Normalised Circuit |
-| `NNet&PCir` | Normalised Netlist & Primitive Circuit |
-| `PNet&NCir` | Primitive Netlist & Normalised Circuit |
-| `PNet&PCir` | Primitive Netlist & Primitive Circuit |
+| `NNet&NCir` | Native Netlist & Native Circuit |
+| `NNet&PCir` | Native Netlist & Proposed JSON Circuit |
+| `PNet&NCir` | Proposed JSON Netlist & Native Circuit |
+| `PNet&PCir` | Proposed JSON Netlist & Proposed JSON Circuit |
 | `PDF` | Schematic exported as PDF |
 
 ## LLM Tools
@@ -181,13 +181,14 @@ Included hardware projects in `OSHP_files/`:
 
 | Project | Type |
 |---------|------|
-| `HadesFCS` | Flight Control Computer |
-| `acorn-robot-electronics` | CM4 Robot Board |
-| `OPNhydro` | Hydroponic Controller |
-| `CF-Chef` | Controller Board |
-| `Meshinger` | Mesh Networking Board |
-| `PortalHardware` | NFC Hardware Wallet |
-| `stack-chan` | Pan/Tilt Robot |
+| `acorn-robot-electronics` | Solar-powered farming rover/robot with steering and drive motors per wheel |
+| `CF-Chef` | Controller for custom composite curing ovens |
+| `fan_controller` | Simple PWM fan controller for 5V or 12V fans with I2C support or potentiometer-based control |
+| `HadesFCS` | Flight controller system with peripheral support |
+| `Meshinger` | Handheld wireless router with a battery, eInk display, SD card and keyboard |
+| `OPNhydro` | Hydroponic systems controller, monitoring soil pH, humidity, air temperature and remote access |
+| `PortalHardware` | Compact NFC-based hardware wallet to secure, store and transfer Bitcoin |
+| `stack-chan` | Interactive robot programmed to emote for communicating with humans |
 
 ## Dependencies
 

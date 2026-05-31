@@ -47,6 +47,35 @@ class KiCadNetlistProcesser:
         if project_name is not None:
             self.export_project_netlist()
 
+    # -- S-expression lookups -------------------------------------------------
+
+    def _find_component_from_netlist_file(self, component_ref: str) -> str | None:
+        with open(self.netlist_path, "r") as fh:
+            netlist_contents = Sexp(fh.read())
+        for comp in netlist_contents.search("components/comp"):
+            if comp.search("comp/ref").value == component_ref:
+                return comp.to_str()
+        return None
+
+    def _find_all_nets_from_netlist_file(self, component_ref: str) -> list:
+        contents: list = ["nets"]
+        with open(self.netlist_path, "r") as fh:
+            netlist_contents = Sexp(fh.read())
+        for net in netlist_contents.search("nets/net"):
+            for node in net.search("net/node"):
+                if node.search("node/ref").value == component_ref:
+                    contents.append(["net", ["name", net.search("net/name").value], node.to_str()])
+        return contents
+
+    def find_all_entries_from_netlist_file_with(self, component_ref: str) -> Sexp:
+        contents = Sexp()
+        comp = self._find_component_from_netlist_file(component_ref)
+        if comp is not None:
+            contents.append(comp)
+        nets = self._find_all_nets_from_netlist_file(component_ref)
+        contents.append(nets)
+        return Sexp(contents)
+
     # -- conversion -----------------------------------------------------------
 
     def convert_project_netlist_to_circuit(self) -> None:
@@ -107,31 +136,3 @@ class KiCadNetlistProcesser:
             )
         self._top_sheet_attributes = self.json_file_operations.read_from_json_file(read_file)
 
-    # -- S-expression lookups -------------------------------------------------
-
-    def _find_component_from_netlist_file(self, component_ref: str) -> str | None:
-        with open(self.netlist_path, "r") as fh:
-            netlist_contents = Sexp(fh.read())
-        for comp in netlist_contents.search("components/comp"):
-            if comp.search("comp/ref").value == component_ref:
-                return comp.to_str()
-        return None
-
-    def _find_all_nets_from_netlist_file(self, component_ref: str) -> list:
-        contents: list = ["nets"]
-        with open(self.netlist_path, "r") as fh:
-            netlist_contents = Sexp(fh.read())
-        for net in netlist_contents.search("nets/net"):
-            for node in net.search("net/node"):
-                if node.search("node/ref").value == component_ref:
-                    contents.append(["net", ["name", net.search("net/name").value], node.to_str()])
-        return contents
-
-    def find_all_entries_from_netlist_file_with(self, component_ref: str) -> Sexp:
-        contents = Sexp()
-        comp = self._find_component_from_netlist_file(component_ref)
-        if comp is not None:
-            contents.append(comp)
-        nets = self._find_all_nets_from_netlist_file(component_ref)
-        contents.append(nets)
-        return Sexp(contents)

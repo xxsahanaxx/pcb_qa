@@ -110,3 +110,9 @@ class ProjectFiles:
             with open(output_path, "w", encoding="utf-8") as fh:
                 json.dump(result, fh, indent=3, ensure_ascii=False)
         return result
+
+if __name__ == "__main__":
+    project_files = ProjectFiles().projects
+
+    with open("new_project_files.json", 'w', encoding='utf-8') as pf:
+        pf.write(json.dumps(project_files, default=lambda o: o.__dict__, indent=3))

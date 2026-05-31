@@ -26,7 +26,8 @@ class KiCadInterface:
 
     def __init__(self, kicad_cli_path: str | None = None) -> None:
         self.executable = os.getcwd() + "/kicad-cli"
-        self._initialise_kicad_cli(kicad_cli_path)
+        print(f"Executable at: {self.executable}")
+        # self._initialise_kicad_cli(kicad_cli_path)
 
     def _initialise_kicad_cli(self, override_path: str | None = None) -> None:
         cli_path = Path(override_path or os.getenv("KICAD_CLI_PATH", ""))
@@ -34,9 +35,9 @@ class KiCadInterface:
             logger.warning("KICAD_CLI_PATH not set or invalid; kicad-cli operations will fail.")
             return
 
-        subprocess.run(["ln", "-sf", str(cli_path), "kicad-cli"], check=False)
+        subprocess.run(["ln", "-s", str(cli_path), "kicad-cli"], check=False)
         logger.info("Symlink created for kicad-cli at %s", self.executable)
-        subprocess.run([self.executable, "-h"], check=False)
+        # subprocess.run([self.executable, "-h"], check=False)
 
     def export_netlist_with_kicad_cli(self, project_name: str, output_file_name: str) -> None:
         """Export ``.kicad_sch`` / ``.pro`` to a KiCad sexpr netlist (``.net``)."""
