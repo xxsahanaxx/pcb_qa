@@ -12,17 +12,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ToolMode(Enum):
     """Operating modes for the tool-calling pipeline."""
-
-    JSON_CIRCUIT_AND_SPICE_JSON = 1
-    PRIMITIVE = 2
-    JSON_CIRCUIT_AND_SPICE_CONTENTS = 3
-    SPICE_JSON_AND_NETLIST_CONTENTS = 4
-    JSON_NET = 5
-    JSON_CIRCUIT = 6
-    NET = 7
-    CIRCUIT = 8
-    SCHEMATIC_PDF = 9
-    INVALID = auto()
+    NNET_AND_NCIR = "NNet&NCir"
+    NNET_AND_PCIR = "NNet&PCir"
+    PNET_AND_NCIR = "PNet&NCir"
+    PNET_AND_PCIR = "PNet&PCir"
+    PDF = "PDF"
+    PNET = "PNet"
+    PCIR = "PCir"
+    NNET = "NNet"
+    NCIR = "NCir"
+    INVALID = "INVALID"
 
 
 class QuestionReasoning(BaseModel):
@@ -131,4 +130,9 @@ class ToolDefinitions:
     @classmethod
     def all_tools(cls) -> list[dict]:
         """Return the full list of tool definitions."""
-        return [cls.GET_RELEVANT_CONTEXT, cls.CALCULATE_SPICE_BEHAVIOUR, cls.FIND_CONNECTIONS]
+        return [
+            cls.GET_RELEVANT_CONTEXT,
+            cls.CALCULATE_SPICE_BEHAVIOUR,
+            cls.FIND_CONNECTIONS,
+            cls.FIND_ALL_NETLIST_ENTRIES,
+        ]

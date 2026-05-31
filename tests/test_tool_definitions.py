@@ -11,16 +11,16 @@ class TestToolMode:
     """Tests for the ToolMode enum."""
 
     def test_enum_members_exist(self) -> None:
-        assert ToolMode.JSON_CIRCUIT_AND_SPICE_JSON.value == 1
-        assert ToolMode.PRIMITIVE.value == 2
-        assert ToolMode.JSON_CIRCUIT_AND_SPICE_CONTENTS.value == 3
-        assert ToolMode.SPICE_JSON_AND_NETLIST_CONTENTS.value == 4
-        assert ToolMode.JSON_NET.value == 5
-        assert ToolMode.JSON_CIRCUIT.value == 6
-        assert ToolMode.NET.value == 7
-        assert ToolMode.CIRCUIT.value == 8
-        assert ToolMode.SCHEMATIC_PDF.value == 9
-        assert ToolMode.INVALID.value == 10
+        assert ToolMode.NNET_AND_NCIR.value == "NNet&NCir"
+        assert ToolMode.NNET_AND_PCIR.value == "NNet&PCir"
+        assert ToolMode.PNET_AND_NCIR.value == "PNet&NCir"
+        assert ToolMode.PNET_AND_PCIR.value == "PNet&PCir"
+        assert ToolMode.PDF.value == "PDF"
+        assert ToolMode.PNET.value == "PNet"
+        assert ToolMode.PCIR.value == "PCir"
+        assert ToolMode.NNET.value == "NNet"
+        assert ToolMode.NCIR.value == "NCir"
+        assert ToolMode.INVALID.value == "INVALID"
 
     def test_enum_is_unique(self) -> None:
         values = [m.value for m in ToolMode]

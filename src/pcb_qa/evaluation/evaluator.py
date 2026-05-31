@@ -10,6 +10,7 @@ from typing import Any
 
 from pcb_qa.config import DEFAULT_LLM_MODELS, load_projects_config
 from pcb_qa.logging_config import logger
+from pcb_qa.models.tool_definitions import ToolMode
 from pcb_qa.utils.file_ops import CSVFileOperator, JSONFileOperator
 
 
@@ -35,7 +36,7 @@ class EvaluateResults:
     def _evaluate_n_responses_for_mode(
         self,
         num_questions: int,
-        mode: str,
+        mode: ToolMode,
         models: list[str] | None = None,
     ) -> None:
         from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
@@ -49,7 +50,7 @@ class EvaluateResults:
                 self.actual_responses = []
                 self.predicted_responses = []
 
-                target_csv = f'{project["parent_directory"]}/results/{mode}/{model}_{project_key}.csv'
+                target_csv = f'{project["parent_directory"]}/results/{mode.value}/{model}_{project_key}.csv'
                 self.csv_file_operator.create_header_for_csv(
                     csv_file=target_csv,
                     fields=["Model", "Question", "Category", "Actual_Response", "Predicted_Response"],
@@ -61,7 +62,7 @@ class EvaluateResults:
                     category = questions[idx]["category"]
                     self.actual_responses.append(questions[idx]["answer"])
 
-                    results_file = f'{project["parent_directory"]}/results/{mode}/{model}/{category}/{idx + 1}.json'
+                    results_file = f'{project["parent_directory"]}/results/{mode.value}/{model}/{category}/{idx + 1}.json'
                     self._read_response_from_file(results_file)
 
                     row = [model, f"Q{idx + 1}", category, questions[idx]["answer"], self.predicted_responses[idx]]
@@ -94,20 +95,20 @@ class EvaluateResults:
     # -- public API (one per mode) -------------------------------------------
 
     def write_nnet_and_ncir_responses_to_csv(self, num_questions: int = 60, models: list[str] | None = None) -> None:
-        """Evaluate the ``NNet&NCir`` mode."""
-        self._evaluate_n_responses_for_mode(num_questions, "NNet&NCir", models)
+        """Evaluate the ``NNET_AND_NCIR`` mode."""
+        self._evaluate_n_responses_for_mode(num_questions, ToolMode.NNET_AND_NCIR, models)
 
     def write_nnet_and_pcir_responses_to_csv(self, num_questions: int = 15, models: list[str] | None = None) -> None:
-        """Evaluate the ``NNet&PCir`` mode."""
-        self._evaluate_n_responses_for_mode(num_questions, "NNet&PCir", models)
+        """Evaluate the ``NNET_AND_PCIR`` mode."""
+        self._evaluate_n_responses_for_mode(num_questions, ToolMode.NNET_AND_PCIR, models)
 
     def write_pnet_and_ncir_responses_to_csv(self, num_questions: int = 15, models: list[str] | None = None) -> None:
-        """Evaluate the ``PNet&NCir`` mode."""
-        self._evaluate_n_responses_for_mode(num_questions, "PNet&NCir", models)
+        """Evaluate the ``PNET_AND_NCIR`` mode."""
+        self._evaluate_n_responses_for_mode(num_questions, ToolMode.PNET_AND_NCIR, models)
 
     def write_pnet_and_pcir_responses_to_csv(self, num_questions: int = 60, models: list[str] | None = None) -> None:
-        """Evaluate the ``PNet&PCir`` mode."""
-        self._evaluate_n_responses_for_mode(num_questions, "PNet&PCir", models)
+        """Evaluate the ``PNET_AND_PCIR`` mode."""
+        self._evaluate_n_responses_for_mode(num_questions, ToolMode.PNET_AND_PCIR, models)
 
     def write_schematic_as_pdfs_responses_to_csv(
         self,
@@ -116,7 +117,7 @@ class EvaluateResults:
     ) -> None:
         """Evaluate the ``PDF`` mode."""
         models = models or ["gpt-5.4-nano"]
-        self._evaluate_n_responses_for_mode(num_questions, "PDF", models)
+        self._evaluate_n_responses_for_mode(num_questions, ToolMode.PDF, models)
 
 
 def main() -> None:

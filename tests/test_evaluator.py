@@ -9,6 +9,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from pcb_qa.evaluation.evaluator import EvaluateResults
+from pcb_qa.models.tool_definitions import ToolMode
 
 
 class TestEvaluateResultsInit:
@@ -125,7 +126,7 @@ class TestEvaluateNResponsesForMode:
         ev.json_file_operator = __import__("pcb_qa.utils.file_ops", fromlist=["JSONFileOperator"]).JSONFileOperator()
         ev.project_files_dict = config
 
-        ev._evaluate_n_responses_for_mode(2, "NNet&NCir", models=["test-model"])
+        ev._evaluate_n_responses_for_mode(2, ToolMode.NNET_AND_NCIR, models=["test-model"])
 
         csv_path = parent_dir / "results" / "NNet&NCir" / "test-model_test_project.csv"
         assert csv_path.exists()
@@ -139,39 +140,39 @@ class TestPublicModeMethods:
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_nnet_and_ncir_responses_to_csv(num_questions=10, models=["m1"])
-                mock_eval.assert_called_once_with(10, "NNet&NCir", ["m1"])
+                mock_eval.assert_called_once_with(10, ToolMode.NNET_AND_NCIR, ["m1"])
 
     def test_write_nnet_and_pcir(self) -> None:
         with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_nnet_and_pcir_responses_to_csv(num_questions=5, models=["m2"])
-                mock_eval.assert_called_once_with(5, "NNet&PCir", ["m2"])
+                mock_eval.assert_called_once_with(5, ToolMode.NNET_AND_PCIR, ["m2"])
 
     def test_write_pnet_and_ncir(self) -> None:
         with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_pnet_and_ncir_responses_to_csv(num_questions=8, models=["m3"])
-                mock_eval.assert_called_once_with(8, "PNet&NCir", ["m3"])
+                mock_eval.assert_called_once_with(8, ToolMode.PNET_AND_NCIR, ["m3"])
 
     def test_write_pnet_and_pcir(self) -> None:
         with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_pnet_and_pcir_responses_to_csv(num_questions=12, models=["m4"])
-                mock_eval.assert_called_once_with(12, "PNet&PCir", ["m4"])
+                mock_eval.assert_called_once_with(12, ToolMode.PNET_AND_PCIR, ["m4"])
 
     def test_write_schematic_as_pdfs(self) -> None:
         with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_schematic_as_pdfs_responses_to_csv(num_questions=3)
-                mock_eval.assert_called_once_with(3, "PDF", ["gpt-5.4-nano"])
+                mock_eval.assert_called_once_with(3, ToolMode.PDF, ["gpt-5.4-nano"])
 
     def test_write_schematic_as_pdfs_custom_models(self) -> None:
         with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_schematic_as_pdfs_responses_to_csv(num_questions=5, models=["custom"])
-                mock_eval.assert_called_once_with(5, "PDF", ["custom"])
+                mock_eval.assert_called_once_with(5, ToolMode.PDF, ["custom"])

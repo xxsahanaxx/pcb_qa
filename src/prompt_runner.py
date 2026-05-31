@@ -34,6 +34,24 @@ from pcb_qa.tools.caller import ToolCaller
 DEFAULT_TEMPERATURE = 0.0
 
 
+def _tools_for_mode(mode: ToolMode) -> list[dict] | None:
+    """Return the LLM tool definitions appropriate for *mode*."""
+    _MODE_TOOLS: dict[ToolMode, list[dict] | None] = {
+        ToolMode.NNET_AND_NCIR: ToolDefinitions.all_tools(),
+        ToolMode.PNET_AND_PCIR: None,
+        ToolMode.NNET_AND_PCIR: [
+            ToolDefinitions.GET_RELEVANT_CONTEXT,
+            ToolDefinitions.FIND_CONNECTIONS,
+        ],
+        ToolMode.PNET_AND_NCIR: [
+            ToolDefinitions.GET_RELEVANT_CONTEXT,
+            ToolDefinitions.CALCULATE_SPICE_BEHAVIOUR,
+        ],
+        ToolMode.PDF: None,
+    }
+    return _MODE_TOOLS.get(mode)
+
+
 # ---------------------------------------------------------------------------
 # Helper: get an initialised OpenAI client pointing at OpenRouter
 # ---------------------------------------------------------------------------
@@ -78,7 +96,7 @@ def ask_agent(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
-    llm_tools: list[dict] | None = None,
+    tool_mode: ToolMode = ToolMode.NNET_AND_NCIR,
 ) -> dict:
     """Run the tool-calling agent for a single question.
 
@@ -94,13 +112,12 @@ def ask_agent(
         Dictionary of project file paths.
     component_ref:
         Optional component reference designator.
-    llm_tools:
-        Tool definitions to pass to the LLM.  Defaults to all tools.
+    tool_mode:
+        Operating mode that selects which tools are available to the LLM.
     """
     from pcb_qa.models.tool_definitions import QuestionReasoning
 
-    if llm_tools is None:
-        llm_tools = ToolDefinitions.all_tools()
+    llm_tools = _tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -221,8 +238,15 @@ def ask_agent_primitive(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
+    tool_mode: ToolMode = ToolMode.PNET_AND_PCIR,
 ) -> dict:
-    """Run a primitive agent that answers directly without tool calls."""
+    """Run a primitive agent that answers directly without tool calls.
+
+    Parameters
+    ----------
+    tool_mode:
+        Operating mode. Defaults to ``ToolMode.PNET_AND_PCIR``.
+    """
     from pcb_qa.models.tool_definitions import QuestionReasoning
 
     caller = ToolCaller()
@@ -284,11 +308,18 @@ def ask_agent_with_json_netlist_and_spice_circuit(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
+    tool_mode: ToolMode = ToolMode.NNET_AND_PCIR,
 ) -> dict:
-    """Collect a response using .cir contents and JSON.net as inputs."""
+    """Collect a response using .cir contents and JSON.net as inputs.
+
+    Parameters
+    ----------
+    tool_mode:
+        Operating mode. Defaults to ``ToolMode.NNET_AND_PCIR``.
+    """
     from pcb_qa.models.tool_definitions import QuestionReasoning
 
-    llm_tools = [ToolDefinitions.GET_RELEVANT_CONTEXT, ToolDefinitions.FIND_CONNECTIONS]
+    llm_tools = _tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -417,11 +448,18 @@ def ask_agent_with_json_spice_and_netlist(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
+    tool_mode: ToolMode = ToolMode.PNET_AND_NCIR,
 ) -> dict:
-    """Collect a response using .JSON.cir and .net contents as inputs."""
+    """Collect a response using .JSON.cir and .net contents as inputs.
+
+    Parameters
+    ----------
+    tool_mode:
+        Operating mode. Defaults to ``ToolMode.PNET_AND_NCIR``.
+    """
     from pcb_qa.models.tool_definitions import QuestionReasoning
 
-    llm_tools = [ToolDefinitions.GET_RELEVANT_CONTEXT, ToolDefinitions.CALCULATE_SPICE_BEHAVIOUR]
+    llm_tools = _tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -570,8 +608,15 @@ def ask_agent_with_schematic_as_pdf(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
+    tool_mode: ToolMode = ToolMode.PDF,
 ) -> dict:
-    """Answer a question by sending a schematic PDF to the LLM as vision input."""
+    """Answer a question by sending a schematic PDF to the LLM as vision input.
+
+    Parameters
+    ----------
+    tool_mode:
+        Operating mode. Defaults to ``ToolMode.PDF``.
+    """
     import base64
     from pcb_qa.models.tool_definitions import QuestionReasoning
 
@@ -674,6 +719,9 @@ def _save_debug_json(filename: str, data: dict) -> None:
 if __name__ == "__main__":
     from pcb_qa.config import DEFAULT_LLM_MODELS
 
+    # Select which mode of prompting to use
+    tool_mode = ToolMode.NNET_AND_NCIR
+
     # Load projects from configuration instead of hardcoded functions
     projects = ProjectFiles()
 
@@ -716,10 +764,11 @@ if __name__ == "__main__":
                     category=category,
                     project_context=project_context,
                     component_ref=component_ref,
+                    tool_mode=tool_mode,
                 )
 
                 output_dir = os.path.join(
-                    project.parent_directory, "dry_run", model.split("/")[-1], category
+                    project.parent_directory, f"{tool_mode.value}", model.split("/")[-1], category
                 )
                 os.makedirs(output_dir, exist_ok=True)
                 output_path = os.path.join(output_dir, f"{idx + 1}.json")
