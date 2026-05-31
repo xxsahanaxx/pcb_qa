@@ -36,6 +36,14 @@ KICAD_CLI_PATH: str | None = _env("KICAD_CLI_PATH")
 NGSPICE_PATH: str | None = _env("NGSPICE_PATH", "ngspice")
 
 # ---------------------------------------------------------------------------
+# LLM / API configuration
+# ---------------------------------------------------------------------------
+
+OPENROUTER_API_KEY: str | None = _env("OPENROUTER_API_KEY")
+OPENROUTER_BASE_URL: str = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+EMBEDDING_MODEL_NAME: str = _env("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+
+# ---------------------------------------------------------------------------
 # LLM defaults
 # ---------------------------------------------------------------------------
 
