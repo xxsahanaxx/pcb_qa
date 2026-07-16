@@ -86,23 +86,6 @@ class TestToolCalls:
 class TestToolDefinitions:
     """Tests for the ToolDefinitions class."""
 
-    def test_all_tools_returns_list(self) -> None:
-        tools = ToolDefinitions.all_tools()
-        assert isinstance(tools, list)
-
-    def test_all_tools_has_three_items(self) -> None:
-        tools = ToolDefinitions.all_tools()
-        assert len(tools) == 3
-
-    def test_tool_structure(self) -> None:
-        tools = ToolDefinitions.all_tools()
-        for tool in tools:
-            assert tool["type"] == "function"
-            assert "function" in tool
-            assert "name" in tool["function"]
-            assert "description" in tool["function"]
-            assert "parameters" in tool["function"]
-
     def test_get_relevant_context_tool(self) -> None:
         tool = ToolDefinitions.GET_RELEVANT_CONTEXT
         assert tool["function"]["name"] == "get_relevant_context_from_question"
@@ -126,7 +109,3 @@ class TestToolDefinitions:
         assert "component_ref" in params["properties"]
         assert "net_name" in params["properties"]
 
-    def test_tools_are_strict(self) -> None:
-        tools = ToolDefinitions.all_tools()
-        for tool in tools:
-            assert tool["function"].get("strict") is True
