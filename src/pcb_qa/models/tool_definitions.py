@@ -134,5 +134,35 @@ class ToolDefinitions:
             cls.GET_RELEVANT_CONTEXT,
             cls.CALCULATE_SPICE_BEHAVIOUR,
             cls.FIND_CONNECTIONS,
-            cls.FIND_ALL_NETLIST_ENTRIES,
         ]
+
+
+def tools_for_mode(mode: ToolMode) -> list[dict] | None:
+    """Return the LLM tool definitions appropriate for *mode*.
+
+    Parameters
+    ----------
+    mode:
+        The operating mode that determines which tools the LLM may call.
+
+    Returns
+    -------
+    list[dict] | None
+        A list of OpenAI-style tool definition dicts, or ``None`` when no
+        tools are required for the given *mode* (e.g. ``PDF`` or
+        ``PNET_AND_PCIR``).
+    """
+    _MODE_TOOLS: dict[ToolMode, list[dict] | None] = {
+        ToolMode.NNET_AND_NCIR: ToolDefinitions.all_tools(),
+        ToolMode.PNET_AND_PCIR: None,
+        ToolMode.NNET_AND_PCIR: [
+            ToolDefinitions.GET_RELEVANT_CONTEXT,
+            ToolDefinitions.FIND_CONNECTIONS,
+        ],
+        ToolMode.PNET_AND_NCIR: [
+            ToolDefinitions.GET_RELEVANT_CONTEXT,
+            ToolDefinitions.CALCULATE_SPICE_BEHAVIOUR,
+        ],
+        ToolMode.PDF: None,
+    }
+    return _MODE_TOOLS.get(mode)
