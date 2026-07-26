@@ -11,6 +11,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+import openai
+
 # ---------------------------------------------------------------------------
 # Path constants
 # ---------------------------------------------------------------------------
@@ -53,6 +55,25 @@ DEFAULT_LLM_MODELS: list[str] = [
     "gpt-5.4-nano",
     "llama-3.3-70b-instruct",
 ]
+
+DEFAULT_TEMPERATURE = 0.0
+
+
+def get_openai_client() -> Any:
+    """Create an OpenAI-compatible client from environment config.
+
+    Raises ``EnvironmentError`` if ``OPENROUTER_API_KEY`` is not set.
+    """
+    import openai
+
+    if not OPENROUTER_API_KEY:
+        raise EnvironmentError(
+            "OPENROUTER_API_KEY environment variable is not set."
+        )
+    return openai.OpenAI(
+        base_url=OPENROUTER_BASE_URL,
+        api_key=OPENROUTER_API_KEY,
+    )
 
 # ---------------------------------------------------------------------------
 # Project file helpers

@@ -15,12 +15,13 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import json
 import sys
+
+from pcb_qa.models.tool_definitions import ToolMode
 
 
 def cmd_evaluate(args: argparse.Namespace) -> None:
-    from pcb_qa.evaluation.evaluator import EvaluateResults
+    from pcb_qa.evaluation.compute_results.evaluator import EvaluateResults
 
     evaluator = EvaluateResults()
     evaluator.write_nnet_and_ncir_responses_to_csv()
@@ -28,6 +29,13 @@ def cmd_evaluate(args: argparse.Namespace) -> None:
     evaluator.write_pnet_and_ncir_responses_to_csv()
     evaluator.write_pnet_and_pcir_responses_to_csv()
     evaluator.write_schematic_as_pdfs_responses_to_csv()
+
+
+def cmd_run(args: argparse.Namespace) -> None:
+    """Run LLM agents against benchmark questions for all projects."""
+    from pcb_qa.evaluation.run_benchmark.runner import run_benchmark
+
+    run_benchmark(tool_mode=args.mode, starting_index=args.start)
 
 
 def cmd_init_kicad(args: argparse.Namespace) -> None:
@@ -69,6 +77,19 @@ def main() -> None:
     )
     sub = parser.add_subparsers(dest="command")
 
+    run_parser = sub.add_parser("run", help="Run LLM agents against benchmark questions")
+    run_parser.add_argument(
+        "--mode",
+        type=ToolMode,
+        default=ToolMode.NNET_AND_NCIR,
+        help="Tool mode (default: NNet&NCir)",
+    )
+    run_parser.add_argument(
+        "--start",
+        type=int,
+        default=0,
+        help="Starting question index (default: 0)",
+    )
     sub.add_parser("evaluate", help="Run the full evaluation pipeline across all projects and models")
     sub.add_parser("init-kicad", help="Create kicad-cli symlink from KICAD_CLI_PATH env var")
     sub.add_parser("projects", help="List configured projects and their file paths")
@@ -77,6 +98,7 @@ def main() -> None:
     args = parser.parse_args()
 
     commands = {
+        "run": cmd_run,
         "evaluate": cmd_evaluate,
         "init-kicad": cmd_init_kicad,
         "projects": cmd_projects,

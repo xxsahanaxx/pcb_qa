@@ -1,9 +1,28 @@
-"""Prompt runner for PCB QA benchmark evaluation.
+"""LLM agent runners for benchmark question answering.
 
-Runs LLM agents against benchmark questions using tool-calling pipelines.
-All project configurations are loaded from ``configs/projects.json`` via
-the ``ProjectFiles`` class, and tool definitions / implementations come
-from the ``pcb_qa`` package.
+Each agent implements a different strategy for getting an LLM to answer a
+single benchmark question:
+
+- ``ask_agent`` — full tool-calling pipeline (the LLM selects a tool, the
+  tool is executed, then a second LLM call produces the final answer).
+- ``ask_agent_primitive`` — direct reasoning with raw netlist + SPICE file
+  contents injected into the prompt.
+- ``ask_agent_with_json_netlist_and_spice_circuit`` — JSON netlist + raw
+  ``.cir`` SPICE text, with optional tool calls.
+- ``ask_agent_with_json_spice_and_netlist`` — JSON SPICE + raw netlist,
+  with optional tool calls.
+- ``ask_agent_with_schematic_as_pdf`` — schematic PDF is base-64 encoded
+  and sent as a vision-style ``file`` message.
+
+All agents return a dict with keys ``category``, ``question``, and
+``response`` (a ``QuestionReasoning``-shaped dict with ``answer``,
+``reasoning``, ``is_final``). Tool-calling agents also include a
+``tool_calls`` key.
+
+Utility
+-------
+``parse_llm_response`` normalises an LLM's raw text response (possibly
+wrapped in markdown fences) into a :class:`pcb_qa.models.tool_definitions.QuestionReasoning`.
 """
 
 from __future__ import annotations
@@ -11,82 +30,47 @@ from __future__ import annotations
 import json
 import os
 import re
-from pathlib import Path
+from typing import Any
 
-import openai
-from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
 import requests
+from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
 
-from pcb_qa.config import (
-    OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
-)
+from pcb_qa.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL
 from pcb_qa.logging_config import logger
-from pcb_qa.models.project import Project, ProjectFiles
-from pcb_qa.models.tool_definitions import ToolDefinitions, ToolMode
+from pcb_qa.models.project import Project
+from pcb_qa.models.tool_definitions import QuestionReasoning, ToolMode, tools_for_mode
+from pcb_qa.parsers.circuit_json import find_component
 from pcb_qa.tools.caller import ToolCaller
+from pcb_qa.utils.file_ops import save_debug_json
 
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-DEFAULT_TEMPERATURE = 0.0
+DEFAULT_TEMPERATURE: float = 0.0
 
 
-def _tools_for_mode(mode: ToolMode) -> list[dict] | None:
-    """Return the LLM tool definitions appropriate for *mode*."""
-    _MODE_TOOLS: dict[ToolMode, list[dict] | None] = {
-        ToolMode.NNET_AND_NCIR: ToolDefinitions.all_tools(),
-        ToolMode.PNET_AND_PCIR: None,
-        ToolMode.NNET_AND_PCIR: [
-            ToolDefinitions.GET_RELEVANT_CONTEXT,
-            ToolDefinitions.FIND_CONNECTIONS,
-        ],
-        ToolMode.PNET_AND_NCIR: [
-            ToolDefinitions.GET_RELEVANT_CONTEXT,
-            ToolDefinitions.CALCULATE_SPICE_BEHAVIOUR,
-        ],
-        ToolMode.PDF: None,
-    }
-    return _MODE_TOOLS.get(mode)
+def _get_openai_client():
+    """Create an OpenAI-compatible client from environment config."""
+    from openai import OpenAI
 
-
-# ---------------------------------------------------------------------------
-# Helper: get an initialised OpenAI client pointing at OpenRouter
-# ---------------------------------------------------------------------------
-
-
-def _get_openai_client() -> openai.OpenAI:
-    """Create an OpenAI client configured for OpenRouter."""
     api_key = OPENROUTER_API_KEY
     if not api_key:
-        raise EnvironmentError(
-            "OPENROUTER_API_KEY environment variable is not set. "
-            "Add it to your .env file or export it in your shell."
-        )
-    return openai.OpenAI(
-        base_url=OPENROUTER_BASE_URL,
-        api_key=api_key,
-    )
+        raise EnvironmentError("OPENROUTER_API_KEY environment variable is not set.")
+    return OpenAI(base_url=OPENROUTER_BASE_URL, api_key=api_key)
 
 
 # ---------------------------------------------------------------------------
-# Parse LLM responses
+# LLM response parsing
 # ---------------------------------------------------------------------------
 
 
-def parse_llm_response(raw_content: str):
+def parse_llm_response(raw_content: str) -> QuestionReasoning:
     """Parse a JSON response (possibly wrapped in markdown fences) into a QuestionReasoning model."""
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
     match = re.search(r"```(?:json)?\s*(.*?)\s*```", raw_content, re.DOTALL)
     clean = match.group(1).strip() if match else raw_content.strip()
     return QuestionReasoning.model_validate_json(clean)
 
 
 # ---------------------------------------------------------------------------
-# Tool-calling agent: tool-based pipeline
+# Tool-calling agent: full pipeline
 # ---------------------------------------------------------------------------
 
 
@@ -98,26 +82,8 @@ def ask_agent(
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.NNET_AND_NCIR,
 ) -> dict:
-    """Run the tool-calling agent for a single question.
-
-    Parameters
-    ----------
-    model:
-        LLM model identifier (e.g. ``"meta-llama/llama-3.3-70b-instruct"``).
-    question:
-        The benchmark question text.
-    category:
-        Question category (e.g. ``"component_datasheet"``).
-    project_context:
-        Dictionary of project file paths.
-    component_ref:
-        Optional component reference designator.
-    tool_mode:
-        Operating mode that selects which tools are available to the LLM.
-    """
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
-    llm_tools = _tools_for_mode(tool_mode)
+    """Run the tool-calling agent for a single question."""
+    llm_tools = tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -166,7 +132,7 @@ def ask_agent(
         extra_body={"reasoning": {"enabled": True}},
     )
 
-    _save_debug_json("agent_response.json", llm_response.model_dump())
+    save_debug_json("agent_response.json", llm_response.model_dump())
 
     tool_calls = llm_response.choices[0].message.tool_calls[0]
     if isinstance(tool_calls, ChatCompletionMessageToolCall):
@@ -213,7 +179,7 @@ def ask_agent(
         temperature=DEFAULT_TEMPERATURE,
     )
 
-    _save_debug_json("final_response.json", second_response.model_dump())
+    save_debug_json("final_response.json", second_response.model_dump())
 
     final_response = {
         "category": category,
@@ -239,16 +205,10 @@ def ask_agent_primitive(
     project_context: dict,
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.PNET_AND_PCIR,
+    output_dir: str | None = None,
+    question_index: int | None = None,
 ) -> dict:
-    """Run a primitive agent that answers directly without tool calls.
-
-    Parameters
-    ----------
-    tool_mode:
-        Operating mode. Defaults to ``ToolMode.PNET_AND_PCIR``.
-    """
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
+    """Run a primitive agent that answers directly without tool calls."""
     caller = ToolCaller()
     client = _get_openai_client()
 
@@ -284,7 +244,9 @@ def ask_agent_primitive(
         temperature=DEFAULT_TEMPERATURE,
     )
 
-    _save_debug_json("agent_response.json", llm_response.model_dump())
+    raw = llm_response.model_dump()
+    if output_dir and question_index:
+        save_debug_json(os.path.join(output_dir, f"{question_index}_raw_llm_response.json"), raw)
 
     final_response = {
         "category": category,
@@ -310,16 +272,8 @@ def ask_agent_with_json_netlist_and_spice_circuit(
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.NNET_AND_PCIR,
 ) -> dict:
-    """Collect a response using .cir contents and JSON.net as inputs.
-
-    Parameters
-    ----------
-    tool_mode:
-        Operating mode. Defaults to ``ToolMode.NNET_AND_PCIR``.
-    """
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
-    llm_tools = _tools_for_mode(tool_mode)
+    """Collect a response using .cir contents and JSON.net as inputs."""
+    llm_tools = tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -370,7 +324,7 @@ def ask_agent_with_json_netlist_and_spice_circuit(
         extra_body={"reasoning": {"enabled": True}},
     )
 
-    _save_debug_json("agent_response.json", llm_response.model_dump())
+    save_debug_json("agent_response.json", llm_response.model_dump())
 
     function_response = None
     selected_tool_name = None
@@ -388,7 +342,6 @@ def ask_agent_with_json_netlist_and_spice_circuit(
     else:
         tool_calls = None
 
-    # Build second-pass messages
     if selected_tool_name == "get_relevant_context_from_question":
         tool_output_text = (
             f"The relevant context for this question is in this struct: {function_response}. "
@@ -423,7 +376,7 @@ def ask_agent_with_json_netlist_and_spice_circuit(
         temperature=DEFAULT_TEMPERATURE,
     )
 
-    _save_debug_json("final_response.json", second_response.model_dump())
+    save_debug_json("final_response.json", second_response.model_dump())
 
     final_response = {
         "category": category,
@@ -450,16 +403,8 @@ def ask_agent_with_json_spice_and_netlist(
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.PNET_AND_NCIR,
 ) -> dict:
-    """Collect a response using .JSON.cir and .net contents as inputs.
-
-    Parameters
-    ----------
-    tool_mode:
-        Operating mode. Defaults to ``ToolMode.PNET_AND_NCIR``.
-    """
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
-    llm_tools = _tools_for_mode(tool_mode)
+    """Collect a response using .JSON.cir and .net contents as inputs."""
+    llm_tools = tools_for_mode(tool_mode)
 
     tool_caller = ToolCaller()
     client = _get_openai_client()
@@ -510,7 +455,7 @@ def ask_agent_with_json_spice_and_netlist(
             extra_body={"reasoning": {"enabled": True}},
         )
 
-        _save_debug_json("agent_response.json", llm_response.model_dump())
+        save_debug_json("agent_response.json", llm_response.model_dump())
 
         function_response = None
         selected_tool_name = None
@@ -525,7 +470,6 @@ def ask_agent_with_json_spice_and_netlist(
 
             function_response = tool_caller.available_functions[selected_tool_name](**selected_tool_args)
 
-        # Build second-pass messages
         if selected_tool_name == "get_relevant_context_from_question":
             tool_output_text = (
                 f"The relevant context for this question is in this struct: {function_response}. "
@@ -572,7 +516,7 @@ def ask_agent_with_json_spice_and_netlist(
             temperature=DEFAULT_TEMPERATURE,
         )
 
-        _save_debug_json("final_response.json", second_response.model_dump())
+        save_debug_json("final_response.json", second_response.model_dump())
 
         final_response = {
             "category": category,
@@ -610,16 +554,7 @@ def ask_agent_with_schematic_as_pdf(
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.PDF,
 ) -> dict:
-    """Answer a question by sending a schematic PDF to the LLM as vision input.
-
-    Parameters
-    ----------
-    tool_mode:
-        Operating mode. Defaults to ``ToolMode.PDF``.
-    """
-    import base64
-    from pcb_qa.models.tool_definitions import QuestionReasoning
-
+    """Answer a question by sending a schematic PDF to the LLM as vision input."""
     api_key = OPENROUTER_API_KEY
     if not api_key:
         raise EnvironmentError("OPENROUTER_API_KEY environment variable is not set.")
@@ -670,7 +605,7 @@ def ask_agent_with_schematic_as_pdf(
 
     llm_response = requests.post(url, headers=headers, json=payload)
 
-    _save_debug_json("agent_response.json", llm_response.json())
+    save_debug_json("agent_response.json", llm_response.json())
 
     content = llm_response.json()["choices"][0]["message"]["content"]
     match = re.search(r"```json\s*([\s\S]*?)\s*```", content)
@@ -687,91 +622,3 @@ def ask_agent_with_schematic_as_pdf(
         "YES" if final_response["response"]["answer"] is True else "NO"
     )
     return final_response
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def find_component(circuit_json_file: str, component_ref: str) -> dict:
-    """Look up a component by reference designator in a circuit JSON file."""
-    from pcb_qa.parsers.circuit_json import CircuitJSON
-
-    circuit = CircuitJSON(circuit_file=circuit_json_file)
-    _subcircuit_name, component_data = circuit.find_component_from_circuit(component_ref)
-    return component_data or {}
-
-
-def _save_debug_json(filename: str, data: dict) -> None:
-    """Best-effort save of debug output to a JSON file."""
-    try:
-        with open(filename, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, indent=4)
-    except OSError as exc:
-        logger.warning("Could not write %s: %s", filename, exc)
-
-
-# ---------------------------------------------------------------------------
-# Main entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    from pcb_qa.config import DEFAULT_LLM_MODELS
-
-    # Select which mode of prompting to use
-    tool_mode = ToolMode.NNET_AND_NCIR
-
-    # Load projects from configuration instead of hardcoded functions
-    projects = ProjectFiles()
-
-    # Select the model to evaluate
-    models = DEFAULT_LLM_MODELS
-    for model in models:
-        for project_name in projects:
-            project = projects[project_name]
-            project_context = project.to_dict()
-
-            logger.info("Processing project: %s", project_name)
-            logger.info("Running model: %s", model)
-
-            with open(project.questions_json_file, "r", encoding="utf-8") as qf:
-                data = json.load(qf)
-
-            starting_index = 0
-
-            for idx in range(starting_index, len(data)):
-                category = data[idx]["category"]
-                question = data[idx]["question"]
-                component_ref = None
-
-                if category == "component_datasheet":
-                    pattern = r"Does the component\s+(\S+)\s+(.+?)\s+according to its datasheet\?"
-                    match = re.search(pattern, question.strip(), re.IGNORECASE)
-                    if match:
-                        component_ref = match.group(1).strip()
-                        feature = match.group(2).strip()
-
-                    component_info = find_component(project.circuit_json_file, component_ref)
-                    if component_info and "value" in component_info:
-                        question = re.sub(component_ref, component_info["value"], question)
-
-                logger.info("--- Question %d: %s ---", idx + 1, question)
-
-                contents = ask_agent_primitive(
-                    model=model,
-                    question=question,
-                    category=category,
-                    project_context=project_context,
-                    component_ref=component_ref,
-                    tool_mode=tool_mode,
-                )
-
-                output_dir = os.path.join(
-                    project.parent_directory, f"{tool_mode.value}", model.split("/")[-1], category
-                )
-                os.makedirs(output_dir, exist_ok=True)
-                output_path = os.path.join(output_dir, f"{idx + 1}.json")
-
-                with open(output_path, "w", encoding="utf-8") as of:
-                    json.dump(contents, of, indent=4)

@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pcb_qa.config import DEFAULT_TEMPERATURE, get_openai_client
-from pcb_qa.evaluation.evaluator import (
+from pcb_qa.evaluation.compute_results.evaluator import (
     parse_llm_response,
     ask_agent,
     ask_agent_primitive,
@@ -126,7 +126,7 @@ class TestGetOpenaiClient:
 
     @patch("pcb_qa.config.OPENROUTER_API_KEY", "test-key-123")
     @patch("pcb_qa.config.OPENROUTER_BASE_URL", "https://example.com/v1")
-    @patch("pcb_qa.config.openai.OpenAI")
+    @patch("openai.OpenAI")
     def test_creates_client_with_correct_params(self, mock_cls: MagicMock) -> None:
         mock_cls.return_value = MagicMock()
         client = get_openai_client()

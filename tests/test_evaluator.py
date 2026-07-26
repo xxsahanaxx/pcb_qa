@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from pcb_qa.evaluation.evaluator import EvaluateResults
+from pcb_qa.evaluation.compute_results.evaluator import EvaluateResults
 from pcb_qa.models.tool_definitions import ToolMode
 
 
@@ -16,7 +16,7 @@ class TestEvaluateResultsInit:
     """Tests for EvaluateResults initialisation."""
 
     def test_init_with_default_config(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config") as mock_load:
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config") as mock_load:
             mock_load.return_value = {}
             ev = EvaluateResults()
             assert isinstance(ev.llm_models, list)
@@ -31,7 +31,7 @@ class TestEvaluateResultsInit:
         assert "TestProject" in ev.project_files_dict
 
     def test_initial_state(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             assert ev.actual_responses == []
             assert ev.predicted_responses == []
@@ -48,14 +48,14 @@ class TestLoadQuestionsFromFile:
         q_file = tmp_path / "questions.json"
         q_file.write_text(json.dumps(questions), encoding="utf-8")
 
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             result = ev._load_questions_from_file(str(q_file))
             assert len(result) == 2
             assert result[0]["answer"] == "YES"
 
     def test_load_nonexistent_file(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with pytest.raises(FileNotFoundError):
                 ev._load_questions_from_file("/nonexistent/questions.json")
@@ -69,13 +69,13 @@ class TestReadResponseFromFile:
         result_file = tmp_path / "result.json"
         result_file.write_text(json.dumps(response_data), encoding="utf-8")
 
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             ev._read_response_from_file(str(result_file))
             assert ev.predicted_responses == ["YES"]
 
     def test_read_missing_file_appends_na(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             ev._read_response_from_file("/nonexistent/result.json")
             assert ev.predicted_responses == ["N/A"]
@@ -136,42 +136,42 @@ class TestPublicModeMethods:
     """Tests for the public evaluation mode methods."""
 
     def test_write_nnet_and_ncir(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_nnet_and_ncir_responses_to_csv(num_questions=10, models=["m1"])
                 mock_eval.assert_called_once_with(10, ToolMode.NNET_AND_NCIR, ["m1"])
 
     def test_write_nnet_and_pcir(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_nnet_and_pcir_responses_to_csv(num_questions=5, models=["m2"])
                 mock_eval.assert_called_once_with(5, ToolMode.NNET_AND_PCIR, ["m2"])
 
     def test_write_pnet_and_ncir(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_pnet_and_ncir_responses_to_csv(num_questions=8, models=["m3"])
                 mock_eval.assert_called_once_with(8, ToolMode.PNET_AND_NCIR, ["m3"])
 
     def test_write_pnet_and_pcir(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_pnet_and_pcir_responses_to_csv(num_questions=12, models=["m4"])
                 mock_eval.assert_called_once_with(12, ToolMode.PNET_AND_PCIR, ["m4"])
 
     def test_write_schematic_as_pdfs(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_schematic_as_pdfs_responses_to_csv(num_questions=3)
                 mock_eval.assert_called_once_with(3, ToolMode.PDF, ["gpt-5.4-nano"])
 
     def test_write_schematic_as_pdfs_custom_models(self) -> None:
-        with patch("pcb_qa.evaluation.evaluator.load_projects_config", return_value={}):
+        with patch("pcb_qa.evaluation.compute_results.evaluator.load_projects_config", return_value={}):
             ev = EvaluateResults()
             with patch.object(ev, "_evaluate_n_responses_for_mode") as mock_eval:
                 ev.write_schematic_as_pdfs_responses_to_csv(num_questions=5, models=["custom"])

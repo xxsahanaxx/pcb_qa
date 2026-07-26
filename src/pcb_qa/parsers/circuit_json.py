@@ -9,6 +9,13 @@ import json
 from typing import Any
 
 
+def find_component(circuit_file: str, component_ref: str) -> dict[str, Any]:
+    """Open *circuit_file*, return the component dict for *component_ref* or {}."""
+    circuit = CircuitJSON(circuit_file)
+    _, component_dict = circuit.find_component_from_circuit(component_ref)
+    return component_dict or {}
+
+
 class CircuitJSON:
     """Parse and query a hierarchical circuit JSON file.
 

@@ -11,6 +11,14 @@ from pathlib import Path
 from typing import Any
 
 
+def save_debug_json(path: str | Path, contents: dict[str, Any]) -> None:
+    """Write *contents* to *path* as pretty-printed JSON, ignoring ``OSError``."""
+    try:
+        JSONFileOperator.write_to_json_file(contents, path)
+    except OSError:
+        pass
+
+
 class JSONFileOperator:
     """Read and write JSON files with UTF-8 encoding."""
 

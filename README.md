@@ -38,9 +38,20 @@ pcb_qa/
 │       ├── tools/
 │       │   ├── __init__.py
 │       │   └── caller.py           # LLM tool-calling interface
+│       ├── question_banks/
+│       │   ├── __init__.py
+│       │   ├── cli.py              # CLI for question bank operations
+│       │   ├── generator.py        # Question generation utilities
+│       │   ├── validator.py        # Question validation against ground truth
+│       │   ├── fixer.py            # Question repair utilities
+│       │   ├── models.py           # Question and QuestionBank dataclasses
+│       │   ├── prompts.py          # Programmatic access to question generation prompts
+│       │   └── question_generation_prompts.md  # Canonical LLM prompts for each question category
 │       ├── evaluation/
 │       │   ├── __init__.py
-│       │   └── evaluator.py        # Benchmark evaluation, metrics & agent runners
+│       │   ├── evaluator.py        # EvaluateResults metrics + CLI entry-point
+│       │   ├── agents.py           # LLM agent runners (ask_agent, ask_agent_primitive, …)
+│       │   └── runner.py           # Benchmark orchestration (run_benchmark)
 │       └── utils/
 │           ├── __init__.py
 │           └── file_ops.py         # JSON & CSV file I/O helpers, save_debug_json()
@@ -146,7 +157,7 @@ These entries are loaded by `pcb_qa.config.load_projects_config()` and surfaced 
 
 ### CLI Commands
 
-The package exposes two console scripts (see `pyproject.toml`):
+The package exposes console scripts for various operations:
 
 ```bash
 # List configured projects and their file paths
@@ -158,39 +169,62 @@ pcb-qa init-kicad
 # Embed datasheets for all projects (FAISS indexing for semantic search)
 pcb-qa embed
 
-# Run the full evaluation pipeline (one CSV per (model, project, mode))
+# Run the full evaluation pipeline
 pcb-qa evaluate
 ```
 
-A dedicated evaluator entry-point is also installed:
+#### Question Bank Commands
+
+Generate and manage question banks using the `pcb-qa-questions` CLI:
 
 ```bash
-pcb-qa-evaluate
-```
+# Generate balanced question banks for all configured projects
+pcb-qa-questions expand
 
-Both commands internally instantiate `pcb_qa.evaluation.evaluator.EvaluateResults` and run all five benchmark modes.
+# Validate existing question banks against reference designs
+pcb-qa-questions validate
+
+# Fix invalid questions in question banks
+pcb-qa-questions fix
+```
 
 ### Running Prompt Agents
 
-The LLM agent functions live in `pcb_qa.evaluation.evaluator` and are accessible via the CLI:
+The benchmark runner is integrated into the `pcb_qa` package and accessible via the CLI:
 
 ```bash
-# Run agents with the default mode (NNet&NCir)
+# Run the benchmarking loop directly (uses ask_agent_primitive by default)
 pcb-qa run
 
-# Run with a specific mode
-pcb-qa run --tool-mode "NNet&PCir"
+# Run with a specific tool mode
+pcb-qa run --mode NNet&PCir
+
+# Resume from a specific question index
+pcb-qa run --start 30
 ```
 
-| Agent function | Default mode | Description |
-|----------------|--------------|-------------|
-| `ask_agent` | `NNET_AND_NCIR` | Full tool-calling agent (datasheets + SPICE + connectivity) |
-| `ask_agent_primitive` | `PNET_AND_PCIR` | Direct reasoning with raw netlist + SPICE contents |
-| `ask_agent_with_json_netlist_and_spice_circuit` | `NNET_AND_PCIR` | JSON netlist + raw SPICE tool calls |
-| `ask_agent_with_json_spice_and_netlist` | `PNET_AND_NCIR` | Raw netlist + JSON SPICE tool calls |
-| `ask_agent_with_schematic_as_pdf` | `PDF` | Vision-style PDF schematic input |
+Alternatively, invoke it programmatically:
 
-The CLI loops over `DEFAULT_LLM_MODELS` from `pcb_qa.config` and all configured projects, writing one JSON result per question to `<project>/<mode>/<model>/<category>/<idx>.json`.
+```python
+from pcb_qa.evaluation.runner import run_benchmark
+from pcb_qa.models.tool_definitions import ToolMode
+
+run_benchmark(
+    tool_mode=ToolMode.NNET_AND_NCIR,
+    starting_index=0,
+)
+```
+
+| Agent function | Default mode | Description | Location |
+|----------------|--------------|-------------|----------|
+| `ask_agent` | `NNET_AND_NCIR` | Full tool-calling agent (datasheets + SPICE + connectivity) | `pcb_qa.evaluation.agents` |
+| `ask_agent_primitive` | `PNET_AND_PCIR` | Direct reasoning with raw netlist + SPICE contents | `pcb_qa.evaluation.agents` |
+| `ask_agent_with_json_netlist_and_spice_circuit` | `NNET_AND_PCIR` | JSON netlist + raw SPICE tool calls | `pcb_qa.evaluation.agents` |
+| `ask_agent_with_json_spice_and_netlist` | `PNET_AND_NCIR` | Raw netlist + JSON SPICE tool calls | `pcb_qa.evaluation.agents` |
+| `ask_agent_with_schematic_as_pdf` | `PDF` | Vision-style PDF schematic input | `pcb_qa.evaluation.agents` |
+| `run_benchmark` | `NNET_AND_NCIR` | Orchestrates agents across all projects & models | `pcb_qa.evaluation.runner` |
+
+The `run_benchmark()` function loops over `DEFAULT_LLM_MODELS` and all configured projects, writing one JSON result per question to `<project>/<mode>/<model>/<category>/<idx>.json`.
 
 ### Python API
 
@@ -245,6 +279,125 @@ evaluator.write_pnet_and_ncir_responses_to_csv()
 evaluator.write_pnet_and_pcir_responses_to_csv()
 evaluator.write_schematic_as_pdfs_responses_to_csv()
 ```
+
+### Creating & Managing Question Banks
+
+The `pcb_qa.question_banks` package provides a complete toolkit for generating, validating, fixing, and documenting PCB question banks:
+
+```
+question_banks/
+├── __init__.py                        # Public API exports
+├── cli.py                             # CLI entry points (expand, validate, fix)
+├── generator.py                       # Question generation from circuit & SPICE data
+├── validator.py                       # Validation against ground-truth circuit/SPICE
+├── fixer.py                           # Automated repair of invalid questions
+├── models.py                          # Question & QuestionBank data classes
+├── prompts.py                         # Programmatic access to LLM prompt templates
+└── question_generation_prompts.md     # Canonical LLM prompts for each question category
+```
+
+#### Module Overview
+
+| Module | Purpose | Key Exports |
+|--------|---------|-------------|
+| `generator.py` | Generate balanced YES/NO questions from circuit JSON + SPICE data | `expand_question_bank_for_project()`, `generate_*_questions_balanced()` |
+| `validator.py` | Validate questions against reference circuit/SPICE data | `CircuitQuestionValidator` |
+| `fixer.py` | Automatically fix invalid net names and wrong answers | `QuestionBankFixer` |
+| `models.py` | Data classes for structured question bank access | `Question`, `QuestionBank` |
+| `prompts.py` | Load the canonical LLM prompt templates as Python resources | `get_prompts_path()`, `get_prompts_text()` |
+| `cli.py` | Command-line interface (used via `pcb-qa-questions`) | `main()` (expand/validate/fix) |
+
+#### Accessing the LLM Prompts
+
+The `question_generation_prompts.md` document contains the canonical LLM prompts used to design each question category. Access it programmatically via the `prompts` module:
+
+```python
+from pcb_qa.question_banks import get_prompts_path, get_prompts_text
+
+# Get the filesystem path (for passing to an LLM or other tools)
+path = get_prompts_path()
+print(f"Prompts file: {path}")
+
+# Get the full markdown text
+text = get_prompts_text()
+
+# Print section headings to verify the content
+for line in text.splitlines():
+    if line.startswith("## "):
+        print(line)
+```
+
+#### Generating Questions
+
+Generate YES/NO-balanced question banks from your circuit and SPICE data:
+
+```python
+from pcb_qa.question_banks import (
+    Question, QuestionBank,
+    generate_datasheet_questions_balanced,
+    generate_spice_questions_balanced,
+    generate_layout_questions_balanced,
+    CircuitQuestionValidator,
+    QuestionBankFixer,
+)
+from pcb_qa.models.project import ProjectFiles
+
+# Load a project
+projects = ProjectFiles()
+project = projects["AcornRobotElectronics"]
+
+# 1. Component datasheet questions (about IC specifications)
+components = ["U1", "U2", "U3", "R1", "C1"]  # From extract_components_from_circuit()
+datasheet_questions = generate_datasheet_questions_balanced(components, count=80)
+
+# 2. SPICE behaviour questions (about voltage levels in simulation)
+nets = ["VCC", "GND", "CLK", "DATA"]  # From extract_nets_from_spice()
+spice_questions = generate_spice_questions_balanced(nets, project.spice_json_file, count=80)
+
+# 3. Theory/layout questions (about component-to-net connectivity)
+connections = {"U1": ["VCC", "GND"], "R1": ["VCC"]}  # From get_component_net_connections()
+layout_questions = generate_layout_questions_balanced(connections, nets, count=80)
+
+# Combine all questions into a single list (the JSON format)
+all_questions = datasheet_questions + spice_questions + layout_questions
+
+# Optionally wrap with QuestionBank for easy counting and filtering
+bank = QuestionBank(all_questions)
+print(f"Total questions: {len(bank)}")
+print(f"Per category: {bank.count_by_category()}")
+print(f"Answer distribution: {bank.count_answers_by_category()}")
+
+# Validate the question bank
+validator = CircuitQuestionValidator(
+    circuit_json_file=project.circuit_json_file,
+    spice_json_file=project.spice_json_file,
+)
+report = validator.validate_questions(all_questions)
+print(f"Valid questions: {report['categories']['spice_behaviour']['valid']}")
+
+# Fix any invalid questions
+fixer = QuestionBankFixer(
+    circuit_json_file=project.circuit_json_file,
+    spice_json_file=project.spice_json_file,
+)
+fixer.fix_question_bank(all_questions)
+
+# Save to JSON (the JSON format is a plain list of dicts)
+with open("questions.json", "w") as f:
+    json.dump(all_questions, f, indent=2)
+```
+
+#### Question Categories
+
+The framework generates three types of questions, each designed from the prompts in `question_generation_prompts.md`:
+
+| Category | Description | Generated From |
+|----------|-------------|--------------|
+| `component_datasheet` | Questions about component specifications (temperature, voltage, current, interfaces, features) | IC component designators |
+| `spice_behaviour` | Questions about SPICE simulation voltage levels on nets | SPICE simulation JSON |
+| `theory_layout` | Questions about component-to-net connectivity | Circuit JSON connections |
+
+Each question bank contains 240 questions (80 per category) with balanced YES/NO answers.
 
 ---
 
@@ -320,7 +473,37 @@ uv run pytest
 pytest
 ```
 
-Tests live in `tests/` and mirror the package layout: `test_circuit_json.py`, `test_config.py`, `test_evaluator.py`, `test_file_ops.py`, `test_kicad_cli.py`, `test_logging_config.py`, `test_main.py`, `test_project.py`, `test_prompt_runner.py`, `test_spice.py`, `test_tool_caller.py`, `test_tool_definitions.py`.
+Tests live in `tests/` and mirror the package layout:
+
+| Test file | Module under test |
+|-----------|------------------|
+| `test_circuit_json.py` | `parsers/circuit_json.py` |
+| `test_config.py` | `config.py` |
+| `test_evaluator.py` | `evaluation/evaluator.py` |
+| `test_file_ops.py` | `utils/file_ops.py` |
+| `test_kicad_cli.py` | `kicad/cli.py` |
+| `test_logging_config.py` | `logging_config.py` |
+| `test_main.py` | `__main__.py` |
+| `test_project.py` | `models/project.py` |
+| `test_prompt_runner.py` | *(stale — imports removed API; DEPRECATED)* |
+| `test_spice.py` | `parsers/spice.py` |
+| `test_tool_caller.py` | `tools/caller.py` |
+| `test_tool_definitions.py` | `models/tool_definitions.py` |
+| `test_question_banks_models.py` | `question_banks/models.py` |
+| `test_question_banks_prompts.py` | `question_banks/prompts.py` |
+| `test_question_banks_generator.py` | `question_banks/generator.py` |
+| `test_question_banks_validator.py` | `question_banks/validator.py` |
+| `test_question_banks_fixer.py` | `question_banks/fixer.py` |
+
+Run tests for a specific module:
+
+```bash
+# All question_banks tests (94 tests)
+uv run pytest tests/test_question_banks_*.py -v
+
+# Or run the full suite
+uv run pytest
+```
 
 ### Logging
 
