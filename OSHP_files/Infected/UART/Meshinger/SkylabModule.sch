@@ -1,0 +1,488 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 3 4
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L SKW92A:SKW92A U5
+U 1 1 60415F24
+P 8400 3450
+F 0 "U5" H 9828 3546 50  0000 L CNN
+F 1 "SKW92A" H 9828 3455 50  0000 L CNN
+F 2 "SKW92A:SKYLAB_SKW92A" H 9828 3455 50  0001 L CNN
+F 3 "http://www.skylab.com.cn/uploadfile/Download/SkyLab_SKW92A_V1.04_datasheet.pdf" H 9828 3364 50  0001 L CNN
+	1    8400 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Micro_SD_Card J2
+U 1 1 6041BAE4
+P 3450 3050
+F 0 "J2" H 3400 2233 50  0000 C CNN
+F 1 "Micro_SD_Card" H 3400 2324 50  0000 C CNN
+F 2 "Connector_Card:microSD_HC_Hirose_DM3D-SF" H 4600 3350 50  0001 C CNN
+F 3 "http://katalog.we-online.de/em/datasheet/693072010801.pdf" H 3450 3050 50  0001 C CNN
+	1    3450 3050
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:GND #PWR010
+U 1 1 6041EF30
+P 2300 2650
+F 0 "#PWR010" H 2300 2400 50  0001 C CNN
+F 1 "GND" H 2305 2477 50  0000 C CNN
+F 2 "" H 2300 2650 50  0001 C CNN
+F 3 "" H 2300 2650 50  0001 C CNN
+	1    2300 2650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2650 2450 2300 2450
+Wire Wire Line
+	2300 2450 2300 2650
+Wire Wire Line
+	4350 3350 6950 3350
+Wire Wire Line
+	6950 3250 4350 3250
+Wire Wire Line
+	4350 3150 6950 3150
+Wire Wire Line
+	6950 3050 5900 3050
+Wire Wire Line
+	5900 3050 5900 2950
+Wire Wire Line
+	5900 2950 4350 2950
+Wire Wire Line
+	8100 2500 8100 1400
+Wire Wire Line
+	8100 1400 4850 1400
+Wire Wire Line
+	4850 1400 4850 2750
+Wire Wire Line
+	4850 2750 4350 2750
+Wire Wire Line
+	4350 2650 4750 2650
+Wire Wire Line
+	4750 2650 4750 1300
+Wire Wire Line
+	4750 1300 8200 1300
+Wire Wire Line
+	8200 1300 8200 2500
+$Comp
+L power:+3V3 #PWR011
+U 1 1 6042698A
+P 4600 4700
+F 0 "#PWR011" H 4600 4550 50  0001 C CNN
+F 1 "+3V3" H 4615 4873 50  0000 C CNN
+F 2 "" H 4600 4700 50  0001 C CNN
+F 3 "" H 4600 4700 50  0001 C CNN
+	1    4600 4700
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4350 3050 4600 3050
+Wire Wire Line
+	4600 3050 4600 4300
+$Comp
+L power:GND #PWR012
+U 1 1 60427AAD
+P 4950 3950
+F 0 "#PWR012" H 4950 3700 50  0001 C CNN
+F 1 "GND" H 4955 3777 50  0000 C CNN
+F 2 "" H 4950 3950 50  0001 C CNN
+F 3 "" H 4950 3950 50  0001 C CNN
+	1    4950 3950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4350 2850 4950 2850
+Wire Wire Line
+	4950 2850 4950 3650
+$Comp
+L power:GND #PWR016
+U 1 1 60428695
+P 7900 1050
+F 0 "#PWR016" H 7900 800 50  0001 C CNN
+F 1 "GND" H 7905 877 50  0000 C CNN
+F 2 "" H 7900 1050 50  0001 C CNN
+F 3 "" H 7900 1050 50  0001 C CNN
+	1    7900 1050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8300 2500 8300 1050
+Wire Wire Line
+	8300 1050 7900 1050
+Wire Wire Line
+	8400 2500 8400 1050
+Wire Wire Line
+	8400 1050 8300 1050
+Connection ~ 8300 1050
+Wire Wire Line
+	4950 2850 6800 2850
+Wire Wire Line
+	6800 2850 6800 2950
+Wire Wire Line
+	6800 2950 6950 2950
+Connection ~ 4950 2850
+Wire Wire Line
+	6950 3650 4950 3650
+Connection ~ 4950 3650
+Wire Wire Line
+	4950 3650 4950 3950
+Connection ~ 4600 4300
+Wire Wire Line
+	4600 4300 4600 4700
+Wire Wire Line
+	6950 3750 6600 3750
+Wire Wire Line
+	6600 3750 6600 3850
+Wire Wire Line
+	6600 4300 4600 4300
+Wire Wire Line
+	6950 3850 6600 3850
+Connection ~ 6600 3850
+Wire Wire Line
+	6600 3850 6600 4300
+$Comp
+L power:GND #PWR014
+U 1 1 6042D8F2
+P 6800 4300
+F 0 "#PWR014" H 6800 4050 50  0001 C CNN
+F 1 "GND" H 6805 4127 50  0000 C CNN
+F 2 "" H 6800 4300 50  0001 C CNN
+F 3 "" H 6800 4300 50  0001 C CNN
+	1    6800 4300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7800 4300 6800 4300
+Text GLabel 8900 5600 0    50   Input ~ 0
+EINK_CHIP_SELECT
+Text GLabel 9000 5750 0    50   Input ~ 0
+EINK_DATA_COMMAND
+Text GLabel 9100 5900 0    50   Input ~ 0
+EINK_DISPLAY_BUSY
+Text GLabel 9200 6050 0    50   Input ~ 0
+EINK_DISPLAY_RESET
+Text GLabel 8600 700  0    50   Input ~ 0
+SPI_CLK
+Text GLabel 8500 850  0    50   Input ~ 0
+SPI_MOSI
+Wire Wire Line
+	8500 850  8500 2500
+Wire Wire Line
+	8600 700  8600 2500
+Text GLabel 6800 3450 0    50   BiDi ~ 0
+UART_RX
+Text GLabel 6800 3550 0    50   BiDi ~ 0
+UART_TX
+Wire Wire Line
+	6800 3450 6950 3450
+Wire Wire Line
+	6800 3550 6950 3550
+$Comp
+L power:GND #PWR015
+U 1 1 60443BB1
+P 7800 1650
+F 0 "#PWR015" H 7800 1400 50  0001 C CNN
+F 1 "GND" H 7805 1477 50  0000 C CNN
+F 2 "" H 7800 1650 50  0001 C CNN
+F 3 "" H 7800 1650 50  0001 C CNN
+	1    7800 1650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8000 2500 8000 1550
+Wire Wire Line
+	8000 1550 7800 1550
+Wire Wire Line
+	7800 1550 7800 1650
+Text GLabel 7650 2350 0    50   BiDi ~ 0
+USB-
+Text GLabel 7650 2200 0    50   BiDi ~ 0
+USB+
+Wire Wire Line
+	7800 2500 7800 2350
+Wire Wire Line
+	7800 2350 7650 2350
+Wire Wire Line
+	7900 2500 7900 2200
+Wire Wire Line
+	7900 2200 7650 2200
+Text GLabel 9300 1750 2    50   BiDi ~ 0
+LAN1_TX-
+Text GLabel 9400 1900 2    50   BiDi ~ 0
+LAN1_TX+
+Text GLabel 9500 2050 2    50   BiDi ~ 0
+LAN1_RX-
+Text GLabel 9600 2200 2    50   BiDi ~ 0
+LAN1_RX+
+Wire Wire Line
+	9600 2200 9600 2500
+Wire Wire Line
+	9500 2050 9500 2500
+Wire Wire Line
+	9400 1900 9400 2500
+Wire Wire Line
+	9300 1750 9300 2500
+Wire Wire Line
+	9500 4300 9500 4600
+Wire Wire Line
+	9400 4300 9400 4750
+$Comp
+L Keyboard:BBQ10KBD U4
+U 1 1 60461E86
+P 2850 6100
+F 0 "U4" H 2850 6987 60  0000 C CNN
+F 1 "BBQ10KBD" H 2850 6881 60  0000 C CNN
+F 2 "BBQ10KBD:BM14B(0.8)-24DS-0.4V(53)" H 2850 6881 60  0001 C CNN
+F 3 "" H 2850 5750 60  0001 C CNN
+	1    2850 6100
+	1    0    0    -1  
+$EndComp
+Text GLabel 8700 700  2    50   BiDi ~ 0
+PWM
+$Comp
+L power:GND #PWR08
+U 1 1 60465DD2
+P 1600 6700
+F 0 "#PWR08" H 1600 6450 50  0001 C CNN
+F 1 "GND" H 1605 6527 50  0000 C CNN
+F 2 "" H 1600 6700 50  0001 C CNN
+F 3 "" H 1600 6700 50  0001 C CNN
+	1    1600 6700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2250 6600 1600 6600
+Wire Wire Line
+	1600 6600 1600 6700
+Wire Wire Line
+	2250 6700 1600 6700
+Connection ~ 1600 6700
+$Comp
+L power:+3V3 #PWR09
+U 1 1 6046A3A4
+P 1950 5500
+F 0 "#PWR09" H 1950 5350 50  0001 C CNN
+F 1 "+3V3" H 1965 5673 50  0000 C CNN
+F 2 "" H 1950 5500 50  0001 C CNN
+F 3 "" H 1950 5500 50  0001 C CNN
+	1    1950 5500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1950 5500 2250 5500
+Text GLabel 1850 6200 0    50   BiDi ~ 0
+PWM
+Wire Wire Line
+	1850 6200 2250 6200
+Text GLabel 3650 5500 2    50   BiDi ~ 0
+COL1
+Text GLabel 3650 5600 2    50   BiDi ~ 0
+COL2
+Text GLabel 3650 5700 2    50   BiDi ~ 0
+COL3
+Text GLabel 3650 5800 2    50   BiDi ~ 0
+COL4
+Text GLabel 3650 5900 2    50   BiDi ~ 0
+COL5
+Text GLabel 3650 6100 2    50   BiDi ~ 0
+ROW1
+Text GLabel 3650 6200 2    50   BiDi ~ 0
+ROW2
+Text GLabel 3650 6300 2    50   BiDi ~ 0
+ROW3
+Text GLabel 3650 6400 2    50   BiDi ~ 0
+ROW4
+Text GLabel 3650 6500 2    50   BiDi ~ 0
+ROW5
+Text GLabel 3650 6600 2    50   BiDi ~ 0
+ROW6
+Text GLabel 3650 6700 2    50   BiDi ~ 0
+ROW7
+Wire Wire Line
+	3450 5500 3650 5500
+Wire Wire Line
+	3450 5600 3650 5600
+Wire Wire Line
+	3450 5700 3650 5700
+Wire Wire Line
+	3450 5800 3650 5800
+Wire Wire Line
+	3450 5900 3650 5900
+Wire Wire Line
+	3450 6100 3650 6100
+Wire Wire Line
+	3450 6200 3650 6200
+Wire Wire Line
+	3450 6300 3650 6300
+Wire Wire Line
+	3450 6400 3650 6400
+Wire Wire Line
+	3450 6500 3650 6500
+Wire Wire Line
+	3450 6600 3650 6600
+Wire Wire Line
+	3450 6700 3650 6700
+Text GLabel 1850 5700 0    50   BiDi ~ 0
+GPIO
+Text GLabel 1850 5800 0    50   BiDi ~ 0
+LED1
+Text GLabel 1850 5900 0    50   BiDi ~ 0
+LED2
+Text GLabel 1850 6000 0    50   BiDi ~ 0
+LED3
+Wire Wire Line
+	1850 5700 2250 5700
+Wire Wire Line
+	1850 5800 2250 5800
+Wire Wire Line
+	1850 5900 2250 5900
+Wire Wire Line
+	1850 6000 2250 6000
+Text GLabel 8300 4850 0    50   BiDi ~ 0
+LED0
+Text GLabel 8200 4750 0    50   BiDi ~ 0
+LED1
+Text GLabel 8100 4650 0    50   BiDi ~ 0
+LED2
+Text GLabel 8000 4550 0    50   BiDi ~ 0
+LED3
+Wire Wire Line
+	8300 4850 8300 4300
+Wire Wire Line
+	8200 4750 8200 4300
+Wire Wire Line
+	8100 4650 8100 4300
+Wire Wire Line
+	8000 4550 8000 4300
+Wire Wire Line
+	8700 700  8700 2500
+Text GLabel 9200 1550 2    50   BiDi ~ 0
+COL1
+Text GLabel 9100 1400 2    50   BiDi ~ 0
+COL2
+Text GLabel 9000 1250 2    50   BiDi ~ 0
+COL3
+Wire Wire Line
+	9200 1550 9200 2500
+Wire Wire Line
+	9100 1400 9100 2500
+Wire Wire Line
+	9000 1250 9000 2500
+Text GLabel 8900 1100 2    50   BiDi ~ 0
+COL4
+Wire Wire Line
+	8900 1100 8900 2500
+Text GLabel 8800 950  2    50   BiDi ~ 0
+COL5
+Wire Wire Line
+	8800 950  8800 2500
+Text GLabel 8400 4950 0    50   BiDi ~ 0
+ROW7
+Wire Wire Line
+	7900 4450 7900 4300
+Text GLabel 8500 5050 0    50   BiDi ~ 0
+ROW6
+Text GLabel 8600 5150 0    50   BiDi ~ 0
+ROW5
+Wire Wire Line
+	8400 4300 8400 4950
+Wire Wire Line
+	8500 4300 8500 5050
+Text GLabel 8700 5250 0    50   BiDi ~ 0
+ROW4
+Wire Wire Line
+	8600 5150 8600 4300
+Wire Wire Line
+	9200 4300 9200 6050
+Wire Wire Line
+	9100 4300 9100 5900
+Wire Wire Line
+	9000 4300 9000 5750
+Wire Wire Line
+	8900 4300 8900 5600
+Text GLabel 8800 5350 0    50   BiDi ~ 0
+ROW3
+Text GLabel 9500 4600 2    50   BiDi ~ 0
+ROW2
+Wire Wire Line
+	8700 4300 8700 5250
+Wire Wire Line
+	8800 4300 8800 5350
+Text GLabel 9600 4450 2    50   BiDi ~ 0
+ROW1
+Wire Wire Line
+	9600 4300 9600 4450
+Text GLabel 9300 4900 2    50   BiDi ~ 0
+HW_RESET
+Wire Wire Line
+	9300 4300 9300 4900
+Text GLabel 9400 4750 2    50   BiDi ~ 0
+GPIO
+$Comp
+L Transistor_FET:NTR2101P Q2
+U 1 1 603ED400
+P 7100 5050
+F 0 "Q2" H 7305 5096 50  0000 L CNN
+F 1 "NTR2101P" H 7305 5005 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 7300 4975 50  0001 L CIN
+F 3 "http://www.onsemi.com/pub/Collateral/NTR2101P-D.PDF" H 7100 5050 50  0001 L CNN
+	1    7100 5050
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+3.3V #PWR013
+U 1 1 603F3686
+P 6150 5150
+F 0 "#PWR013" H 6150 5000 50  0001 C CNN
+F 1 "+3.3V" H 6165 5323 50  0000 C CNN
+F 2 "" H 6150 5150 50  0001 C CNN
+F 3 "" H 6150 5150 50  0001 C CNN
+	1    6150 5150
+	1    0    0    -1  
+$EndComp
+Text GLabel 7750 5150 3    50   BiDi ~ 0
+Display_Power_Switch
+Wire Wire Line
+	7750 5150 7300 5150
+Wire Wire Line
+	7900 4450 7100 4450
+Wire Wire Line
+	7100 4450 7100 4800
+Wire Wire Line
+	6150 5150 6500 5150
+$Comp
+L Device:R R2
+U 1 1 617BE3EA
+P 6650 4800
+F 0 "R2" V 6443 4800 50  0000 C CNN
+F 1 "10k" V 6534 4800 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 6535 4800 50  0001 C CNN
+F 3 "~" H 6650 4800 50  0001 C CNN
+	1    6650 4800
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6800 4800 7100 4800
+Connection ~ 7100 4800
+Wire Wire Line
+	7100 4800 7100 4850
+Wire Wire Line
+	6500 4800 6500 5150
+Connection ~ 6500 5150
+Wire Wire Line
+	6500 5150 6900 5150
+$EndSCHEMATC
