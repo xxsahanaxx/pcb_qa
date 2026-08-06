@@ -161,8 +161,41 @@ class KiCadSPICECircuitProcesser:
         kicad = KiCadInterface()
         kicad.export_spice_with_kicad_cli(self.project_name, self.spice_circuit_path)
 
+    def _normalise_spice_circuit(self):
+        """Create an ngspice-compatible copy of a raw KiCad ``.cir`` file.
+
+        KiCad SPICE exports contain capacitor/inductor values with voltage
+        ratings, e.g. ``1uF/25V``.  ngspice cannot parse the ``/`` suffix, so it
+        is stripped (``1uF``).  Power rails (``+3V3``, ``BAT+``) are left as-is —
+        ``KiCadSPICECircuitProcesser.convert_project_spice_to_circuit`` detects
+        them and appends the appropriate DC voltage sources.
+
+        Returns the path to the normalised copy (in a temporary directory).
+        """
+
+        with open(self.spice_circuit_path, "r") as fh:
+            lines = fh.readlines()
+
+        normalised_lines: list[str] = []
+        for line in lines:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("*") or stripped.startswith("."):
+                normalised_lines.append(line)
+                continue
+
+            # Strip voltage ratings from values: 1uF/25V -> 1uF, 10u/25V -> 10u
+            line = re.sub(r"/(\d+(?:\.\d+)?)V", "", line, flags=re.IGNORECASE)
+            normalised_lines.append(line)
+
+        with open(self.spice_circuit_path, "w") as fh:
+            fh.writelines(normalised_lines)
+
     def convert_project_spice_to_circuit(self, output_file_name: str) -> None:
         new_lines: list[str] = []
+        spice_commands = "\n \n"
+        power_lines = {}
+
+        self._normalise_spice_circuit()
 
         with open(self.spice_circuit_path, "r") as fh:
             original_content = fh.readlines()
@@ -183,7 +216,18 @@ class KiCadSPICECircuitProcesser:
                 line = first_word + " ".join(map(str, line.split(" ")[1:-1])) + " " + last_word
             new_lines.append(line)
 
-        spice_commands = (
+        # Find power rails from new_lines
+        for line in new_lines:
+            entries = line.split(" ")
+            for entry in entries:
+                matches = re.findall(r"\+\d+", entry)
+                if len(matches) > 0 and not entry.startswith("Net"): 
+                    power_lines[entry] = True
+
+        for power in power_lines.keys():
+            spice_commands += f"V_{power[1:]} {power} 0 DC {self._convert_voltage_str(power[1:])}" + "\n"
+        
+        spice_commands += (
             "\n \n"
             ".control \n"
             "tran 100u 10m \n"
@@ -217,34 +261,43 @@ class KiCadSPICECircuitProcesser:
         return ngspice_contents
 
     def parse_spice_simulated_data(self, output_raw_file_path: str) -> dict[str, Any]:
-        with open(output_raw_file_path, "r") as fh:
-            raw_content = fh.read()
+        with open(output_raw_file_path, 'r') as f:
+            raw_content = f.read()
 
-        num_vars = re.search(r"No\. Variables:\s*(\d+)", raw_content, re.IGNORECASE)
-        num_points = re.search(r"No\. Points:\s*(\d+)", raw_content, re.IGNORECASE)
-        logger.info("Variables: %s, Points: %s", num_vars.group(1) if num_vars else "?", num_points.group(1) if num_points else "?")
+        num_vars = re.search(r'No\. Variables:\s*(\d+)', raw_content, re.IGNORECASE)
+        num_points = re.search(r'No\. Points:\s*(\d+)', raw_content, re.IGNORECASE)
 
-        ngspice_contents: dict[str, Any] = {}
+        print(f"No. of variables from SPICE simulated file: {int(num_vars.group(1))}")
+        print(f"No. of points from SPICE simulated file: {int(num_points.group(1))}")
 
-        variables_match = re.search(r"Variables:\n(.*?)(?:\n[\w ]+:\s*\S+|\Z)", raw_content, re.DOTALL)
-        if variables_match:
-            for var_line in variables_match.group(1).strip().split("\n"):
-                parts = var_line.strip().split("\t")
-                if len(parts) >= 3:
-                    ngspice_contents[parts[0]] = {"name": parts[1], "values": {}}
+        ngspice_contents = {}
 
-        values_match = re.search(r"Values:\n(.*)", raw_content, re.DOTALL)
-        if values_match:
-            count = 0
-            data_point = ""
-            for val_line in values_match.group(1).strip().split("\n"):
-                values = val_line.strip().split("\t")
-                if len(values) > 1:
-                    data_point = values[0]
-                    ngspice_contents["0"]["values"][data_point] = values[1]
-                else:
-                    count += 1
-                    ngspice_contents[str(count)]["values"][data_point] = values[0]
+        variables_section_match = re.search(r'Variables:\n(.*?)(?:\n[\w ]+:\s*\S+|\Z)', raw_content, re.DOTALL)
+
+        if variables_section_match:
+            variables_text = variables_section_match.group(1).strip()
+            for var_line in variables_text.split('\n'):
+                if var_line.strip():
+                    parts = var_line.strip().split('\t')
+                    if len(parts) >= 3:
+                        idx = parts[0]
+                        name = parts[1]
+                        ngspice_contents[idx] = {'name': name, 'values': {}}
+
+        values_section_match = re.search(r'Values:\n(.*)', raw_content, re.DOTALL) 
+        
+        if values_section_match:
+            values_text = values_section_match.group(1).strip()
+            for val_line in values_text.split('\n'):
+                if val_line.strip():
+                    values = val_line.strip().split('\t')
+                    if (len(values) > 1):
+                        count = 0 # First line
+                        data_point = values[0]
+                        ngspice_contents[f"{count}"]['values'][f"{data_point}"] = values[1]
+                    else:
+                        count = count + 1
+                        ngspice_contents[f"{count}"]['values'][f"{data_point}"] = values[0]
 
         return ngspice_contents
 
