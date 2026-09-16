@@ -29,12 +29,14 @@ relative imports, so a loose-file invocation won't work):
 
 ```
 netlist_trojans/
-  core.py     # engine: parse / render / extract_spec / apply_spec (the library)
-  snip.py     # "snip" Trojan  — split one net (SDA, SCL, MISO, MOSI, ...)
-  swap.py     # "swap" Trojan  — cross an RX/TX pair (UART, ...)
-  cli.py      # command-line front end (argparse)
-  __main__.py # enables `python -m netlist_trojans`
-  specs/      # example Trojan spec(s): uart.json
+  insert_trojan/
+    core.py   # engine: parse / render / extract_spec / apply_spec (the library)
+    snip.py   # "snip" Trojan  — split one net (SDA, SCL, MISO, MOSI, ...)
+    swap.py   # "swap" Trojan  — cross an RX/TX pair (UART, ...)
+    cli.py    # command-line front end (argparse)
+  convert_circuits.py  # convert infected .net -> circuit JSON (needs pcb_qa)
+  __main__.py          # enables `python -m netlist_trojans`
+  specs/               # example Trojan spec(s): uart.json
 ```
 
 ---
@@ -144,6 +146,22 @@ The bundled `specs/uart.json` reproduces the Meshinger UART sample byte-for-byte
 downgrades). It's kept as the worked example for this workflow.
 
 ---
+
+## Converting infected netlists to circuit JSON
+
+After generating infected netlists, convert each to hierarchical circuit JSON
+(written `<source>.json` next to every `.net`):
+
+```bash
+.venv/bin/python -m netlist_trojans.convert_circuits                       # whole Infected tree
+.venv/bin/python -m netlist_trojans.convert_circuits --root outputs/Infected/SDA
+.venv/bin/python -m netlist_trojans.convert_circuits --verbose             # show parser logs
+```
+
+Re-run it any time you regenerate netlists. **Note:** unlike the rest of this
+package (which only needs `simp_sexp`), this one module depends on the **pcb_qa**
+project package — it imports it lazily and is the only part that needs it, so run
+it with the project venv from the repo root.
 
 ## Library use
 

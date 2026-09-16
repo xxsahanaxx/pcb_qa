@@ -12,11 +12,12 @@ Bus "snip" Trojan (see ``snip``): split one net into Troj_<SIGNAL>0 / ...1
 Bus RX/TX "swap" Trojan (see ``swap``): cross a pair into Troj_RX / Troj_TX
     uart_pairs, build_swap, swap.run_single, swap.run_batch
 
-The command-line front end is ``netlist_trojans.cli`` (``python -m netlist_trojans``).
+The command-line front end is ``netlist_trojans.insert_trojan.cli``
+(run it as ``python -m netlist_trojans``).
 """
 
-from . import core, snip, swap
-from .core import (
+from .insert_trojan import core, snip, swap
+from .insert_trojan.core import (
     Net,
     Node,
     apply_spec,
@@ -27,8 +28,8 @@ from .core import (
     render_net_block,
     write,
 )
-from .snip import bus_nets, build_split
-from .swap import build_swap, uart_pairs
+from .insert_trojan.snip import bus_nets, build_split
+from .insert_trojan.swap import build_swap, uart_pairs
 
 __all__ = [
     "core",
