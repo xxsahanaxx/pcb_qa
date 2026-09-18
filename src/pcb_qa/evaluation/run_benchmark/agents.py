@@ -13,11 +13,24 @@ single benchmark question:
   with optional tool calls.
 - ``ask_agent_with_schematic_as_pdf`` — schematic PDF is base-64 encoded
   and sent as a vision-style ``file`` message.
+- ``ask_agent_identify_design_flaw`` — compares an infected netlist against
+  a clean reference netlist and identifies the malicious design flaw
+  (hardware trojan) present in the infected one.
 
-All agents return a dict with keys ``category``, ``question``, and
+All agents return a dict with keys ``category``, ``question``,
 ``response`` (a ``QuestionReasoning``-shaped dict with ``answer``,
-``reasoning``, ``is_final``). Tool-calling agents also include a
-``tool_calls`` key.
+``reasoning``, ``is_final``, extracted for convenience), and
+``raw_response`` (the *complete*, unfiltered ``.model_dump()`` of the LLM
+response that produced ``response`` — id, model, usage/token counts, finish
+reason, provider fields, and the raw message/output content itself, so
+``response`` can always be re-derived from it later). Tool-calling agents
+also include a ``tool_calls`` key, and a ``retrieved_context`` key holding
+the datasheet chunks returned by the ``get_relevant_context_from_question``
+tool when the LLM selected it (``None`` for any other tool, or if no tool
+was called). Since ``runner.py`` writes each agent's returned dict straight
+to ``<project>/<mode>/<model>/<category>/<idx>.json``, ``raw_response`` and
+``retrieved_context`` both end up in that same per-question file — no
+separate lookup needed.
 
 Utility
 -------
@@ -27,9 +40,11 @@ wrapped in markdown fences) into a :class:`pcb_qa.models.tool_definitions.Questi
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -69,6 +84,22 @@ def parse_llm_response(raw_content: str) -> QuestionReasoning:
     return QuestionReasoning.model_validate_json(clean)
 
 
+def _save_numbered_response(
+    output_dir: str | None, question_index: int | None, suffix: str, raw: dict
+) -> None:
+    """Persist a raw LLM response dump as ``<output_dir>/<question_index>_<suffix>.json``.
+
+    A no-op when either `output_dir` or `question_index` is missing, so a
+    caller that doesn't care about per-question debug files (e.g. tests, or
+    an agent invoked outside `runner.py`) pays no cost. `suffix` is
+    ``"first_response"`` for an agent's only/initial LLM call and
+    ``"second_response"`` for the follow-up call that produces the final
+    answer in the two-call agents.
+    """
+    if output_dir and question_index:
+        save_debug_json(os.path.join(output_dir, f"{question_index}_{suffix}.json"), raw)
+
+
 # ---------------------------------------------------------------------------
 # Tool-calling agent: full pipeline
 # ---------------------------------------------------------------------------
@@ -80,7 +111,9 @@ def ask_agent(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
-    tool_mode: ToolMode = ToolMode.NNET_AND_NCIR,
+    tool_mode: ToolMode = ToolMode.PNET_AND_PCIR,
+    output_dir: str | None = None,
+    question_index: int | None = None,
 ) -> dict:
     """Run the tool-calling agent for a single question."""
     llm_tools = tools_for_mode(tool_mode)
@@ -132,7 +165,7 @@ def ask_agent(
         extra_body={"reasoning": {"enabled": True}},
     )
 
-    save_debug_json("agent_response.json", llm_response.model_dump())
+    _save_numbered_response(output_dir, question_index, "first_response", llm_response.model_dump())
 
     tool_calls = llm_response.choices[0].message.tool_calls[0]
     if isinstance(tool_calls, ChatCompletionMessageToolCall):
@@ -179,13 +212,18 @@ def ask_agent(
         temperature=DEFAULT_TEMPERATURE,
     )
 
-    save_debug_json("final_response.json", second_response.model_dump())
+    second_response_dump = second_response.model_dump()
+    _save_numbered_response(output_dir, question_index, "second_response", second_response_dump)
 
     final_response = {
         "category": category,
         "question": question,
         "tool_calls": llm_response.choices[0].message.tool_calls[0].function.model_dump(),
         "response": second_response.output[0].content[0].parsed.model_dump(),
+        "raw_response": second_response_dump,
+        "retrieved_context": (
+            function_response if selected_tool_name == "get_relevant_context_from_question" else None
+        ),
     }
     final_response["response"]["answer"] = (
         "YES" if final_response["response"]["answer"] is True else "NO"
@@ -204,7 +242,7 @@ def ask_agent_primitive(
     category: str,
     project_context: dict,
     component_ref: str | None = None,
-    tool_mode: ToolMode = ToolMode.PNET_AND_PCIR,
+    tool_mode: ToolMode = ToolMode.NNET_AND_NCIR,
     output_dir: str | None = None,
     question_index: int | None = None,
 ) -> dict:
@@ -245,13 +283,13 @@ def ask_agent_primitive(
     )
 
     raw = llm_response.model_dump()
-    if output_dir and question_index:
-        save_debug_json(os.path.join(output_dir, f"{question_index}_raw_llm_response.json"), raw)
+    _save_numbered_response(output_dir, question_index, "first_response", raw)
 
     final_response = {
         "category": category,
         "question": question,
         "response": llm_response.output[0].content[0].parsed.model_dump(),
+        "raw_response": raw,
     }
     final_response["response"]["answer"] = (
         "YES" if final_response["response"]["answer"] is True else "NO"
@@ -271,6 +309,8 @@ def ask_agent_with_json_netlist_and_spice_circuit(
     project_context: dict,
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.NNET_AND_PCIR,
+    output_dir: str | None = None,
+    question_index: int | None = None,
 ) -> dict:
     """Collect a response using .cir contents and JSON.net as inputs."""
     llm_tools = tools_for_mode(tool_mode)
@@ -324,7 +364,7 @@ def ask_agent_with_json_netlist_and_spice_circuit(
         extra_body={"reasoning": {"enabled": True}},
     )
 
-    save_debug_json("agent_response.json", llm_response.model_dump())
+    _save_numbered_response(output_dir, question_index, "first_response", llm_response.model_dump())
 
     function_response = None
     selected_tool_name = None
@@ -376,13 +416,18 @@ def ask_agent_with_json_netlist_and_spice_circuit(
         temperature=DEFAULT_TEMPERATURE,
     )
 
-    save_debug_json("final_response.json", second_response.model_dump())
+    second_response_dump = second_response.model_dump()
+    _save_numbered_response(output_dir, question_index, "second_response", second_response_dump)
 
     final_response = {
         "category": category,
         "question": question,
         "tool_calls": tool_calls.function.model_dump() if tool_calls else None,
         "response": second_response.output[0].content[0].parsed.model_dump(),
+        "raw_response": second_response_dump,
+        "retrieved_context": (
+            function_response if selected_tool_name == "get_relevant_context_from_question" else None
+        ),
     }
     final_response["response"]["answer"] = (
         "YES" if final_response["response"]["answer"] is True else "NO"
@@ -402,6 +447,8 @@ def ask_agent_with_json_spice_and_netlist(
     project_context: dict,
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.PNET_AND_NCIR,
+    output_dir: str | None = None,
+    question_index: int | None = None,
 ) -> dict:
     """Collect a response using .JSON.cir and .net contents as inputs."""
     llm_tools = tools_for_mode(tool_mode)
@@ -455,7 +502,7 @@ def ask_agent_with_json_spice_and_netlist(
             extra_body={"reasoning": {"enabled": True}},
         )
 
-        save_debug_json("agent_response.json", llm_response.model_dump())
+        _save_numbered_response(output_dir, question_index, "first_response", llm_response.model_dump())
 
         function_response = None
         selected_tool_name = None
@@ -516,13 +563,18 @@ def ask_agent_with_json_spice_and_netlist(
             temperature=DEFAULT_TEMPERATURE,
         )
 
-        save_debug_json("final_response.json", second_response.model_dump())
+        second_response_dump = second_response.model_dump()
+        _save_numbered_response(output_dir, question_index, "second_response", second_response_dump)
 
         final_response = {
             "category": category,
             "question": question,
             "tool_calls": llm_response.choices[0].message.tool_calls[0].function.model_dump(),
             "response": second_response.output[0].content[0].parsed.model_dump(),
+            "raw_response": second_response_dump,
+            "retrieved_context": (
+                function_response if selected_tool_name == "get_relevant_context_from_question" else None
+            ),
         }
         final_response["response"]["answer"] = (
             "YES" if final_response["response"]["answer"] is True else "NO"
@@ -542,6 +594,109 @@ def ask_agent_with_json_spice_and_netlist(
 
 
 # ---------------------------------------------------------------------------
+# Design-flaw identification agent (compares infected vs clean netlists)
+# ---------------------------------------------------------------------------
+
+
+def ask_agent_identify_design_flaw(
+    model: str,
+    infected_netlist: str,
+    clean_netlist: str,
+    category: str = "design_flaw",
+    output_dir: str | None = None,
+    question_index: int | None = None,
+) -> dict:
+    """Identify the design flaw in an infected netlist by comparing it against
+    a clean (uninfected) reference netlist.
+
+    Parameters
+    ----------
+    model:
+        The LLM model identifier to use (e.g. ``"openai/gpt-4o"``).
+    infected_netlist:
+        Raw contents of the infected KiCad S-expression netlist.
+    clean_netlist:
+        Raw contents of the clean (reference) KiCad S-expression netlist.
+    category:
+        Category label to attach to the returned result. Defaults to
+        ``"design_flaw"``.
+    output_dir, question_index:
+        If both are given, the raw LLM response is additionally saved to
+        ``<output_dir>/<question_index>_first_response.json``.
+
+    Returns
+    -------
+    dict
+        A dict with keys ``category`` and ``response``. The ``response`` is a
+        ``QuestionReasoning``-shaped dict with ``answer`` (``"YES"`` if a
+        flaw was found, else ``"NO"``), ``reasoning`` (a description of the
+        identified design flaw), and ``is_final``.
+    """
+    client = _get_openai_client()
+
+    prompt = (
+        "You are a Hardware Security and Design Review Expert. "
+        "You are given two KiCad S-expression netlists for the same circuit: "
+        "one is a clean (trusted) reference and the other is suspected of "
+        "containing a malicious design flaw (a hardware trojan).\n\n"
+        "Your task is to carefully compare the two netlists and identify the "
+        "design flaw in the infected netlist.\n\n"
+        "Pay close attention to:\n"
+        "- Net names that differ between the two netlists (e.g. renamed nets).\n"
+        "- Pin-to-net connections that have been swapped or rerouted.\n"
+        "- Connector pins that connect to the wrong device pins.\n"
+        "- Any suspicious or unexpected connectivity changes.\n\n"
+        "CLEAN (REFERENCE) NETLIST:\n"
+        "----------------------------------------\n"
+        f"{clean_netlist}\n\n"
+        "INFECTED NETLIST:\n"
+        "----------------------------------------\n"
+        f"{infected_netlist}\n\n"
+        "Do not hallucinate. Only report flaws that are actually present in the "
+        "infected netlist and supported by the evidence in the netlists.\n"
+        "Answer the question in the specified format requested by the user.\n"
+        "Once you are completely sure with your answer, set the 'is_final' "
+        "attribute to True in your output response.\n"
+        "Make sure you explain your reasoning clearly in the 'reasoning' "
+        "attribute of the output response.\n\n"
+        "Only output your response in the specified format and make sure to "
+        "fill in all required fields."
+    )
+
+    question = (
+        "Does the infected netlist contain a design flaw (hardware trojan)? "
+        "If yes, describe exactly what the flaw is, which nets/components are "
+        "affected, and how the connections differ from the clean reference."
+    )
+
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": question},
+    ]
+
+    llm_response = client.responses.parse(
+        model=model,
+        input=messages,
+        text_format=QuestionReasoning,
+        temperature=DEFAULT_TEMPERATURE,
+    )
+
+    raw = llm_response.model_dump()
+    _save_numbered_response(output_dir, question_index, "first_response", raw)
+
+    final_response = {
+        "category": category,
+        "question": question,
+        "response": llm_response.output[0].content[0].parsed.model_dump(),
+        "raw_response": raw,
+    }
+    final_response["response"]["answer"] = (
+        "YES" if final_response["response"]["answer"] is True else "NO"
+    )
+    return final_response
+
+
+# ---------------------------------------------------------------------------
 # Schematic-as-PDF agent
 # ---------------------------------------------------------------------------
 
@@ -553,6 +708,8 @@ def ask_agent_with_schematic_as_pdf(
     project_context: dict,
     component_ref: str | None = None,
     tool_mode: ToolMode = ToolMode.PDF,
+    output_dir: str | None = None,
+    question_index: int | None = None,
 ) -> dict:
     """Answer a question by sending a schematic PDF to the LLM as vision input."""
     api_key = OPENROUTER_API_KEY
@@ -604,10 +761,11 @@ def ask_agent_with_schematic_as_pdf(
     payload = {"model": model, "messages": messages}
 
     llm_response = requests.post(url, headers=headers, json=payload)
+    raw = llm_response.json()
 
-    save_debug_json("agent_response.json", llm_response.json())
+    _save_numbered_response(output_dir, question_index, "first_response", raw)
 
-    content = llm_response.json()["choices"][0]["message"]["content"]
+    content = raw["choices"][0]["message"]["content"]
     match = re.search(r"```json\s*([\s\S]*?)\s*```", content)
     if match:
         content = re.sub(r"^```json\s*|\s*```$", "", match.group(1))
@@ -616,7 +774,7 @@ def ask_agent_with_schematic_as_pdf(
         "category": category,
         "question": question,
         "response": json.loads(content),
-        "usage_stats": llm_response.json().get("usage"),
+        "raw_response": raw,
     }
     final_response["response"]["answer"] = (
         "YES" if final_response["response"]["answer"] is True else "NO"
