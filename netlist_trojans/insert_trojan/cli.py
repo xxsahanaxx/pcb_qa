@@ -6,6 +6,12 @@ Subcommands:
   apply        Insert a Trojan spec into a clean netlist.
   snip         Snip one bus-signal net in a single file (SDA/SCL/MISO/MOSI/...).
   snip-batch   Snip every matching net across a tree of clean netlists.
+  swap         Cross one RX/TX net pair in a single file.
+  swap-batch   Swap every RX/TX pair across a tree of clean netlists.
+  tolerance        Swap the tolerance grade of one passive in a single file.
+  tolerance-batch  Swap the tolerance grade of every R/C/L passive across a tree.
+  value        Shift the magnitude of one passive's value in a single file.
+  value-batch  Shift the magnitude of every R/C/L passive's value across a tree.
 
 Run it as a module from the repo root:
   python -m netlist_trojans <subcommand> ...
@@ -19,6 +25,8 @@ from typing import Dict, List, Optional
 from . import core
 from . import snip
 from . import swap
+from . import tolerance
+from . import value
 
 
 def _parse_kv(pairs: Optional[List[str]], flag: str) -> Dict[str, str]:
@@ -76,6 +84,28 @@ def _cmd_swap(args) -> int:
 def _cmd_swap_batch(args) -> int:
     return swap.run_batch(args.signal, clean_glob=args.clean_glob,
                           out_root=args.out_root)
+
+
+def _cmd_tolerance(args) -> int:
+    return tolerance.run_single(args.input, output=args.output,
+                                ref=args.ref, list_only=args.list)
+
+
+def _cmd_tolerance_batch(args) -> int:
+    families = args.families.split(",") if args.families else None
+    return tolerance.run_batch(clean_glob=args.clean_glob,
+                               out_root=args.out_root, families=families)
+
+
+def _cmd_value(args) -> int:
+    return value.run_single(args.input, output=args.output,
+                            ref=args.ref, list_only=args.list)
+
+
+def _cmd_value_batch(args) -> int:
+    families = args.families.split(",") if args.families else None
+    return value.run_batch(clean_glob=args.clean_glob,
+                           out_root=args.out_root, families=families)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -139,6 +169,46 @@ def build_parser() -> argparse.ArgumentParser:
     wb.add_argument("--out-root", default=None,
                     help="Output root (default: outputs/Infected/<SIGNAL>)")
     wb.set_defaults(func=_cmd_swap_batch)
+
+    t = sub.add_parser("tolerance",
+                       help="Swap the tolerance grade of one R/C/L passive in a single netlist")
+    t.add_argument("input", help="Path to the clean .net file")
+    t.add_argument("-o", "--output", help="Output .net (default: <input>_infected.net)")
+    t.add_argument("--ref", help="Ref of the passive to substitute (default: first found)")
+    t.add_argument("--list", action="store_true",
+                   help="List the passives (and their current tolerance) in INPUT and exit")
+    t.set_defaults(func=_cmd_tolerance)
+
+    tb = sub.add_parser("tolerance-batch",
+                        help="Swap the tolerance grade of every R/C/L passive across a tree "
+                             "of clean netlists")
+    tb.add_argument("--clean-glob", default=tolerance.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {tolerance.CLEAN_GLOB})")
+    tb.add_argument("--out-root", default=None,
+                    help="Output root (default: outputs/Infected/Tolerance)")
+    tb.add_argument("--families", default=None,
+                    help="Comma-separated subset of R,C,L (default: all three)")
+    tb.set_defaults(func=_cmd_tolerance_batch)
+
+    v = sub.add_parser("value",
+                       help="Shift the magnitude of one R/C/L passive's value in a single netlist")
+    v.add_argument("input", help="Path to the clean .net file")
+    v.add_argument("-o", "--output", help="Output .net (default: <input>_infected.net)")
+    v.add_argument("--ref", help="Ref of the passive to substitute (default: first found)")
+    v.add_argument("--list", action="store_true",
+                   help="List the passives (and their current value) in INPUT and exit")
+    v.set_defaults(func=_cmd_value)
+
+    vb = sub.add_parser("value-batch",
+                        help="Shift the magnitude of every R/C/L passive's value across a tree "
+                             "of clean netlists")
+    vb.add_argument("--clean-glob", default=value.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {value.CLEAN_GLOB})")
+    vb.add_argument("--out-root", default=None,
+                    help="Output root (default: outputs/Infected/Value)")
+    vb.add_argument("--families", default=None,
+                    help="Comma-separated subset of R,C,L (default: all three)")
+    vb.set_defaults(func=_cmd_value_batch)
 
     return p
 

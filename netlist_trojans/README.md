@@ -47,10 +47,12 @@ netlist_trojans/
 |---|---|---|---|
 | **snip** | Split one bus net into `Troj_<SIGNAL>0` / `Troj_<SIGNAL>1` (cut a trace) | `snip`, `snip-batch` | no — rule-based |
 | **swap** | Cross a matched RX/TX pair → `Troj_RX` / `Troj_TX` | `swap`, `swap-batch` | no — rule-based |
+| **tolerance** | Re-grade one R/C/L passive to a different tolerance (%) | `tolerance`, `tolerance-batch` | no — rule-based |
+| **value** | Shift one R/C/L passive's value to a different SI decade | `value`, `value-batch` | no — rule-based |
 | **spec replay** | Reproduce/retarget an *exact* recorded Trojan | `extract`, `apply` | yes — `specs/*.json` |
 
-**Rule-based** Trojans (snip, swap) compute what to change from whatever nets a
-board actually has — you just give a `--signal` keyword, nothing is stored.
+**Rule-based** Trojans (snip, swap, tolerance, value) compute what to change
+from whatever nets/components a board actually has — nothing is stored.
 **Spec-based** Trojans capture a specific hand-made example once (via `extract`)
 and replay it (via `apply`); that recipe *is* the JSON in `specs/`.
 
@@ -93,18 +95,84 @@ Swaps the node lists of a matched RX/TX pair and renames them `Troj_RX` /
 
 Works for any RX/TX-named bus (e.g. `--signal RS485`), not just UART.
 
+### tolerance — re-grade a passive (R/C/L) to a different tolerance
+
+Models a supply-chain substitution: a resistor/capacitor/inductor is swapped
+for a same-value, same-footprint part sourced to a **different tolerance
+grade**. Value, footprint and every net stay untouched — the only change is a
+single `Tolerance` property in the component's own `(comp ...)` block, so the
+diff is one line. The new grade is picked deterministically (hash of board +
+ref), never equal to the component's current grade.
+
+"Current grade" is read with this precedence: an explicit `Tolerance`
+property already in the block > a grade mined from the vendor part/description
+text when the library states one (e.g. `"RES 10kΩ ±1% 1/8W 0805 Yageo"`) > a
+generic per-family default (5% for R, 10% for C/L) when the netlist states
+neither — so the *value that gets tampered* is always the board's real
+declared tolerance where one exists, and after the swap it visibly disagrees
+with any untouched vendor description sitting right next to it.
+
+```bash
+# one file
+.venv/bin/python -m netlist_trojans tolerance board.net --list           # show candidates + current grade
+.venv/bin/python -m netlist_trojans tolerance board.net --ref R5 -o out.net
+
+# every R/C/L passive across a tree of clean netlists (one output per part)
+.venv/bin/python -m netlist_trojans tolerance-batch
+.venv/bin/python -m netlist_trojans tolerance-batch --families R,C       # skip inductors
+```
+
+Only two-terminal passives with a meaningful ±% rating qualify: Device-library
+`R`/`R_Small`/`R_US`/`C`/`C_Small`/`C_Polarized`/`L`, plus any part whose
+libsource `part` text starts with `RES`/`CAP`/`IND` (vendor-exported
+libraries). LEDs, diodes, transistors, crystals and fuses are excluded — they
+aren't rated by a simple tolerance percentage.
+
+### value — shift a passive's magnitude (same unit, different decade)
+
+Tampers with the component's actual nominal value instead of a bolted-on
+property: it shifts the SI-prefix magnitude (p, n, u, m, k, M) while leaving
+every digit, the decimal point, and the base unit (ohms/farads/henries)
+untouched. A `10k` pull-up silently becomes `10M`; a `100n` decoupling cap
+becomes `100u`; a bare `47` (ohm) resistor becomes `47k`. Same-family,
+same-footprint, same-digits — only the decade is wrong, which is exactly the
+kind of misread (k vs M, m vs M) that slips past a schematic review.
+
+```bash
+# one file
+.venv/bin/python -m netlist_trojans value board.net --list           # show candidates + current value
+.venv/bin/python -m netlist_trojans value board.net --ref C5 -o out.net
+
+# every R/C/L passive across a tree of clean netlists (one output per part)
+.venv/bin/python -m netlist_trojans value-batch
+.venv/bin/python -m netlist_trojans value-batch --families R          # resistors only
+```
+
+Handles every value shape seen in this corpus: plain SI shorthand (`10k`,
+`3.9uH`), KiCad's decimal-in-letter form (`4k7` = 4.7k, `2u2` = 2.2u), and
+bare/no-prefix numbers with or without a spelled-out unit (`47`, `100R`,
+`0.47ohm`, `100Ω`). A trailing rating/tolerance/description (`47uF 63V
+solid`, `1nF 2kV`, `2.2k 1%`, `0.1uF/16V`) is split off first and left
+alone, so a prefix letter inside a voltage rating (the `k` in `2kV`) is
+never mistaken for the component's own magnitude. A value with no
+meaningful magnitude to shift — a 0-ohm link, or a placeholder like `??` —
+is skipped rather than corrupted.
+
 ### Batch output layout
 
-`snip-batch` and `swap-batch` write **one output file per net / per pair**, so
-each output's diff is a single change:
+`snip-batch`, `swap-batch`, `tolerance-batch` and `value-batch` write **one
+output file per net / per pair / per part**, so each output's diff is a
+single change:
 
 ```
-<out-root>/<board>/<net-or-pair>/<original filename>
-<out-root>/manifest.json          # board, net(s), output path, resulting nodes
+<out-root>/<board>/<net-or-pair-or-ref>/<original filename>
+<out-root>/manifest.json          # board, target(s), output path, what changed
 ```
 
-Defaults: `--clean-glob 'outputs/Clean/*/*.net'`, `--out-root outputs/Infected/<SIGNAL>`.
-Override either for use outside this repo.
+Defaults: `--clean-glob 'outputs/Clean/*/*.net'`, `--out-root
+outputs/Infected/<SIGNAL>` (snip/swap), `outputs/Infected/Tolerance`
+(tolerance-batch), or `outputs/Infected/Value` (value-batch). Override either
+for use outside this repo.
 
 ---
 
@@ -163,6 +231,39 @@ package (which only needs `simp_sexp`), this one module depends on the **pcb_qa*
 project package — it imports it lazily and is the only part that needs it, so run
 it with the project venv from the repo root.
 
+## Trojan-detection question banks
+
+Generate a detection question bank next to each infected netlist, driven by the
+batch `manifest.json` files:
+
+```bash
+.venv/bin/python -m netlist_trojans.gen_trojan_questions                 # whole Infected tree
+.venv/bin/python -m netlist_trojans.gen_trojan_questions --root outputs/Infected/SDA
+```
+
+For each infected variant it writes `<stem>_trojan_questions.json` into that
+folder (schema `{category, question, answer, clean_answer}`, `category =
+"trojan_detection"`). Each `answer` is the ground truth **on the infected
+netlist**, computed from the parsed files, and questions are kept only when the
+clean and infected answers differ — so every question is guaranteed to
+discriminate. Question kinds:
+
+- a named signal net is now missing (renamed/removed),
+- a `Troj_*` net has appeared (canary),
+- a signal endpoint moved to the wrong net (RX/TX swap),
+- two components that shared a bus net are no longer on a common net (snip),
+- a pin now sits on a one-pin (floating) net — dangling pin (snip),
+- a pin's function contradicts its net's role, e.g. a `UART_TXD` pin on a
+  receive-named net (swap; emitted only when pin functions denote a role).
+
+The last two are reference-free — they flag the tamper from the infected file
+alone, even if the `Troj_*` nets were renamed to something innocent.
+
+`clean_answer` is stored alongside so the bank supports single-file scoring or
+clean-vs-infected differential scoring. Only manifest-listed variants are
+covered (the hand-made `outputs/Infected/UART/Meshinger/Meshinger.net` sample is
+not in a manifest, so it is skipped).
+
 ## Library use
 
 ```python
@@ -178,6 +279,14 @@ infected, log = t.apply_spec(clean, t.build_split(sda, "SDA"))
 rx, tx = t.uart_pairs(nets, "UART")[0]
 infected, log = t.apply_spec(clean, t.build_swap(rx, tx))
 
+passives = t.parse_passives(clean)
+sub = t.build_substitution(passives[0], clean, board="board")
+infected = t.tolerance.apply_tolerance(clean, passives[0], sub["substituted_tolerance"])
+
+candidates = t.parse_candidates(clean)
+vsub = t.value.build_substitution(candidates[0], board="board")
+infected = t.value.apply_value(clean, candidates[0], vsub["new_value"])
+
 # spec-based
 spec = t.extract_spec("clean.net", "infected.net", label="UART")
 infected, log = t.apply_spec(clean, spec)
@@ -185,6 +294,8 @@ infected, log = t.apply_spec(clean, spec)
 # batch runners
 t.snip.run_batch("SDA")
 t.swap.run_batch("UART")
+t.tolerance.run_batch()
+t.value.run_batch()
 ```
 
 ---
