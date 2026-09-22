@@ -30,13 +30,19 @@ relative imports, so a loose-file invocation won't work):
 ```
 netlist_trojans/
   insert_trojan/
-    core.py   # engine: parse / render / extract_spec / apply_spec (the library)
-    snip.py   # "snip" Trojan  — split one net (SDA, SCL, MISO, MOSI, ...)
-    swap.py   # "swap" Trojan  — cross an RX/TX pair (UART, ...)
-    cli.py    # command-line front end (argparse)
-  convert_circuits.py  # convert infected .net -> circuit JSON (needs pcb_qa)
-  __main__.py          # enables `python -m netlist_trojans`
-  specs/               # example Trojan spec(s): uart.json
+    core.py       # engine: parse / render / extract_spec / apply_spec (the library)
+    snip.py       # "snip" Trojan  — split one net (SDA, SCL, MISO, MOSI, ...)
+    swap.py       # "swap" Trojan  — cross an RX/TX pair (UART, ...)
+    tolerance.py  # "tolerance" Trojan — re-grade one R/C/L passive
+    value.py      # "value" Trojan — shift one R/C/L passive's SI-prefix magnitude
+    cli.py        # command-line front end (argparse)
+  conversions/
+    convert_circuits.py  # infected .net -> hierarchical circuit JSON (needs pcb_qa)
+    convert_spice.py     # infected .net -> infected SPICE .cir (needs pcb_qa)
+    run_spice.py         # batch-run ngspice over generated .cir files
+  gen_trojan_questions.py  # Trojan-detection question banks from batch manifests
+  __main__.py              # enables `python -m netlist_trojans`
+  specs/                   # example Trojan spec(s): uart.json
 ```
 
 ---
@@ -215,21 +221,84 @@ downgrades). It's kept as the worked example for this workflow.
 
 ---
 
-## Converting infected netlists to circuit JSON
+## Conversions (`netlist_trojans/conversions/`)
 
-After generating infected netlists, convert each to hierarchical circuit JSON
-(written `<source>.json` next to every `.net`):
+Three separate scripts, meant to run in sequence after generating infected
+netlists. **Note:** unlike the rest of this package (which only needs
+`simp_sexp`), all three depend on the **pcb_qa** project package (`convert_spice`
+directly; the others import it lazily) — run them with the project venv, from
+the repo root.
+
+### convert_circuits — infected `.net` → hierarchical circuit JSON
+
+Convert each infected netlist to hierarchical circuit JSON, written
+`<source>.json` next to every `.net`:
 
 ```bash
-.venv/bin/python -m netlist_trojans.convert_circuits                       # whole Infected tree
-.venv/bin/python -m netlist_trojans.convert_circuits --root outputs/Infected/SDA
-.venv/bin/python -m netlist_trojans.convert_circuits --verbose             # show parser logs
+.venv/bin/python -m netlist_trojans.conversions.convert_circuits                       # whole Infected tree
+.venv/bin/python -m netlist_trojans.conversions.convert_circuits --root outputs/Infected/SDA
+.venv/bin/python -m netlist_trojans.conversions.convert_circuits --verbose             # show parser logs
 ```
 
-Re-run it any time you regenerate netlists. **Note:** unlike the rest of this
-package (which only needs `simp_sexp`), this one module depends on the **pcb_qa**
-project package — it imports it lazily and is the only part that needs it, so run
-it with the project venv from the repo root.
+Re-run it any time you regenerate netlists.
+
+### convert_spice — infected `.net` → infected SPICE `.cir`
+
+For every infected `.net` under
+`outputs/Infected/ComponentSubstitution/{Value,Tolerance}/<board>/<ref>/`,
+writes a sibling `.cir`, derived from that board's Clean `.cir` template
+(`outputs/Clean/<board>/*.cir`) with the same substitution applied — **without**
+re-running KiCad's schematic → SPICE export (the infected netlists have no
+schematic to export from):
+
+- **Value** substitutions rewrite just the SI-magnitude prefix of the matching
+  `.cir` line (`10k` → `10M` in the `.net` becomes `10k` → `10Meg` in the `.cir`,
+  since bare SPICE `M` means milli, not mega), reusing the Clean line's own
+  already-correct mantissa.
+- **Tolerance** substitutions never touch a component's `value`, and KiCad's
+  SPICE exporter has no notion of tolerance at all, so the `.cir` is a copy of
+  the Clean template — only its `write` output path is retargeted (see below).
+- A ref the Clean board's SPICE export excludes (KiCad doesn't model every
+  schematic component) is written out unchanged.
+- Every variant's own `.control` block is rewritten to `write` its `.raw` dump
+  next to its own `.cir`, instead of the Clean template's single shared path —
+  otherwise every variant of a board would clobber the same `.raw` file.
+- `stack-chan`'s Clean `.cir` was checked in at KiCad's raw, pre-conversion
+  export stage (no `.control`/`tran`/`write`/DC sources at all, unlike every
+  other board). `convert_spice` finishes it into a runnable deck **in memory**
+  before using it as that board's template — it is never written to
+  `outputs/Clean/`.
+
+```bash
+.venv/bin/python -m netlist_trojans.conversions.convert_spice                       # whole ComponentSubstitution tree
+.venv/bin/python -m netlist_trojans.conversions.convert_spice --root outputs/Infected/ComponentSubstitution/Value
+.venv/bin/python -m netlist_trojans.conversions.convert_spice --dry-run             # report only, write nothing
+```
+
+Writes a manifest to `<root>/spice_manifest.json` (per-file board/ref/status/detail).
+Never reads a Clean `.net`/`.cir` for anything other than as an unmodified
+template, and never writes under `outputs/Clean/`.
+
+### run_spice — batch-run ngspice over generated `.cir` files
+
+Runs `ngspice -b` against every `.cir` under a root (in parallel), writing an
+ngspice log next to each one:
+
+```bash
+.venv/bin/python -m netlist_trojans.conversions.run_spice                       # whole ComponentSubstitution tree
+.venv/bin/python -m netlist_trojans.conversions.run_spice --root outputs/Infected/ComponentSubstitution/Value
+.venv/bin/python -m netlist_trojans.conversions.run_spice --jobs 8              # parallel ngspice processes
+```
+
+Only needs the `ngspice` binary on `PATH` (no pcb_qa/venv dependency). Writes a
+manifest to `<root>/spice_run_manifest.json` (per-file ok/fail + first error
+line). A circuit that doesn't converge under ngspice's default `tran` solver
+(e.g. an extreme Value-substitution magnitude shift next to a near-zero-ohm
+net tie, which can blow the linear solver's condition number past
+double-precision range) needs solver-level fixes by hand — relaxed
+`.options` tolerances/`gmin` stepping/`rshunt`, or, if the matrix stays
+singular, nudging an adjacent near-zero-value passive slightly off zero — not
+something this script attempts automatically.
 
 ## Trojan-detection question banks
 
