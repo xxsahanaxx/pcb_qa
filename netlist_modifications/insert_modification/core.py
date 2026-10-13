@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Core engine for Trojan insertion in KiCad S-expression netlists (.net).
 
-This module is the reusable library behind the ``netlist_trojans`` package. It
+This module is the reusable library behind the ``netlist_modifications`` package. It
 parses netlists, and provides two operations:
 
   extract_spec(clean, infected)   Diff a CLEAN netlist against an INFECTED one
@@ -24,7 +24,7 @@ if codes get reassigned.
 The file header (source path, date) is intentionally left alone: it is
 environment metadata, not part of the Trojan.
 
-The command-line front end lives in ``netlist_trojans.cli``.
+The command-line front end lives in ``netlist_modifications.insert_modification.cli``.
 """
 
 import os

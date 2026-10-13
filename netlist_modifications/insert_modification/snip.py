@@ -4,7 +4,7 @@
 A snip splits one bus-signal net into two nets, ``Troj_<SIGNAL>0`` and
 ``Troj_<SIGNAL>1``: the net's first node is isolated on side 0, the rest go on
 side 1. The same rule serves every signal, so all bus Trojans behave
-identically. Drive it from the CLI (``netlist_trojans.cli``) with ``snip`` /
+identically. Drive it from the CLI (``netlist_modifications``) with ``snip`` /
 ``snip-batch --signal <NAME>``.
 """
 

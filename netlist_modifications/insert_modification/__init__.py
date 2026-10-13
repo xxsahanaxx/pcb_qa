@@ -5,5 +5,5 @@
   swap   the "swap" Trojan (cross an RX/TX pair; UART, ...)
   cli    the command-line front end
 
-The public API is re-exported from the top-level ``netlist_trojans`` package.
+The public API is re-exported from the top-level ``netlist_modifications`` package.
 """

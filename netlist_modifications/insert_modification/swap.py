@@ -11,7 +11,7 @@ RX and TX nets are paired by base name: the first ``RX``/``TX`` token is
 neutralised, so ``UART_RX``↔``UART_TX`` and ``UART1_RX_FCC``↔``UART1_TX_FCC``
 pair up. Filtered by a signal keyword (e.g. ``UART``).
 
-Drive it from the CLI (``netlist_trojans.cli``) with ``swap`` /
+Drive it from the CLI (``netlist_modifications``) with ``swap`` /
 ``swap-batch --signal UART``.
 """
 

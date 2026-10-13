@@ -1,8 +1,8 @@
-# netlist_trojans
+# netlist_modifications
 
 Insert hardware Trojans into KiCad S-expression netlists (`.net`). Self-contained
 and dependency-light so it can be reused from other projects: copy the folder,
-install `simp_sexp`, and `import netlist_trojans`.
+install `simp_sexp`, and `import netlist_modifications`.
 
 - **Minimal, single-change diffs.** Every Trojan touches only the nets it must,
   leaving the rest of the file (formatting, quoting, header) byte-for-byte intact.
@@ -19,8 +19,8 @@ In this repo it lives in `.venv`. Run the CLI **as a module** (the package uses
 relative imports, so a loose-file invocation won't work):
 
 ```bash
-.venv/bin/python -m netlist_trojans <subcommand> ...
-.venv/bin/python -m netlist_trojans --help
+.venv/bin/python -m netlist_modifications <subcommand> ...
+.venv/bin/python -m netlist_modifications --help
 ```
 
 ---
@@ -28,21 +28,22 @@ relative imports, so a loose-file invocation won't work):
 ## Layout
 
 ```
-netlist_trojans/
-  insert_trojan/
+netlist_modifications/
+  insert_modification/
     core.py       # engine: parse / render / extract_spec / apply_spec (the library)
     snip.py       # "snip" Trojan  — split one net (SDA, SCL, MISO, MOSI, ...)
     swap.py       # "swap" Trojan  — cross an RX/TX pair (UART, ...)
     tolerance.py  # "tolerance" Trojan — re-grade one R/C/L passive
     value.py      # "value" Trojan — shift one R/C/L passive's SI-prefix magnitude
     gnd_short.py  # "gnd-short" Trojan — tie a labelled net to GND in the .kicad_sch (kicad-cli)
+    gnd_short_ref.py # "gnd-short-ref" Trojan — tie a component PIN (e.g. C1) to GND in the .kicad_sch (kicad-cli)
     cli.py        # command-line front end (argparse)
   conversions/
     convert_circuits.py  # infected .net -> hierarchical circuit JSON (needs pcb_qa)
     convert_spice.py     # infected .net -> infected SPICE .cir (needs pcb_qa)
     run_spice.py         # batch-run ngspice over generated .cir files
   gen_trojan_questions.py  # Trojan-detection question banks from batch manifests
-  __main__.py              # enables `python -m netlist_trojans`
+  __main__.py              # enables `python -m netlist_modifications`
   specs/                   # example Trojan spec(s): uart.json
 ```
 
@@ -57,6 +58,7 @@ netlist_trojans/
 | **tolerance** | Re-grade one R/C/L passive to a different tolerance (%) | `tolerance`, `tolerance-batch` | no — rule-based |
 | **value** | Shift one R/C/L passive's value to a different SI decade | `value`, `value-batch` | no — rule-based |
 | **gnd-short** | Tie a labelled net to GND **in the schematic** (label + wire + GND symbol), re-export with kicad-cli | `gnd-short`, `gnd-short-batch` | no — rule-based |
+| **gnd-short-ref** | Tie a component **pin** (e.g. `C1`) to GND **in the schematic** by dropping a GND symbol on the pin; reaches unlabelled/power nets too | `gnd-short-ref`, `gnd-short-ref-batch` | no — rule-based |
 | **spec replay** | Reproduce/retarget an *exact* recorded Trojan | `extract`, `apply` | yes — `specs/*.json` |
 
 **Rule-based** Trojans (snip, swap, tolerance, value) compute what to change
@@ -75,12 +77,12 @@ Splits a signal net into two nets: the first node is isolated on
 
 ```bash
 # one file
-.venv/bin/python -m netlist_trojans snip board.net --signal SDA
-.venv/bin/python -m netlist_trojans snip board.net --signal SDA --list        # show candidates
-.venv/bin/python -m netlist_trojans snip board.net --signal SDA --net NFC_SDA -o out.net
+.venv/bin/python -m netlist_modifications snip board.net --signal SDA
+.venv/bin/python -m netlist_modifications snip board.net --signal SDA --list        # show candidates
+.venv/bin/python -m netlist_modifications snip board.net --signal SDA --net NFC_SDA -o out.net
 
 # every matching net across a tree of clean netlists (one output per net)
-.venv/bin/python -m netlist_trojans snip-batch --signal SCL
+.venv/bin/python -m netlist_modifications snip-batch --signal SCL
 ```
 
 `--signal` is any keyword found in a net name: `SDA`, `SCL`, `MISO`, `MOSI`,
@@ -94,11 +96,11 @@ Swaps the node lists of a matched RX/TX pair and renames them `Troj_RX` /
 
 ```bash
 # one file
-.venv/bin/python -m netlist_trojans swap board.net --signal UART --list
-.venv/bin/python -m netlist_trojans swap board.net --signal UART --net UART_RX -o out.net
+.venv/bin/python -m netlist_modifications swap board.net --signal UART --list
+.venv/bin/python -m netlist_modifications swap board.net --signal UART --net UART_RX -o out.net
 
 # every RX/TX pair across a tree (one output per pair)
-.venv/bin/python -m netlist_trojans swap-batch --signal UART
+.venv/bin/python -m netlist_modifications swap-batch --signal UART
 ```
 
 Works for any RX/TX-named bus (e.g. `--signal RS485`), not just UART.
@@ -122,12 +124,12 @@ with any untouched vendor description sitting right next to it.
 
 ```bash
 # one file
-.venv/bin/python -m netlist_trojans tolerance board.net --list           # show candidates + current grade
-.venv/bin/python -m netlist_trojans tolerance board.net --ref R5 -o out.net
+.venv/bin/python -m netlist_modifications tolerance board.net --list           # show candidates + current grade
+.venv/bin/python -m netlist_modifications tolerance board.net --ref R5 -o out.net
 
 # every R/C/L passive across a tree of clean netlists (one output per part)
-.venv/bin/python -m netlist_trojans tolerance-batch
-.venv/bin/python -m netlist_trojans tolerance-batch --families R,C       # skip inductors
+.venv/bin/python -m netlist_modifications tolerance-batch
+.venv/bin/python -m netlist_modifications tolerance-batch --families R,C       # skip inductors
 ```
 
 Only two-terminal passives with a meaningful ±% rating qualify: Device-library
@@ -148,12 +150,12 @@ kind of misread (k vs M, m vs M) that slips past a schematic review.
 
 ```bash
 # one file
-.venv/bin/python -m netlist_trojans value board.net --list           # show candidates + current value
-.venv/bin/python -m netlist_trojans value board.net --ref C5 -o out.net
+.venv/bin/python -m netlist_modifications value board.net --list           # show candidates + current value
+.venv/bin/python -m netlist_modifications value board.net --ref C5 -o out.net
 
 # every R/C/L passive across a tree of clean netlists (one output per part)
-.venv/bin/python -m netlist_trojans value-batch
-.venv/bin/python -m netlist_trojans value-batch --families R          # resistors only
+.venv/bin/python -m netlist_modifications value-batch
+.venv/bin/python -m netlist_modifications value-batch --families R          # resistors only
 ```
 
 Handles every value shape seen in this corpus: plain SI shorthand (`10k`,
@@ -202,11 +204,11 @@ so the `.kicad_sch` diff is purely additive.
 
 ```bash
 # one project (pass the root .kicad_sch or the .kicad_pro)
-.venv/bin/python -m netlist_trojans gnd-short OSHP_files/Clean/stack-chan/schematics/m5-pantilt/m5-pantilt.kicad_pro --list
-.venv/bin/python -m netlist_trojans gnd-short OSHP_files/Clean/stack-chan/schematics/m5-pantilt/m5-pantilt.kicad_pro --label TXD2 --erc
+.venv/bin/python -m netlist_modifications gnd-short OSHP_files/Clean/stack-chan/schematics/m5-pantilt/m5-pantilt.kicad_pro --list
+.venv/bin/python -m netlist_modifications gnd-short OSHP_files/Clean/stack-chan/schematics/m5-pantilt/m5-pantilt.kicad_pro --label TXD2 --erc
 
 # every labelled net matching a keyword, across the designs behind outputs/Clean
-.venv/bin/python -m netlist_trojans gnd-short-batch --signal SDA [--erc]
+.venv/bin/python -m netlist_modifications gnd-short-batch --signal SDA [--erc]
 ```
 
 The batch finds each board's schematic from the clean `.net`'s `(source ...)`
@@ -234,6 +236,58 @@ skipped, and KiCad 6+ schematics only. Legacy `.sch`/`.pro` projects
 (HadesFCS) must be opened and saved in KiCad first. kicad-cli is found via
 `$KICAD_CLI_PATH`, then `PATH`, then the macOS app bundle.
 
+### gnd-short-ref — tie a component pin to GND in the schematic (kicad-cli)
+
+Like `gnd-short`, this edits the **design source** and re-exports with
+kicad-cli, but it targets a component **pin** (default `C1`) instead of a net
+*label* — so it reaches nets that have no label at all: power rails (`VCC`,
+`+5V`), auto-named nets (`Net-(D2-K)`), anything. It finds the symbol on
+whichever sheet carries it (root **or** sub-sheet), works out where the chosen
+pin physically connects on that sheet, and drops a clone of that sheet's own
+GND power symbol so the clone's pin lands exactly on the target pin. KiCad
+connects items by coincident points, so **no wire is drawn** — the
+clean-vs-infected `.kicad_sch` diff is a single added GND symbol.
+
+By default it shorts the pin that is **not already on GND** (a decoupling cap
+usually has one pin grounded already); `--pin` forces a specific pin.
+
+```bash
+# one project (pass the root .kicad_sch or the .kicad_pro)
+.venv/bin/python -m netlist_modifications gnd-short-ref OSHP_files/Clean/MyKiCad/Atmel/fan_controller/fan_controller.kicad_sch
+.venv/bin/python -m netlist_modifications gnd-short-ref OSHP_files/Clean/portal-hardware/PCB.kicad_pro --ref C2 --pin 1 --erc
+
+# the same pin on every clean design under outputs/Clean
+.venv/bin/python -m netlist_modifications gnd-short-ref-batch --ref C1 [--erc]
+```
+
+Output per board (default `--out-root outputs/Infected/GndShortRef/<REF>`):
+
+```
+<out-root>/<board>/_clean/<name>.net        # clean design re-exported by the same kicad-cli
+<out-root>/<board>/kicad/...                # infected project copy (only the target sheet differs)
+<out-root>/<board>/<name>.net               # infected netlist (kicad-cli export)
+<out-root>/<board>/gnd_short_ref.json       # (single runs) this variant's record
+<out-root>/manifest.json
+```
+
+Ground truth is measured, not assumed: each manifest entry records the
+`ref`/`ref_pin` shorted, the `sheet` edited, `victim_nets`, `moved_nodes` (every
+pin that ended up on GND's net) and `merged_net` (the name KiCad gave the merged
+net — often the rail's name, e.g. `+5V`, rather than `GND`). The run fails and
+discards the output if the target pin did **not** actually move onto GND, so a
+geometry error can't produce a mislabelled sample.
+
+The **original project is never modified**: everything is built from a copy, and
+the whole source tree is SHA-256-hashed before and after — any accidental write
+aborts the run.
+
+Limits: the target's sheet must carry a GND symbol to clone, and the sheet must
+be instantiated **exactly once**. A part on a *reused* sheet is refused with its
+reason (editing the one shared symbol would short every instance, not just the
+one asked for — e.g. `C1`, which is also `C26`/`C120` elsewhere on
+AcornRobotElectronics). KiCad 6+ schematics only; kicad-cli resolution and the
+legacy-project caveat are the same as `gnd-short` above.
+
 ---
 
 ## Spec-based Trojans
@@ -245,11 +299,11 @@ you want to reproduce exactly, or retarget across boards.
 ### extract — record a Trojan from a clean/infected pair
 
 ```bash
-.venv/bin/python -m netlist_trojans extract \
+.venv/bin/python -m netlist_modifications extract \
     outputs/Clean/Meshinger/Meshinger.net \
     outputs/Infected/UART/Meshinger/Meshinger.net \
     --label UART --param J7=CONN --param U5=MCU \
-    -o netlist_trojans/specs/uart.json
+    -o netlist_modifications/specs/uart.json
 ```
 
 `--param OLDREF=VAR` turns a component ref into a `${VAR}` placeholder whose
@@ -258,9 +312,9 @@ default is that ref, so the spec stays retargetable. Omit `-o` to print to stdou
 ### apply — replay a spec onto a clean netlist
 
 ```bash
-.venv/bin/python -m netlist_trojans apply \
+.venv/bin/python -m netlist_modifications apply \
     outputs/Clean/Meshinger/Meshinger.net \
-    netlist_trojans/specs/uart.json \
+    netlist_modifications/specs/uart.json \
     -o outputs/Infected/UART/Meshinger/Meshinger.net
 ```
 
@@ -275,7 +329,7 @@ downgrades). It's kept as the worked example for this workflow.
 
 ---
 
-## Conversions (`netlist_trojans/conversions/`)
+## Conversions (`netlist_modifications/conversions/`)
 
 Three separate scripts, meant to run in sequence after generating infected
 netlists. **Note:** unlike the rest of this package (which only needs
@@ -289,9 +343,9 @@ Convert each infected netlist to hierarchical circuit JSON, written
 `<source>.json` next to every `.net`:
 
 ```bash
-.venv/bin/python -m netlist_trojans.conversions.convert_circuits                       # whole Infected tree
-.venv/bin/python -m netlist_trojans.conversions.convert_circuits --root outputs/Infected/SDA
-.venv/bin/python -m netlist_trojans.conversions.convert_circuits --verbose             # show parser logs
+.venv/bin/python -m netlist_modifications.conversions.convert_circuits                       # whole Infected tree
+.venv/bin/python -m netlist_modifications.conversions.convert_circuits --root outputs/Infected/SDA
+.venv/bin/python -m netlist_modifications.conversions.convert_circuits --verbose             # show parser logs
 ```
 
 Re-run it any time you regenerate netlists.
@@ -324,9 +378,9 @@ schematic to export from):
   `outputs/Clean/`.
 
 ```bash
-.venv/bin/python -m netlist_trojans.conversions.convert_spice                       # whole ComponentSubstitution tree
-.venv/bin/python -m netlist_trojans.conversions.convert_spice --root outputs/Infected/ComponentSubstitution/Value
-.venv/bin/python -m netlist_trojans.conversions.convert_spice --dry-run             # report only, write nothing
+.venv/bin/python -m netlist_modifications.conversions.convert_spice                       # whole ComponentSubstitution tree
+.venv/bin/python -m netlist_modifications.conversions.convert_spice --root outputs/Infected/ComponentSubstitution/Value
+.venv/bin/python -m netlist_modifications.conversions.convert_spice --dry-run             # report only, write nothing
 ```
 
 Writes a manifest to `<root>/spice_manifest.json` (per-file board/ref/status/detail).
@@ -339,9 +393,9 @@ Runs `ngspice -b` against every `.cir` under a root (in parallel), writing an
 ngspice log next to each one:
 
 ```bash
-.venv/bin/python -m netlist_trojans.conversions.run_spice                       # whole ComponentSubstitution tree
-.venv/bin/python -m netlist_trojans.conversions.run_spice --root outputs/Infected/ComponentSubstitution/Value
-.venv/bin/python -m netlist_trojans.conversions.run_spice --jobs 8              # parallel ngspice processes
+.venv/bin/python -m netlist_modifications.conversions.run_spice                       # whole ComponentSubstitution tree
+.venv/bin/python -m netlist_modifications.conversions.run_spice --root outputs/Infected/ComponentSubstitution/Value
+.venv/bin/python -m netlist_modifications.conversions.run_spice --jobs 8              # parallel ngspice processes
 ```
 
 Only needs the `ngspice` binary on `PATH` (no pcb_qa/venv dependency). Writes a
@@ -360,8 +414,8 @@ Generate a detection question bank next to each infected netlist, driven by the
 batch `manifest.json` files:
 
 ```bash
-.venv/bin/python -m netlist_trojans.gen_trojan_questions                 # whole Infected tree
-.venv/bin/python -m netlist_trojans.gen_trojan_questions --root outputs/Infected/SDA
+.venv/bin/python -m netlist_modifications.gen_trojan_questions                 # whole Infected tree
+.venv/bin/python -m netlist_modifications.gen_trojan_questions --root outputs/Infected/SDA
 ```
 
 For each infected variant it writes `<stem>_trojan_questions.json` into that
@@ -390,7 +444,7 @@ not in a manifest, so it is skipped).
 ## Library use
 
 ```python
-import netlist_trojans as t
+import netlist_modifications as t
 
 clean = t.read("board.net")
 
@@ -448,14 +502,14 @@ t.value.run_batch()
   they don't check the ref exists on the board. `pin`/`pinfunction` values in a
   spec are literal — parameterise them too, or extract a board-specific spec, if a
   target board's wiring differs.
-- **Run with `-m`.** Package-relative imports mean `python -m netlist_trojans ...`,
-  not `python netlist_trojans/cli.py`.
+- **Run with `-m`.** Package-relative imports mean `python -m netlist_modifications ...`,
+  not `python netlist_modifications/cli.py`.
 
 ---
 
 ## Reusing elsewhere
 
-Copy `netlist_trojans/` next to your code (or onto `PYTHONPATH`) and
+Copy `netlist_modifications/` next to your code (or onto `PYTHONPATH`) and
 `pip install simp_sexp`. The snip/swap path defaults are just CLI defaults —
 override with `--clean-glob` / `--out-root`, or call `snip.run_batch(...)` /
 `swap.run_batch(...)` / `run_single(...)` with your own paths.

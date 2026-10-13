@@ -11,17 +11,17 @@ infected netlists here have no schematic, only the ``.net`` diff, so this
 script does not re-run that export. Instead it reproduces its effect
 directly, in SPICE terms:
 
-  - Value substitution (``insert_trojan.value``): shifts one component's
+  - Value substitution (``insert_modification.value``): shifts one component's
     SI-magnitude prefix (e.g. ``10k`` -> ``10M``) while leaving every digit
     untouched. The Clean ``.cir`` line for that ref has already been resolved
     by KiCad's exporter into decimal SPICE notation (``4k7`` -> ``4.7k``,
     ``1.8M`` -> ``1.8Meg``) — the script parses just the prefix off both the
     Clean and infected ``.net`` values (via
-    ``insert_trojan.value.parse_value_token``), then rewrites *only* the
+    ``insert_modification.value.parse_value_token``), then rewrites *only* the
     matching ``.cir`` line's trailing prefix letter(s) to the SPICE spelling
     of the new decade (``Meg`` for mega, since bare SPICE ``M`` means milli),
     reusing the already-correct mantissa verbatim.
-  - Tolerance substitution (``insert_trojan.tolerance``): adds/changes a
+  - Tolerance substitution (``insert_modification.tolerance``): adds/changes a
     ``Tolerance`` *property*; the component's ``value`` field is never
     touched, and KiCad's SPICE exporter has no notion of tolerance at all —
     so the resulting ``.cir`` is a copy of the Clean template with only its
@@ -37,9 +37,9 @@ Never reads a Clean ``.net``/``.cir`` for anything other than as an unmodified
 template, and never writes under ``outputs/Clean/``.
 
 Usage (run with the project venv, from the repo root):
-  .venv/bin/python -m netlist_trojans.conversions.convert_spice
-  .venv/bin/python -m netlist_trojans.conversions.convert_spice --root outputs/Infected/ComponentSubstitution/Value
-  .venv/bin/python -m netlist_trojans.conversions.convert_spice --dry-run
+  .venv/bin/python -m netlist_modifications.conversions.convert_spice
+  .venv/bin/python -m netlist_modifications.conversions.convert_spice --root outputs/Infected/ComponentSubstitution/Value
+  .venv/bin/python -m netlist_modifications.conversions.convert_spice --dry-run
 """
 
 import argparse
@@ -51,17 +51,17 @@ import sys
 from dataclasses import asdict, dataclass
 from typing import Dict, List, Optional, Tuple
 
-from ..insert_trojan import core as nt
-from ..insert_trojan import tolerance as tol
-from ..insert_trojan import value as val
+from ..insert_modification import core as nt
+from ..insert_modification import tolerance as tol
+from ..insert_modification import value as val
 
 DEFAULT_ROOT = "outputs/Infected/ComponentSubstitution"
 CLEAN_ROOT = "outputs/Clean"
 
-# SPICE spelling for each decade `insert_trojan.value` can substitute between.
+# SPICE spelling for each decade `insert_modification.value` can substitute between.
 # "M" is deliberately mapped to "Meg": bare SPICE/ngspice "M" means milli, so a
 # naive passthrough would silently turn a mega-ohm resistor into a milli-ohm
-# one. Mirrors `insert_trojan.value._PREFIX_NORMALISE` for the reverse map.
+# one. Mirrors `insert_modification.value._PREFIX_NORMALISE` for the reverse map.
 SPICE_PREFIX = {"": "", "p": "p", "n": "n", "u": "u", "m": "m", "k": "k", "M": "Meg"}
 _PREFIX_NORMALISE = {"µ": "u", "μ": "u", "K": "k", "R": ""}
 
@@ -315,14 +315,178 @@ def run(root: str = DEFAULT_ROOT, dry_run: bool = False) -> List[Result]:
     return results
 
 
+# --- Raw kicad-cli exports (e.g. GndShortRef) --------------------------------
+#
+# Modifications that edit the *schematic* (GndShortRef) get a real infected
+# `.cir` straight from `kicad-cli`, so there is no Clean template to patch --
+# the raw export only needs finishing into a runnable deck. `--raw-exports`
+# does that in place, keeping the untouched export beside it as
+# `<stem>.kicad_cir` (not globbed by run_spice, and re-used as the source on
+# re-runs so the step is idempotent).
+#
+# Same transform as `_complete_raw_kicad_cir` / pcb_qa's
+# `convert_project_spice_to_circuit`, with these differences:
+#   - only the `.title` and `.end` lines are peeled off (both of those slice
+#     `[1:-2]`, which silently drops the last component when the export has
+#     no trailing blank line -- true of every GndShortRef export);
+#   - `LEDn` lines become `DLEDn` with a generated LED diode model, and any
+#     other diode whose model isn't defined (KiCad's bare `LED`) gets one too;
+#   - R/C/L lines are cut to `ref n1 n2 value`, and dropped if the value isn't
+#     numeric (e.g. PortalHardware's `??`), since ngspice aborts on them --
+#     likewise V/I source symbols with a part name for a value (OPNhydro's
+#     `V1 ... DC DIGITEN-24V`; the rail sources below drive those nets);
+#   - rail voltages parse every KiCad spelling (`+3V3`, `+3.3V`, `+24VF`);
+#   - the matching Clean board's `.cir` supplies its `tran` line and any
+#     source whose node is still present (e.g. PortalHardware's `VCC`), so
+#     infected and Clean simulations stay comparable.
+RAW_EXPORT_SUFFIX = ".kicad_cir"
+_DEFAULT_TRAN = "tran 100u 10m"
+_LED_MODEL = "D (Is=1p Rs=10 N=1.7)"
+_RAIL_VOLTAGE_RE = re.compile(r"^\+(\d+)(?:V(\d+)|(\.\d+)V|V)?")
+_NUMERIC_VALUE_RE = re.compile(
+    r"^\d+\.?\d*(?:e[+-]?\d+)?(?:meg|[tgkmunpf])?[a-z]*$", re.IGNORECASE)
+_SOURCE_LINE_RE = re.compile(r"^V\S*\s+(\S+)\s+0\s+DC\s+\S+", re.IGNORECASE)
+
+
+@dataclass
+class RawResult:
+    cir: str
+    clean_template: Optional[str]
+    sources: List[str]
+    dropped: List[str]
+
+
+def _rail_voltage(rail: str) -> Optional[float]:
+    m = _RAIL_VOLTAGE_RE.match(rail)
+    if not m:
+        return None
+    whole, frac_v, frac_dot = m.groups()
+    return float(whole + "." + frac_v) if frac_v else float(whole + (frac_dot or ""))
+
+
+def _clean_template_for(board_dir: str) -> Optional[str]:
+    """Clean `.cir` whose board dir matches `board_dir`, ignoring case/punctuation."""
+    key = re.sub(r"[^a-z0-9]", "", os.path.basename(board_dir).lower())
+    for d in sorted(os.listdir(CLEAN_ROOT)):
+        if re.sub(r"[^a-z0-9]", "", d.lower()) == key:
+            cirs = glob.glob(os.path.join(CLEAN_ROOT, d, "*.cir"))
+            return cirs[0] if cirs else None
+    return None
+
+
+def _complete_raw_export(raw_lines: List[str], out_cir: str,
+                         clean_cir: Optional[str]) -> Tuple[List[str], RawResult]:
+    lines = [_RATING_STRIP_RE.sub("", ln).rstrip("\n") for ln in raw_lines]
+    title = lines[0]
+    body = [ln for ln in lines[1:] if ln.strip() and ln.strip().lower() != ".end"]
+
+    models: List[str] = []
+    defined: set = set()
+    comps: List[str] = []
+    dropped: List[str] = []
+    for line in body:
+        tokens = line.split()
+        if tokens[0].lower() == ".model":
+            defined.add(tokens[1])
+            models.append(line)
+            continue
+        if len(tokens) == 2:
+            continue  # unmodeled component (connector/transistor/IC/switch)
+        tokens = [_GND_RE.sub("0", t) for t in tokens]
+        ref = tokens[0]
+        if ref.upper().startswith("LED"):
+            tokens[0] = "D" + ref
+            tokens[-1] = f"LED_D_{tokens[-1]}"
+        if tokens[0][0].upper() in "RCL":
+            # Some exports trail rating/tolerance/dielectric tokens
+            # (`C5 +5V 0 1000uF 10v solid`); ngspice wants just the value.
+            tokens = tokens[:4]
+            if not _NUMERIC_VALUE_RE.match(tokens[3]):
+                dropped.append(line)
+                continue
+        elif tokens[0][0].upper() in "VI" and not _NUMERIC_VALUE_RE.match(tokens[-1]):
+            dropped.append(line)  # schematic source symbol, e.g. `DC DIGITEN-24V`
+            continue
+        if tokens[0][0].upper() == "D" and tokens[-1] not in defined:
+            defined.add(tokens[-1])
+            models.append(f".model {tokens[-1]} {_LED_MODEL}")
+        comps.append(" ".join(tokens))
+
+    nodes = {t for c in comps for t in c.split()[1:-1]}
+    sources: Dict[str, float] = {}
+    for node in sorted(nodes):
+        if node.startswith("+"):
+            v = _rail_voltage(node)
+            if v is not None:
+                sources[node] = v
+
+    tran = _DEFAULT_TRAN
+    if clean_cir:
+        with open(clean_cir) as f:
+            for ln in f:
+                m = _SOURCE_LINE_RE.match(ln.strip())
+                if m and m.group(1) in nodes:
+                    sources[m.group(1)] = float(ln.split()[-1])
+                elif ln.strip().lower().startswith("tran "):
+                    tran = ln.strip()
+
+    source_lines = [f"V_{re.sub(r'[^A-Za-z0-9]', '_', n.lstrip('+'))} {n} 0 DC {v}"
+                    for n, v in sources.items()]
+    raw_out = f"./{os.path.splitext(out_cir)[0]}_raw.raw"
+    content = "\n".join(
+        [title, ""] + models + [""] + comps + ["", ""] + source_lines
+        + ["", "", ".control", tran, "set filetype=ascii",
+           f"write {raw_out} all", ".endc", "", ".end"]) + "\n"
+    return (content.splitlines(keepends=True),
+            RawResult(out_cir, clean_cir, source_lines, dropped))
+
+
+def run_raw_exports(root: str, dry_run: bool = False) -> List[RawResult]:
+    """Finish every raw kicad-cli `.cir` export under `root` in place."""
+    results: List[RawResult] = []
+    for cir in sorted(glob.glob(os.path.join(root, "**", "*.cir"), recursive=True)):
+        backup = os.path.splitext(cir)[0] + RAW_EXPORT_SUFFIX
+        src = backup if os.path.exists(backup) else cir
+        with open(src) as f:
+            raw_lines = f.readlines()
+        if src == cir and any(ln.startswith(".control") for ln in raw_lines):
+            print(f"skip      {cir} (already a finished deck, no raw export kept)")
+            continue
+        lines, res = _complete_raw_export(
+            raw_lines, cir, _clean_template_for(os.path.dirname(cir)))
+        if not dry_run:
+            if src == cir:
+                with open(backup, "w") as f:
+                    f.writelines(raw_lines)
+            with open(cir, "w") as f:
+                f.writelines(lines)
+        results.append(res)
+        print(f"completed {cir}  sources={len(res.sources)} dropped={len(res.dropped)}"
+              f"  template={res.clean_template}")
+    return results
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(
-        prog="netlist_trojans.conversions.convert_spice",
+        prog="netlist_modifications.conversions.convert_spice",
         description="Generate infected SPICE .cir circuits for ComponentSubstitution netlists.")
     p.add_argument("--root", default=DEFAULT_ROOT,
                    help=f"ComponentSubstitution tree to scan (default: {DEFAULT_ROOT})")
     p.add_argument("--dry-run", action="store_true", help="Report only, write nothing")
+    p.add_argument("--raw-exports", action="store_true",
+                   help="Finish raw kicad-cli .cir exports under --root in place "
+                        "(e.g. outputs/Infected/GndShortRef)")
     args = p.parse_args(argv)
+
+    if args.raw_exports:
+        raw_results = run_raw_exports(args.root, dry_run=args.dry_run)
+        print(f"\n{len(raw_results)} raw export(s) completed")
+        if not args.dry_run:
+            manifest_path = os.path.join(args.root, "spice_manifest.json")
+            with open(manifest_path, "w") as f:
+                json.dump([asdict(r) for r in raw_results], f, indent=2)
+            print(f"Manifest: {manifest_path}")
+        return 0
 
     results = run(args.root, dry_run=args.dry_run)
     changed = sum(1 for r in results if r.status == "changed")

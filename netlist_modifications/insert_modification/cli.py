@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Command-line front end for the netlist_trojans package.
+"""Command-line front end for the netlist_modifications package.
 
 Subcommands:
   extract      Derive a Trojan spec (JSON) from a clean + infected pair.
@@ -14,9 +14,11 @@ Subcommands:
   value-batch  Shift the magnitude of every R/C/L passive's value across a tree.
   gnd-short        Tie one labelled net to GND in a KiCad schematic (.kicad_sch).
   gnd-short-batch  GND-short every labelled net matching a keyword across designs.
+  gnd-short-ref        Tie one component pin to GND on its sheet (.kicad_sch).
+  gnd-short-ref-batch  GND-short one component pin across every clean design.
 
 Run it as a module from the repo root:
-  python -m netlist_trojans <subcommand> ...
+  python -m netlist_modifications <subcommand> ...
 """
 
 import argparse
@@ -26,6 +28,7 @@ from typing import Dict, List, Optional
 
 from . import core
 from . import gnd_short
+from . import gnd_short_ref
 from . import snip
 from . import swap
 from . import tolerance
@@ -121,9 +124,19 @@ def _cmd_gnd_short_batch(args) -> int:
                                out_root=args.out_root, erc=args.erc)
 
 
+def _cmd_gnd_short_ref(args) -> int:
+    return gnd_short_ref.run_single(args.input, ref=args.ref, pin=args.pin,
+                                    output=args.output, erc=args.erc)
+
+
+def _cmd_gnd_short_ref_batch(args) -> int:
+    return gnd_short_ref.run_batch(ref=args.ref, clean_glob=args.clean_glob,
+                                   out_root=args.out_root, pin=args.pin, erc=args.erc)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="netlist_trojans", description=__doc__,
+        prog="netlist_modifications", description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="command", required=True)
 
@@ -249,6 +262,31 @@ def build_parser() -> argparse.ArgumentParser:
     gb.add_argument("--erc", action="store_true",
                     help="Also run kicad-cli ERC on the clean and infected designs")
     gb.set_defaults(func=_cmd_gnd_short_batch)
+
+    gr = sub.add_parser("gnd-short-ref",
+                        help="Tie one component pin (e.g. C1) to GND on whichever "
+                             "sheet carries it, by placing a GND symbol on the pin")
+    gr.add_argument("input", help="Root .kicad_sch, or the project's .kicad_pro")
+    gr.add_argument("--ref", default="C1", help="Component reference to short (default: C1)")
+    gr.add_argument("--pin", help="Pin number to short (default: the pin not already on GND)")
+    gr.add_argument("-o", "--output",
+                    help="Output dir (default: outputs/Infected/GndShortRef/<project>/<ref>)")
+    gr.add_argument("--erc", action="store_true",
+                    help="Also run kicad-cli ERC on the clean and modified designs")
+    gr.set_defaults(func=_cmd_gnd_short_ref)
+
+    grb = sub.add_parser("gnd-short-ref-batch",
+                         help="GND-short one component pin on its own single-instance "
+                              "sheet in every resolvable clean design")
+    grb.add_argument("--ref", default="C1", help="Component reference to short (default: C1)")
+    grb.add_argument("--pin", help="Pin number to short (default: the pin not already on GND)")
+    grb.add_argument("--clean-glob", default=gnd_short_ref.CLEAN_GLOB,
+                     help=f"Glob for clean netlists (default: {gnd_short_ref.CLEAN_GLOB})")
+    grb.add_argument("--out-root", default=None,
+                     help="Output root (default: outputs/Infected/GndShortRef/<REF>)")
+    grb.add_argument("--erc", action="store_true",
+                     help="Also run kicad-cli ERC on the clean and modified designs")
+    grb.set_defaults(func=_cmd_gnd_short_ref_batch)
 
     return p
 
