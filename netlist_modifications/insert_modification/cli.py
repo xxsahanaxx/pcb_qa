@@ -21,6 +21,10 @@ Subcommands:
   bridge-random-batch  N single-wire bridges between two random components, per design.
   r-to-c-random-batch  N single-resistor -> capacitor substitutions, per design.
   c-to-r-random-batch  N single-capacitor -> resistor substitutions, per design.
+  r-magnitude-random-batch  N single-resistor x1000 value step-ups, per design.
+  c-magnitude-random-batch  N single-capacitor x1000 value step-ups, per design.
+  r-magnitude-down-random-batch  N single-resistor /1000 value step-downs, per design.
+  c-magnitude-down-random-batch  N single-capacitor /1000 value step-downs, per design.
 
 Run it as a module from the repo root:
   python -m netlist_modifications <subcommand> ...
@@ -37,6 +41,7 @@ from . import gnd_short_ref
 from . import gnd_short_random
 from . import bridge_random
 from . import passive_swap_random
+from . import magnitude_random
 from . import snip
 from . import swap
 from . import tolerance
@@ -157,6 +162,12 @@ def _cmd_passive_swap_random_batch(args) -> int:
     return passive_swap_random.run_batch(count=args.count, seed=args.seed,
                                          clean_glob=args.clean_glob, out_root=args.out_root,
                                          mode=args.mode)
+
+
+def _cmd_magnitude_random_batch(args) -> int:
+    return magnitude_random.run_batch(count=args.count, seed=args.seed,
+                                      clean_glob=args.clean_glob, out_root=args.out_root,
+                                      mode=args.mode)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -359,6 +370,25 @@ def build_parser() -> argparse.ArgumentParser:
                         help=f"Output root (default: {passive_swap_random.DEFAULT_OUT_ROOTS[mode]}); "
                              "variants go to <out-root>/Swap<i>/<board>")
         rc.set_defaults(func=_cmd_passive_swap_random_batch, mode=mode)
+
+    for mode, kind, how in (("r_magnitude", "resistor", "up one SI step (x1000)"),
+                            ("c_magnitude", "capacitor", "up one SI step (x1000)"),
+                            ("r_magnitude_down", "resistor", "down one SI step (/1000)"),
+                            ("c_magnitude_down", "capacitor", "down one SI step (/1000)")):
+        rm = sub.add_parser(f"{mode.replace('_', '-')}-random-batch",
+                            help=f"For every clean design, build COUNT variants that each move "
+                                 f"one random {kind}'s value {how}")
+        rm.add_argument("--count", type=int, default=magnitude_random.DEFAULT_COUNT,
+                        help=f"Variants (distinct {kind}s) per design (default: "
+                             f"{magnitude_random.DEFAULT_COUNT})")
+        rm.add_argument("--seed", type=int, default=magnitude_random.DEFAULT_SEED,
+                        help="Random seed; combined with the board name per design (default: 0)")
+        rm.add_argument("--clean-glob", default=magnitude_random.CLEAN_GLOB,
+                        help=f"Glob for clean netlists (default: {magnitude_random.CLEAN_GLOB})")
+        rm.add_argument("--out-root", default=magnitude_random.DEFAULT_OUT_ROOTS[mode],
+                        help=f"Output root (default: {magnitude_random.DEFAULT_OUT_ROOTS[mode]}); "
+                             "variants go to <out-root>/Value<i>/<board>")
+        rm.set_defaults(func=_cmd_magnitude_random_batch, mode=mode)
 
     return p
 
