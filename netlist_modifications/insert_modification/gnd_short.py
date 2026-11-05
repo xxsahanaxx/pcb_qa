@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Schematic-level "GND short" Trojan: tie an existing labelled net to GND.
+"""Schematic-level "GND short" modification: tie an existing labelled net to GND.
 
-Unlike the other Trojans (which edit an exported ``.net``), this one edits the
+Unlike the other modifications (which edit an exported ``.net``), this one edits the
 KiCad *schematic* (``.kicad_sch``) and lets ``kicad-cli`` re-export the netlist,
-so the Trojan exists in the design source and every downstream artefact
+so the modification exists in the design source and every downstream artefact
 (netlist, SPICE, ERC) is derived from it. The ``.kicad_pro`` is only copied
 alongside -- it holds settings, not connectivity.
 
@@ -17,9 +17,9 @@ The label is a clone of the existing one (same kind: local / global /
 hierarchical), so it joins the target net by name; the GND symbol is a clone
 of one already on that sheet (so its lib_id, instance paths and project name
 are right for this design). Every other byte of the file is left alone, so a
-clean-vs-infected diff of the ``.kicad_sch`` shows only the Trojan.
+clean-vs-modified diff of the ``.kicad_sch`` shows only the modification.
 
-Ground truth is never assumed: both the clean and the infected schematics are
+Ground truth is never assumed: both the clean and the modified schematics are
 exported with the same kicad-cli, and the manifest records which component
 pins actually moved onto GND.
 """
@@ -256,7 +256,7 @@ def _next_ref(used: set) -> str:
 
 
 def insert_gnd_short(text: str, cand: Candidate, used_refs: set) -> Tuple[str, Dict]:
-    """Return (infected sheet text, info) with label->wire->GND appended."""
+    """Return (modified sheet text, info) with label->wire->GND appended."""
     blocks = top_level_blocks(text)
     label_src = next(text[s:e] for k, s, e in blocks
                      if k == cand.kind and text[s:e].startswith(f'({k} "{cand.name}"'))
@@ -289,9 +289,9 @@ def insert_gnd_short(text: str, cand: Candidate, used_refs: set) -> Tuple[str, D
     anchor = text.find("\n\t(sheet_instances")
     if anchor < 0:
         anchor = text.rstrip().rfind(")") - 1
-    infected = text[: anchor + 1] + insertion + text[anchor + 1:]
+    modified = text[: anchor + 1] + insertion + text[anchor + 1:]
     info = {"label_at": [x, y], "gnd_at": [x, gy], "gnd_refs": refs}
-    return infected, info
+    return modified, info
 
 
 def copy_project(root_sch: str, sheets: List[Sheet], dest: str) -> str:
@@ -314,11 +314,11 @@ def copy_project(root_sch: str, sheets: List[Sheet], dest: str) -> str:
 
 def diff_against_gnd(clean_net: str, infected_net: str) -> Dict:
     clean = nt.parse_nets(nt.read(clean_net))
-    infected = nt.parse_nets(nt.read(infected_net))
+    modified = nt.parse_nets(nt.read(infected_net))
     gnd = next((n for n in clean if n.name == "GND"), None)
     if gnd is None:
         raise ValueError(f"No net named GND in {clean_net}")
-    merged = max((n for n in infected if gnd.node_set() <= n.node_set()),
+    merged = max((n for n in modified if gnd.node_set() <= n.node_set()),
                  key=lambda n: len(n.nodes))
     moved = merged.node_set() - gnd.node_set()
     victims = [n for n in clean if n.node_set() and n.node_set() <= moved]
@@ -335,7 +335,7 @@ def diff_against_gnd(clean_net: str, infected_net: str) -> Dict:
 
 def build_variant(root_sch: str, cand: Candidate, out_dir: str,
                   clean_net: str, erc: bool = False) -> Dict:
-    """Write one infected project copy + its exported netlist into `out_dir`."""
+    """Write one modified project copy + its exported netlist into `out_dir`."""
     sheets = walk_sheets(root_sch)
     proj_dir = os.path.dirname(root_sch)
     stem = os.path.splitext(os.path.basename(root_sch))[0]
@@ -346,9 +346,9 @@ def build_variant(root_sch: str, cand: Candidate, out_dir: str,
     new_root = copy_project(root_sch, sheets, kicad_dir)
 
     target = os.path.join(kicad_dir, cand.sheet.file)
-    infected, info = insert_gnd_short(nt.read(target), cand,
+    modified, info = insert_gnd_short(nt.read(target), cand,
                                       _used_pwr_refs(proj_dir, sheets))
-    nt.write(target, infected)
+    nt.write(target, modified)
 
     out_net = os.path.join(out_dir, f"{stem}.net")
     export_netlist(new_root, out_net)
@@ -375,7 +375,7 @@ def run_batch(signal: str, clean_glob: str = CLEAN_GLOB, out_root: str = None,
               erc: bool = False) -> int:
     """GND-short every labelled `signal` net in every resolvable clean design."""
     signal = signal.upper()
-    out_root = out_root or f"outputs/Infected/GndShort/{signal}"
+    out_root = out_root or f"outputs/modified/GndShort/{signal}"
     manifest = []
 
     for path in sorted(glob.glob(clean_glob)):
@@ -424,7 +424,7 @@ def run_batch(signal: str, clean_glob: str = CLEAN_GLOB, out_root: str = None,
     manifest_path = os.path.join(out_root, "manifest.json")
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
-    print(f"\n{len(manifest)} infected design(s) written. Manifest: {manifest_path}")
+    print(f"\n{len(manifest)} modified design(s) written. Manifest: {manifest_path}")
     return 0
 
 
@@ -458,7 +458,7 @@ def run_single(input_path: str, label: str = None, sheet: str = None,
               file=sys.stderr)
 
     stem = os.path.splitext(os.path.basename(root))[0]
-    out_dir = output or os.path.join("outputs/Infected/GndShort", stem, sanitise(cand.net))
+    out_dir = output or os.path.join("outputs/modified/GndShort", stem, sanitise(cand.net))
     with tempfile.TemporaryDirectory() as tmp:
         clean_net = os.path.join(tmp, f"{stem}.net")
         export_netlist(root, clean_net)
@@ -470,7 +470,7 @@ def run_single(input_path: str, label: str = None, sheet: str = None,
     print(f"  victim net(s): {', '.join(rec['victim_nets']) or '-'}")
     print(f"  pins now on {rec['merged_net']}: {', '.join(rec['moved_nodes']) or '-'}")
     if erc:
-        print(f"  ERC clean={rec['erc_clean']} infected={rec['erc_infected']}")
+        print(f"  ERC clean={rec['erc_clean']} modified={rec['erc_infected']}")
     print(f"Wrote {rec['schematic']}\n      {rec['output']}")
     with open(os.path.join(out_dir, "gnd_short.json"), "w") as f:
         json.dump(rec, f, indent=2)

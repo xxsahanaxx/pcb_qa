@@ -16,6 +16,11 @@ Subcommands:
   gnd-short-batch  GND-short every labelled net matching a keyword across designs.
   gnd-short-ref        Tie one component pin to GND on its sheet (.kicad_sch).
   gnd-short-ref-batch  GND-short one component pin across every clean design.
+  gnd-short-random-batch  N single-wire GND shorts on random nets, per clean design.
+  vcc-short-random-batch  N single-wire VCC/+rail shorts on random nets, per clean design.
+  bridge-random-batch  N single-wire bridges between two random components, per design.
+  r-to-c-random-batch  N single-resistor -> capacitor substitutions, per design.
+  c-to-r-random-batch  N single-capacitor -> resistor substitutions, per design.
 
 Run it as a module from the repo root:
   python -m netlist_modifications <subcommand> ...
@@ -29,6 +34,9 @@ from typing import Dict, List, Optional
 from . import core
 from . import gnd_short
 from . import gnd_short_ref
+from . import gnd_short_random
+from . import bridge_random
+from . import passive_swap_random
 from . import snip
 from . import swap
 from . import tolerance
@@ -132,6 +140,23 @@ def _cmd_gnd_short_ref(args) -> int:
 def _cmd_gnd_short_ref_batch(args) -> int:
     return gnd_short_ref.run_batch(ref=args.ref, clean_glob=args.clean_glob,
                                    out_root=args.out_root, pin=args.pin, erc=args.erc)
+
+
+def _cmd_short_random_batch(args) -> int:
+    return gnd_short_random.run_batch(count=args.count, seed=args.seed,
+                                      clean_glob=args.clean_glob, out_root=args.out_root,
+                                      mode=args.mode)
+
+
+def _cmd_bridge_random_batch(args) -> int:
+    return bridge_random.run_batch(count=args.count, seed=args.seed,
+                                   clean_glob=args.clean_glob, out_root=args.out_root)
+
+
+def _cmd_passive_swap_random_batch(args) -> int:
+    return passive_swap_random.run_batch(count=args.count, seed=args.seed,
+                                         clean_glob=args.clean_glob, out_root=args.out_root,
+                                         mode=args.mode)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -287,6 +312,53 @@ def build_parser() -> argparse.ArgumentParser:
     grb.add_argument("--erc", action="store_true",
                      help="Also run kicad-cli ERC on the clean and modified designs")
     grb.set_defaults(func=_cmd_gnd_short_ref_batch)
+
+    for mode, target in (("gnd", "GND"), ("vcc", "a positive rail (VCC first)")):
+        rb = sub.add_parser(f"{mode}-short-random-batch",
+                            help=f"For every clean design, build COUNT variants that each "
+                                 f"tie one pin of a different random net to {target}")
+        rb.add_argument("--count", type=int, default=gnd_short_random.DEFAULT_COUNT,
+                        help=f"Variants (distinct nets) per design (default: "
+                             f"{gnd_short_random.DEFAULT_COUNT})")
+        rb.add_argument("--seed", type=int, default=gnd_short_random.DEFAULT_SEED,
+                        help="Random seed; combined with the board name per design (default: 0)")
+        rb.add_argument("--clean-glob", default=gnd_short_random.CLEAN_GLOB,
+                        help=f"Glob for clean netlists (default: {gnd_short_random.CLEAN_GLOB})")
+        rb.add_argument("--out-root", default=gnd_short_random.DEFAULT_OUT_ROOTS[mode],
+                        help=f"Output root (default: {gnd_short_random.DEFAULT_OUT_ROOTS[mode]}); "
+                             "variants go to <out-root>/Wire<i>/<board>")
+        rb.set_defaults(func=_cmd_short_random_batch, mode=mode)
+
+    br = sub.add_parser("bridge-random-batch",
+                        help="For every clean design, build COUNT variants that each draw "
+                             "one wire between pins of two random components (signal nets)")
+    br.add_argument("--count", type=int, default=bridge_random.DEFAULT_COUNT,
+                    help=f"Variants per design (default: {bridge_random.DEFAULT_COUNT})")
+    br.add_argument("--seed", type=int, default=bridge_random.DEFAULT_SEED,
+                    help="Random seed; combined with the board name per design (default: 0)")
+    br.add_argument("--clean-glob", default=bridge_random.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {bridge_random.CLEAN_GLOB})")
+    br.add_argument("--out-root", default=bridge_random.DEFAULT_OUT_ROOT,
+                    help=f"Output root (default: {bridge_random.DEFAULT_OUT_ROOT}); "
+                         "variants go to <out-root>/Wire<i>/<board>")
+    br.set_defaults(func=_cmd_bridge_random_batch)
+
+    for mode, (src, dst) in (("r_to_c", ("resistor", "capacitor")),
+                             ("c_to_r", ("capacitor", "resistor"))):
+        rc = sub.add_parser(f"{mode.replace('_', '-')}-random-batch",
+                            help=f"For every clean design, build COUNT variants that each "
+                                 f"replace one random {src} with a {dst}")
+        rc.add_argument("--count", type=int, default=passive_swap_random.DEFAULT_COUNT,
+                        help=f"Variants (distinct {src}s) per design (default: "
+                             f"{passive_swap_random.DEFAULT_COUNT})")
+        rc.add_argument("--seed", type=int, default=passive_swap_random.DEFAULT_SEED,
+                        help="Random seed; combined with the board name per design (default: 0)")
+        rc.add_argument("--clean-glob", default=passive_swap_random.CLEAN_GLOB,
+                        help=f"Glob for clean netlists (default: {passive_swap_random.CLEAN_GLOB})")
+        rc.add_argument("--out-root", default=passive_swap_random.DEFAULT_OUT_ROOTS[mode],
+                        help=f"Output root (default: {passive_swap_random.DEFAULT_OUT_ROOTS[mode]}); "
+                             "variants go to <out-root>/Swap<i>/<board>")
+        rc.set_defaults(func=_cmd_passive_swap_random_batch, mode=mode)
 
     return p
 

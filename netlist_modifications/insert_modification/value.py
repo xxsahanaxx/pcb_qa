@@ -23,7 +23,7 @@ the component's own magnitude.
 
 Rule-based, like ``tolerance``: no spec file, a deterministic per-component
 pick (hash of board + ref) so re-runs are reproducible. Drive it from the
-CLI (``netlist_trojans.cli``) with ``value`` / ``value-batch``.
+CLI (``netlist_modifications``) with ``value`` / ``value-batch``.
 """
 
 import glob

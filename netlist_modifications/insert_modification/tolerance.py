@@ -13,7 +13,7 @@ checked against the family's assumed baseline grade.
 
 Rule-based, like ``snip``/``swap``: no spec file, just a deterministic
 per-component pick (hash of board + ref) so re-runs are reproducible.
-Drive it from the CLI (``netlist_trojans.cli``) with ``tolerance`` /
+Drive it from the CLI (``netlist_modifications``) with ``tolerance`` /
 ``tolerance-batch``.
 """
 
