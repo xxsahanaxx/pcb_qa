@@ -1,0 +1,262 @@
+{
+  "id": "fan_controller/GndShortRandom_Wire2",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/spice.cir",
+    "chars": 52241,
+    "sha256": "b4d3b703ff43cb646aa2ab01fd7b4487e2face32041f40b1f712dc416461d1b6"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.85,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"U2\", \"U3\", \"J4\", \"R3\", \"C1\", \"C2\", \"D1\", \"Q2\"],\n      \"pins\": [\"U2.1\", \"U3.1\", \"U2.4\", \"U3.4\", \"J4.5\", \"J4.6\", \"R3.2\"],\n      \"nets\": [\"RST\"],\n      \"observed\": \"The net named RST contains the GND pins of U1, U2 and U3 (U1.1, U2.4, U3.4, J4.6). It also contains the reset pins U2.1 (~{RESET}/PB5), U3.1 (~{RESET}/PB5) and the ISP reset line J4.5 (~{RST}). The RST net is therefore the ground net, so both ATtiny reset pins are hard-wired to GND. The same net also carries the emitter of Q2, the cathode-side grounds of C1/C2 and the anode of D1. In the SPICE deck, R3 is connected from +5V to node 0, which confirms the reset node is ground.\",\n      \"expected\": \"The ATtiny reset pins should be held high through a pull-up (R3 from +5V) and reach ground only through the GND pins. The ~{RST} line on the ISP header should be separate from ground. The reset net should be isolated from the GND net.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"10\\\") (name \\\"RST\\\") (class \\\"Default\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\") (pintype \\\"bidirectional\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\") (pintype \\\"power_in\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"J4\\\") (pin \\\"6\\\") (pinfunction \\\"GND\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"R3 +5V 0 10k\"}\n      ],\n      \"impact\": \"Both ATtiny reset pins are tied to ground, which holds the MCUs in permanent reset. Neither microcontroller can run, so the PWM and tach logic does not work. ISP programming is also blocked, because the reset line cannot be pulled high or toggled.\",\n      \"confidence\": 0.85\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.2\", \"U3.2\", \"U2.3\", \"U3.3\", \"U2.5\", \"U3.5\", \"U2.6\", \"U3.6\", \"U2.7\", \"U3.7\"],\n      \"nets\": [\"POT\", \"TACH\", \"SDA\", \"PWM\", \"SCK\"],\n      \"observed\": \"Two different ATtiny parts, U2 (ATtiny45-20P) and U3 (ATtiny13V-10S), share every signal net, including POT, TACH, PWM, SCK and SDA, and both have VCC on the same rail. Two MCUs driving the same I/O nets would contend, with conflicting outputs and possible damage.\",\n      \"expected\": \"Only one microcontroller should be populated on a shared signal set. A second part should be a do-not-populate alternate or should be on separate nets.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"}\n      ],\n      \"impact\": \"If both parts are populated, their outputs conflict on the shared pins. Only one can be intended to drive the fan PWM, so the board's behaviour is unpredictable.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The RST net is the ground net: the reset pins of U2 and U3 and the ISP reset line are tied to GND, which holds both ATtiny MCUs in reset and blocks programming. A secondary concern is that two different ATtiny parts share all signal nets.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.85,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "U2",
+            "U3",
+            "J4",
+            "R3",
+            "C1",
+            "C2",
+            "D1",
+            "Q2"
+          ],
+          "pins": [
+            "U2.1",
+            "U3.1",
+            "U2.4",
+            "U3.4",
+            "J4.5",
+            "J4.6",
+            "R3.2"
+          ],
+          "nets": [
+            "RST"
+          ],
+          "observed": "The net named RST contains the GND pins of U1, U2 and U3 (U1.1, U2.4, U3.4, J4.6). It also contains the reset pins U2.1 (~{RESET}/PB5), U3.1 (~{RESET}/PB5) and the ISP reset line J4.5 (~{RST}). The RST net is therefore the ground net, so both ATtiny reset pins are hard-wired to GND. The same net also carries the emitter of Q2, the cathode-side grounds of C1/C2 and the anode of D1. In the SPICE deck, R3 is connected from +5V to node 0, which confirms the reset node is ground.",
+          "expected": "The ATtiny reset pins should be held high through a pull-up (R3 from +5V) and reach ground only through the GND pins. The ~{RST} line on the ISP header should be separate from ground. The reset net should be isolated from the GND net.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"10\") (name \"RST\") (class \"Default\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"1\") (pinfunction \"~{RESET}/PB5\") (pintype \"bidirectional\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"4\") (pinfunction \"GND\") (pintype \"power_in\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"J4\") (pin \"6\") (pinfunction \"GND\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "R3 +5V 0 10k"
+            }
+          ],
+          "impact": "Both ATtiny reset pins are tied to ground, which holds the MCUs in permanent reset. Neither microcontroller can run, so the PWM and tach logic does not work. ISP programming is also blocked, because the reset line cannot be pulled high or toggled.",
+          "confidence": 0.85
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U2",
+            "U3"
+          ],
+          "pins": [
+            "U2.2",
+            "U3.2",
+            "U2.3",
+            "U3.3",
+            "U2.5",
+            "U3.5",
+            "U2.6",
+            "U3.6",
+            "U2.7",
+            "U3.7"
+          ],
+          "nets": [
+            "POT",
+            "TACH",
+            "SDA",
+            "PWM",
+            "SCK"
+          ],
+          "observed": "Two different ATtiny parts, U2 (ATtiny45-20P) and U3 (ATtiny13V-10S), share every signal net, including POT, TACH, PWM, SCK and SDA, and both have VCC on the same rail. Two MCUs driving the same I/O nets would contend, with conflicting outputs and possible damage.",
+          "expected": "Only one microcontroller should be populated on a shared signal set. A second part should be a do-not-populate alternate or should be on separate nets.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"6\") (pinfunction \"PB1\") (pintype \"bidirectional\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U3\") (pin \"6\") (pinfunction \"PB1\") (pintype \"bidirectional\"))"
+            }
+          ],
+          "impact": "If both parts are populated, their outputs conflict on the shared pins. Only one can be intended to drive the fan PWM, so the board's behaviour is unpredictable.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The RST net is the ground net: the reset pins of U2 and U3 and the ISP reset line are tied to GND, which holds both ATtiny MCUs in reset and blocks programming. A secondary concern is that two different ATtiny parts share all signal nets."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 22621,
+    "completion_tokens": 3689,
+    "reasoning_tokens": 2222,
+    "cached_tokens": 0,
+    "total_tokens": 26310,
+    "cost_usd": 0.0041066,
+    "cost_details": {
+      "upstream_inference_cost": 0.0041066,
+      "upstream_inference_prompt_cost": 0.0022621,
+      "upstream_inference_completions_cost": 0.0018445
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:33:25.577192+00:00",
+    "ended_at": "2026-11-05T03:33:41.825435+00:00",
+    "latency_s": 16.248
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-05T03:33:25.729Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 10756,
+    "moderation_latency": null,
+    "generation_time": 16108,
+    "tokens_prompt": 13312,
+    "tokens_completion": 839,
+    "native_tokens_prompt": 22621,
+    "native_tokens_completion": 3689,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 2222,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0041066,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849605-IQTXTSbLUuWvw61iCSMC",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849605-iUwa61rZd7VQdibws93B",
+    "upstream_id": "msg_011Cgj5UAD7aWkqPqsQ3GHJM",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Cgj5UAD7aWkqPqsQ3GHJM",
+        "is_byok": false,
+        "latency": 390,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0041066,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849605-iUwa61rZd7VQdibws93B",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.85,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"U2\", \"U3\", \"J4\", \"R3\", \"C1\", \"C2\", \"D1\", \"Q2\"],\n      \"pins\": [\"U2.1\", \"U3.1\", \"U2.4\", \"U3.4\", \"J4.5\", \"J4.6\", \"R3.2\"],\n      \"nets\": [\"RST\"],\n      \"observed\": \"The net named RST contains the GND pins of U1, U2 and U3 (U1.1, U2.4, U3.4, J4.6). It also contains the reset pins U2.1 (~{RESET}/PB5), U3.1 (~{RESET}/PB5) and the ISP reset line J4.5 (~{RST}). The RST net is therefore the ground net, so both ATtiny reset pins are hard-wired to GND. The same net also carries the emitter of Q2, the cathode-side grounds of C1/C2 and the anode of D1. In the SPICE deck, R3 is connected from +5V to node 0, which confirms the reset node is ground.\",\n      \"expected\": \"The ATtiny reset pins should be held high through a pull-up (R3 from +5V) and reach ground only through the GND pins. The ~{RST} line on the ISP header should be separate from ground. The reset net should be isolated from the GND net.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"10\\\") (name \\\"RST\\\") (class \\\"Default\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\") (pintype \\\"bidirectional\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\") (pintype \\\"power_in\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"J4\\\") (pin \\\"6\\\") (pinfunction \\\"GND\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"R3 +5V 0 10k\"}\n      ],\n      \"impact\": \"Both ATtiny reset pins are tied to ground, which holds the MCUs in permanent reset. Neither microcontroller can run, so the PWM and tach logic does not work. ISP programming is also blocked, because the reset line cannot be pulled high or toggled.\",\n      \"confidence\": 0.85\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.2\", \"U3.2\", \"U2.3\", \"U3.3\", \"U2.5\", \"U3.5\", \"U2.6\", \"U3.6\", \"U2.7\", \"U3.7\"],\n      \"nets\": [\"POT\", \"TACH\", \"SDA\", \"PWM\", \"SCK\"],\n      \"observed\": \"Two different ATtiny parts, U2 (ATtiny45-20P) and U3 (ATtiny13V-10S), share every signal net, including POT, TACH, PWM, SCK and SDA, and both have VCC on the same rail. Two MCUs driving the same I/O nets would contend, with conflicting outputs and possible damage.\",\n      \"expected\": \"Only one microcontroller should be populated on a shared signal set. A second part should be a do-not-populate alternate or should be on separate nets.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"}\n      ],\n      \"impact\": \"If both parts are populated, their outputs conflict on the shared pins. Only one can be intended to drive the fan PWM, so the board's behaviour is unpredictable.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The RST net is the ground net: the reset pins of U2 and U3 and the ISP reset line are tied to GND, which holds both ATtiny MCUs in reset and blocks programming. A secondary concern is that two different ATtiny parts share all signal nets.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1793849605,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3689,
+      "prompt_tokens": 22621,
+      "total_tokens": 26310,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2222,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0041066,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0041066,
+        "upstream_inference_prompt_cost": 0.0022621,
+        "upstream_inference_completions_cost": 0.0018445
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

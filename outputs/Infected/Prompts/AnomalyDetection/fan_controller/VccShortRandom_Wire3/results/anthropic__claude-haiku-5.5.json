@@ -1,0 +1,246 @@
+{
+  "id": "fan_controller/VccShortRandom_Wire3",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/VccShortRandom_Wire3/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/VccShortRandom_Wire3/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/VccShortRandom_Wire3/spice.cir",
+    "chars": 52233,
+    "sha256": "f5504c70173d2026a22c488e3348c0eff00154f8f5f67bd1a70d6525544ef64e"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.4, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"R5\"], \"pins\": [\"R5.1\", \"R5.2\", \"U2.6\", \"U3.6\"], \"nets\": [\"VCC\", \"PWM\"], \"observed\": \"R5 is a 1k pull-up from the unregulated VCC rail (the LM1117 input, U1.3) to the PWM net, which also drives the MCU PB1 pin (U2.6/U3.6) and the MISO line of J4. The 1k value is about ten times lower than the 10k used for the other pull-ups (R1, R3, R6), and the pull-up target is not the 5 V logic rail.\", \"expected\": \"A pull-up on a 5 V microcontroller I/O should return to the regulated +5V net (as R3 does for RST), and its value should match the other pull-ups (10k) unless a stronger pull is deliberately needed. The specification gives no value for this part, so this is judged against sound practice.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"14\\\") (name \\\"VCC\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) ...\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\")) ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")\"}, {\"source\": \"spice\", \"quote\": \"R5 VCC PWM 1k\"}], \"impact\": \"If the unregulated input rail is above about 5.5 V, the PWM pin is pulled above the MCU supply, risking over-voltage stress on PB1. A 1k pull-up also draws about 5 mA through the line and holds the PWM input high at power-up, which switches the NPN and the fan on by default.\", \"confidence\": 0.4}, {\"category\": \"bridged_nets\", \"components\": [\"U2\", \"U3\"], \"pins\": [\"U2.1\", \"U3.1\", \"U2.2\", \"U3.2\", \"U2.6\", \"U3.6\", \"U2.8\", \"U3.8\"], \"nets\": [\"RST\", \"POT\", \"PWM\", \"TACH\", \"SCK\", \"SDA\", \"+5V\", \"GND\"], \"observed\": \"Both ATtiny45-20P (U2) and ATtiny13V-10S (U3) are wired to exactly the same nets on every pin, so two microcontrollers are connected in parallel on the same I/O lines.\", \"expected\": \"Only one MCU should be populated. If the two parts are alternate footprints, one should be marked do-not-populate or kept out of the assembled BOM, since two driven outputs on the same pins would contend.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\")) ... (node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"8\\\") (pinfunction \\\"VCC\\\") (pintype \\\"power_in\\\")) ... (node (ref \\\"U3\\\") (pin \\\"8\\\") (pinfunction \\\"VCC\\\") (pintype \\\"power_in\\\"))\"}], \"impact\": \"If both devices are soldered, their outputs drive the PWM, RST and TACH lines against each other, causing contention, unreliable control of the fan and possible damage to the pins. This may be a deliberate dual-footprint arrangement, in which case it is only a risk if both are populated.\", \"confidence\": 0.2}], \"summary\": \"The netlist shows the PWM pull-up R5 tied to the unregulated VCC rail with an unusually low 1k value, which is inconsistent with the other 10k pull-ups and the 5 V logic domain. The spec describes an unrelated repository and gives no fan_controller values, so this verdict rests on standard practice; the parallel U2/U3 MCUs are a lower-confidence second candidate.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.4,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "R5"
+          ],
+          "pins": [
+            "R5.1",
+            "R5.2",
+            "U2.6",
+            "U3.6"
+          ],
+          "nets": [
+            "VCC",
+            "PWM"
+          ],
+          "observed": "R5 is a 1k pull-up from the unregulated VCC rail (the LM1117 input, U1.3) to the PWM net, which also drives the MCU PB1 pin (U2.6/U3.6) and the MISO line of J4. The 1k value is about ten times lower than the 10k used for the other pull-ups (R1, R3, R6), and the pull-up target is not the 5 V logic rail.",
+          "expected": "A pull-up on a 5 V microcontroller I/O should return to the regulated +5V net (as R3 does for RST), and its value should match the other pull-ups (10k) unless a stronger pull is deliberately needed. The specification gives no value for this part, so this is judged against sound practice.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"14\") (name \"VCC\") ... (node (ref \"R5\") (pin \"1\") (pintype \"passive\")) ..."
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R5\") (pin \"2\") (pintype \"passive\")) ... (node (ref \"U2\") (pin \"6\") (pinfunction \"PB1\")"
+            },
+            {
+              "source": "spice",
+              "quote": "R5 VCC PWM 1k"
+            }
+          ],
+          "impact": "If the unregulated input rail is above about 5.5 V, the PWM pin is pulled above the MCU supply, risking over-voltage stress on PB1. A 1k pull-up also draws about 5 mA through the line and holds the PWM input high at power-up, which switches the NPN and the fan on by default.",
+          "confidence": 0.4
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U2",
+            "U3"
+          ],
+          "pins": [
+            "U2.1",
+            "U3.1",
+            "U2.2",
+            "U3.2",
+            "U2.6",
+            "U3.6",
+            "U2.8",
+            "U3.8"
+          ],
+          "nets": [
+            "RST",
+            "POT",
+            "PWM",
+            "TACH",
+            "SCK",
+            "SDA",
+            "+5V",
+            "GND"
+          ],
+          "observed": "Both ATtiny45-20P (U2) and ATtiny13V-10S (U3) are wired to exactly the same nets on every pin, so two microcontrollers are connected in parallel on the same I/O lines.",
+          "expected": "Only one MCU should be populated. If the two parts are alternate footprints, one should be marked do-not-populate or kept out of the assembled BOM, since two driven outputs on the same pins would contend.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"6\") (pinfunction \"PB1\") (pintype \"bidirectional\")) ... (node (ref \"U3\") (pin \"6\") (pinfunction \"PB1\") (pintype \"bidirectional\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"8\") (pinfunction \"VCC\") (pintype \"power_in\")) ... (node (ref \"U3\") (pin \"8\") (pinfunction \"VCC\") (pintype \"power_in\"))"
+            }
+          ],
+          "impact": "If both devices are soldered, their outputs drive the PWM, RST and TACH lines against each other, causing contention, unreliable control of the fan and possible damage to the pins. This may be a deliberate dual-footprint arrangement, in which case it is only a risk if both are populated.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "The netlist shows the PWM pull-up R5 tied to the unregulated VCC rail with an unusually low 1k value, which is inconsistent with the other 10k pull-ups and the 5 V logic domain. The spec describes an unrelated repository and gives no fan_controller values, so this verdict rests on standard practice; the parallel U2/U3 MCUs are a lower-confidence second candidate."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 22610,
+    "completion_tokens": 6223,
+    "reasoning_tokens": 4847,
+    "cached_tokens": 0,
+    "total_tokens": 28833,
+    "cost_usd": 0.0053725,
+    "cost_details": {
+      "upstream_inference_cost": 0.0053725,
+      "upstream_inference_prompt_cost": 0.002261,
+      "upstream_inference_completions_cost": 0.0031115
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:34:47.862976+00:00",
+    "ended_at": "2026-11-05T03:35:16.750156+00:00",
+    "latency_s": 28.887
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-05T03:34:48.008Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 25806,
+    "moderation_latency": null,
+    "generation_time": 28778,
+    "tokens_prompt": 13310,
+    "tokens_completion": 790,
+    "native_tokens_prompt": 22610,
+    "native_tokens_completion": 6223,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 4847,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0053725,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849688-rkjiQl1o0frSOydQiQDX",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849688-x01E1HKOTvCXd5MgbDrt",
+    "upstream_id": "msg_011Cgj5aDxzTjT88BfVVP4YP",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Cgj5aDxzTjT88BfVVP4YP",
+        "is_byok": false,
+        "latency": 369,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0053725,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849688-x01E1HKOTvCXd5MgbDrt",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.4, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"R5\"], \"pins\": [\"R5.1\", \"R5.2\", \"U2.6\", \"U3.6\"], \"nets\": [\"VCC\", \"PWM\"], \"observed\": \"R5 is a 1k pull-up from the unregulated VCC rail (the LM1117 input, U1.3) to the PWM net, which also drives the MCU PB1 pin (U2.6/U3.6) and the MISO line of J4. The 1k value is about ten times lower than the 10k used for the other pull-ups (R1, R3, R6), and the pull-up target is not the 5 V logic rail.\", \"expected\": \"A pull-up on a 5 V microcontroller I/O should return to the regulated +5V net (as R3 does for RST), and its value should match the other pull-ups (10k) unless a stronger pull is deliberately needed. The specification gives no value for this part, so this is judged against sound practice.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"14\\\") (name \\\"VCC\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) ...\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\")) ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")\"}, {\"source\": \"spice\", \"quote\": \"R5 VCC PWM 1k\"}], \"impact\": \"If the unregulated input rail is above about 5.5 V, the PWM pin is pulled above the MCU supply, risking over-voltage stress on PB1. A 1k pull-up also draws about 5 mA through the line and holds the PWM input high at power-up, which switches the NPN and the fan on by default.\", \"confidence\": 0.4}, {\"category\": \"bridged_nets\", \"components\": [\"U2\", \"U3\"], \"pins\": [\"U2.1\", \"U3.1\", \"U2.2\", \"U3.2\", \"U2.6\", \"U3.6\", \"U2.8\", \"U3.8\"], \"nets\": [\"RST\", \"POT\", \"PWM\", \"TACH\", \"SCK\", \"SDA\", \"+5V\", \"GND\"], \"observed\": \"Both ATtiny45-20P (U2) and ATtiny13V-10S (U3) are wired to exactly the same nets on every pin, so two microcontrollers are connected in parallel on the same I/O lines.\", \"expected\": \"Only one MCU should be populated. If the two parts are alternate footprints, one should be marked do-not-populate or kept out of the assembled BOM, since two driven outputs on the same pins would contend.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\")) ... (node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\") (pintype \\\"bidirectional\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"8\\\") (pinfunction \\\"VCC\\\") (pintype \\\"power_in\\\")) ... (node (ref \\\"U3\\\") (pin \\\"8\\\") (pinfunction \\\"VCC\\\") (pintype \\\"power_in\\\"))\"}], \"impact\": \"If both devices are soldered, their outputs drive the PWM, RST and TACH lines against each other, causing contention, unreliable control of the fan and possible damage to the pins. This may be a deliberate dual-footprint arrangement, in which case it is only a risk if both are populated.\", \"confidence\": 0.2}], \"summary\": \"The netlist shows the PWM pull-up R5 tied to the unregulated VCC rail with an unusually low 1k value, which is inconsistent with the other 10k pull-ups and the 5 V logic domain. The spec describes an unrelated repository and gives no fan_controller values, so this verdict rests on standard practice; the parallel U2/U3 MCUs are a lower-confidence second candidate.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "CAQSoFAKEAgTGAI4AUIIdGhpbmtpbmcSDJq4nQIuvboC9JvxLBoMjRg1d7dlbcs7ncswIjBY4+lA5CCxn8YYPLd1DqZ33Ikb+HMHLljS6TGwrzidMaz+ojyxFV6GH1FYmVag1PoqvU80i1aA68rcUzqguC7rHQ9jSVUtBMpjKRcnPvbLFR3mdcHvzQak5XY+lC3/AoHt/ihX+e2QOkZw7gfO8hWzVUEY/iqAVct8+LhJ5P2nyssStLHCSaVfB9LxJ8Rl/Jjr1cbI8RpWMgruh3KijsXabJZgX+6WIXBQ8Q0znkmrnLL1n9Gxdlc10STUiEZLSkeyzR/Ng2DUkUg38CeqKFAkLb1WyOK6go2CZtxeI6VeTeol6HmF0JoNq2Q9O+iChdrKYKPdLcPfxS6JOx1FPs1ggHPCSfibaiaD38KEv1YtMmo48509FYg1q6X6GakCA4a83ng78ZxOaApoK99vgrv62NVgQ+/4KWU1tZKNS/NYqnAh7XRtABo4rPgmJPk+7+XOQIuNbstdVR+4cm3UP7i4VO68qIlPr8NMg1OUmKDiROJ0oMQMnRUy2w3CivV0BcxkajbQokKataADNSkP6xXc54I6NcoKxZSlZCpO86D7iD9OsojH0dOiPtD+u28cG1OJIgOucp8Uae3dLbaDQoZCBjtXw+YPQYo+TASR8kDhv7mi1BqfRDoScCLHpO8Zms4oyJGVez9E5POuKaSkZLUBza+evmRTfr+0PO+NY2VbLOGVLyP+K2Nkbzn8+OqzuMts7VuOQnVnwBbGfn5PZ8gIoZdvhgJcUjcLUZ8e9cWk2vyn+aQwK7SJJAUbmBLn5FKR44A9SpXY9fbZAqxKY5qNQYws7TByI46vHn3+x4EHLEjbmkjUpWr/QvM5I9lmwg7cAJS4fmdTb9ERp7KAudz3V9hRJrBTczdZXbtGdWuiAJjOrfbgV8o1z0iMU75/1RyZHwmsXVXtD3BeFb3SQuBe8jWkYiC7l52dyrUV5kDdkW76X4LIUqkZnl3L1c6bIo0vfBffPOAXJ5v/HYCdgmq9oU5cP4jJsXgIuaJkH9QxBsdOkEQPqnJt1iHDzlh7VXmbqbT9QBSRyZFST3ai2yeS/60wCTxwBuERyqzRfhmzpfzLyMKCsnSc7DJNO6Xn89VlIXo1DCevgdBzk0r88uCDAfSrpn0FtLuxOtWsrjJrayFUsk0PYG74a9BkCO2mzImBSsRSGR1zJwM8+zTcWuV/PGHuzGiRL76S4PgqpvrJij+lZ+4fHCoe4xZy20lz5ACOTMa/Sy2CF7onTIXqWSZZD8rEzulY5KHadGVYxsyqukLLUtwCJOsxVYq59IOda5zQsJHvSd/RZENyKo/dBd7d+zDUha6VKZHUCqBsyQpdR64abCRX0UK2EdvTq4fl63GZ8hP7KALDwVIwSL6xOq2/EPOIOSVaYmkaOuCBkimCmoeMCI12rffqom69aOwXRIPgNKz5mxyieLp6SNSTE+WpDnItsxp+r0/opanJA4pDDEesuMFpTVNT8jbgrf3uF7NtXGjolUImXGD4Uro8pJZiIigJqsL3TgKGpntLkEutiYlGJW/4+T4JuyghwGg7QYr91bHh7YUlzJxfiCMFM1WVDVZP9xn4PwAYT2RvUMBfHs62b6K31+EqHYA8IvfeKX5zRvPijK7XWqAxsSMp+65Dt8f08VPFBD7PH3knB1biVKYCr2+eLtBf1d8j6QIpyeoeqzKXvvw1UJbgX4Z0Q+SKWUhTCuh13ummbO86CCrrXLtPlkXrj6LOnGU2/jbl2EnI2drhJMUZqWG6dB34FzBXSSPM0ayepP5Ot+s1vtRlbu9ploFtGV4Xtw6Klhl31T0tdfpEJ3aD9/4PpX5S2zTG9yw4n2Ze9L673lvARaIEkrQVEgGkJ+iVmm6o/8jzfoCuEVLHA22++DKtIGHvva4ewMgA32enhkO6aOATlpBpdd9pj0ktrNcX+Sx0jaTmHK3PB090qaWAIdRcSg1NCHgCoFeaZAwhV7cT50QAWrsC1Vo7UjoOobWNEAC7REFJw+9zfDuLTW5x1C6c3C04igytugUQBGwzIPR2WrQjbKrWQtK0WfylYklT/ubQuJo5R0XohaQQo98r0YmDq0iAtlhcEStHfhQ4fI/oBU7LVtasSV/Q858C8VytNrnb0b8UTybQoNOIX/ZPFyJQT/yIjf7FRPsO5+sC9jqoBPeJJEMoU74QvSC+OjMvZbPnWINghuQLKBvhuhCEmQf04CC30VF3AyKYc7YLUHbLO38fpivihp0TMn4lHQVdSYU2RDHjZjBQpIuiBKejDe8gFhXEIBNxuiADLpNj7sW/6z7YHp2JhWuTZtRhpsOJ+BK6Iq9zhekatraN4ypqYk06zA+bblpYNiqWpQF3ftuNvRVe5wlj4OtWkfGgJHMVZHSL44MRogbQx8elXRuYRlG28ji3kW3q0KfQkMp1IKzEb4CE4GdXKFGNZxtODyYeNTopk2iN6QmKLhVtBkZNkuJKdOb9xt2kqo7bsr/npBXTEyC3DfZeLwIBCWTo2qNEJ8K8zHugeciJQQsM7/3LytOjNgObk/V7JAFCst+mhKQiWDpRZPfMe8TdNNInHp5IGvRl7ypWJyf7vcu23k7u0HumEbNzDkR6MvPMTvkFKgD0WfzwVGgc2PrTMN+y3yOaZzw5r6bYNduFm5KaC++kV9+oDBBxEEgTNz8jILMcidp00fL94aormUmZvcHa+Tn9mxQTrIUJrVA0LbM/9EfSxPlMdzTzwysn8ov6Ta6C/LPPQisQKyBih4/IbI8X5RJgkjygibdvgOKOaW4Ml6+vEK4f5fdFklPO3u6aLAg84Gfl0Wg1OGcFI+gDoIwf0zzwvo9Ejy84HKJ+hUU61MSdOBR1BQB9hZLbjkzDVdQ6KYVGGfEL2RszKdqwZQQEk4Wc1OExa3dIuUINupi9nrgHuISacujDDT52+32RBYVbwF8SiRwgAnXmCYP3ggbdxPrBCChqvalOPBpExvK7v3sNbmP1iN6lgf7zus4+xyfHBVrhibna4LFTUCbPpUeB/7F1RYSp4bjhX8qJI0uL5ZA157lYjfa18xiD9BFO/0dzMn4i9qqof6JGWcMwCw/GOEVXVbZbKkmQRC9WxaHbEYR/6ETYCZBXr6yoXuwEY3Xs+GzP4f46MTVG6NJL2YkB5TgqUGuw5mOUtmJuhu3Zr9jOY1+yUsuX8eAjhUKgleu/i+3q4JsQ2Zr6zvvt9oKB02pdYhyplNXaTaJd4JbKR4ooN9mztEyBm5YH9J3e6Ucep9tBPyKSqiATAsUGVdGs/NiIvPFDDBSlyl7iHts1BRT2kLXpoWMriUDyTglgFeEW95zxe4OMZrFd7MGQ+jO1h06TPOHFk5K3WXplNS+OzUIyQRSYTczAUJYY81E1h0YHC+sLiaiKMbmvuk4NPIAgJTsEhb+DpvLV2BKPSaydRb55wOZhr3HwKDGZqJCVBbdx0olMokT/u9B/g5UlM4OE6n7oojspNJwrD8ijLj+3F7/k6AWykA+wB99ZQk+N4hWDTzl4huRtBjPcjTjZGK4rC5LUB5MH7azfjuzAeo/NJNw69pi4sCSOBTzgNRgPNNLG6Y7L9nCaO+p/45vzeg16KZGE3Iv8fIpNJ/HYEPkxjjifLhFKAE/TSTiMfkykdIJ7Vmt5SzjyFVxp0BgBEXA7QxLoWBUxmTbK0Lqh9JDgo28rN1bZo05WV2OUiulomplM64X/RSIOGMaJ5WTKhZtfoYA5rXMWL2jPa9Kb6355lXvAgftVj0MgjXNM37qu028wpxiZhZvPwkQWhuRGCcV+FtYDjLN5RfVt0xgewPwx3wFCQC8c9QwFA8lv8iuQDynxd43zXhfe3+F8OTenCVcHQQF7b4ugirgL86swgAFKzTDrFMbIDGDbNFD438DBqojRaFLWa3stqkDlpTvgVGzFFgwQzQKQYb4eE2Y+aaFNoTNlBhJ+45nDhT5v1Rjh6U4YovBns9Zil6aDBu3Pe9hpPAOSoCm+xwS0gKR2kbpM9NGvuNgfrFnTYGbFAEl40601EfZ1SlZrwrt3vV5Y3aCkZdej/CzZKGxnZ9EHw7Rpxm+goJocxrnVLd5RPZ4OEyhaWXhaXhRuxPRR3LzRg5cOpdXYzx00LhJKM/6PbyxuOeqbXBhWRCmMf3bLnl0SVr5cO974qVkDY78cjr7za9migvrPuyp6wUyZTbZmdU/fUBw6ONutmgYGGaW/83DaUpNs1YpJYQxSyTcPyKqeVBjHBZPRXr80eq+6o7YzpyaQ5srSV5PBiJnBaXJC7UlEx2KiUTLqs+077KK/P6kk/En5kYytoJcshxwnBFEcYAi0TYL0n7xrqJjX8pxdcuBjClHaXWSF8pXFhlzO1MurT6GtOCK+y4Fjh0JL46YIZlsk4GvfFPMXLFaLLYFK9iE64Eu7gbtROI+Q2dyWE2+9GCPvfRaIWA7Hg0gcxyoOYSocytB+f0SRhc2tJ4sMSl9aENcC9LszyMVYZHip8ckL5B/0HZdGcPWMbW1fMUSU5qnyCiUHFZe0zvSNJJ1QpZ3RXfEYZLqWi/dnpIidXwAQBbY6snSoaXmlWIAvbYkmaHuXUJtmwy5h4BtZQDoSvRUTaFGe3IFeFYSVFa5JuwIlmju9HYZ/bqYQyfxUDdRtdtDaz68dRIdXXYTjohWX6g1QjK9+7i0KsmzkSGloA7miuVK6oCmD6mqqxO+X4/wrW+EoXqyR/A66ZNzHkgelSUfBuR2se1yvu4FqiR+zZhl3Ln2MLxjFaM9W5iBZYVDhWGf2vwGAHNx+ShdcBeqM5qXe2bKtdVkDNpiODqS7l4qHf1TljhxSTmqWM7e9uxNq/pPoC4X4cBlHrtonz8+sC4l6m2JJGxl8V8YTFNX01ZLBoQbirjKf3gNnq9uvGOZ5diPt9viPTgVzEjrhxi3beJj0ZYwfgzNsgYMJvYj0+DNr914zV8QBJg+niERc0feJKckhNG5FUTwV/yJ9N4DzRC1fuMbtb8NDnxmEhMKOYrgFIJnuFNrE4eoEv5illJxEYgvVyYAjD21NHnwR8ciZGizNOm4lDhuBhZCFMLUMh763EnrZs15my6leQaHg5YsLvH+iIhEAqxdwVsjssi041nFMtOik8O4VnBnGoEXF0CXuOHpdRgm2jRkAbHG4l7Q96j7ppi25+3w35Bwh9VFYfRw+OYB8VO4Xg8BXs37MXwUTbn0+G6athSrRq39yNHurcQUr97YOHrYtpMJnRxo9mDp29+Xo1hv7IUvb2S7B+skUn+oFtMgK/vXuv8TaUGEuX6Nbc+40UzMTQBBYasHnzXoFQVvb3WMonLPrig8aI7IkaDehgzlL4/GoeOXaiLQG5SOAbVsXlKf+NWgOqkZxPY/DfI8ZJvl47O7smXvCGW1BBbTRiNOA5ACQVyrNYm9bvzgMkWGUtKb1gtd5zZNhumBYNFHHzACtRjZMzpLzrxV4tqXLKs6DbhxGOPo+Bau7GTGd5sgMVDN7+Y522U2OOqqe279NE+2eYGErXuLbUMEWkDA0+deLwFy6+f7mMb8e94nevptEywYjBJpSvcwtdU+c9Hl8gCwuze73lsrHyVgEaYiHn5YXdDrd3jVX8GC04hzM0KG4i7Kog0EV3uQ7+jHQgomTDNYp73bLUtJBIQxiwxZ4S5agUVDjDuR2fRonxzPt0eVvDjYNb5wwiBjHsXKnUjeWM8v1J+Y3OBDcMcqkGB5osvirBzKUyEYCefgEehK4omRZ98gadMqBLCEhlNMui/eXd1qLRntp7QYbE5ggmblJxQJdBfPv/ytV4nh2XcsPd1rutub3a4eCtf8Km2mmrsI3MRH8r6YfouZqXvqzHYLXDa5QiYp1G7htBaXBkmUaUxcxe/j++K9fbjcp1FKW226ouQaPiXwQiCGP8eLJ9xdY7QUNuCnviXdZXhP9ocvWrX+m5UmuGKJBLcvjx4A4h2FIXiVBkHw059Da984Bk03PPlybe6whyziMQU1Q9GHmxNverXB7ybNgA/31LL2uCZDlZVwuFhVzLMlp9tWbDbolXMZCaS3bclq6IvvkQXpiHc/MbjajVpqe4wBBGnHFd6dk7z6OntDHIResyoAdO1Z+sNoO4zakzkEFSorQdHA0YFNR0iwYRodE/ctkLLgmuOEvw1xiMjr8RH4OD378YIQr9bfUHqw10MmsvxczTSOVkIjdyqrv8zmJ06cvR6JLT2fNC0V3Xviv/MgeLmamg7S8sYAXBPjyexUIHhUVs16mKE1kOihqs6CxWRTe+xFNIxa21OjIBydKtrIRZPB3dNrtPRcWShbkRSPl+Mz9YDkIXmKA4O3iJ6/o6mE8PAezUCgA8UTOCJBlYSYrKouQXf+0VRUIaWq79R/oOQy/J5rUEJASq3ktilQ+BkBwYME6gQsPIg4iggnN+Sc0FL0OpIVcJy8OXs96OhupH4kgt6v0aMdzKibupU2+jv2m0eVBXKaMFxDxM5RPw6xgou4QMwQKfoSIHqyJff+QnFEuM7C+YNHoIbwu4Wdm/qe3KF506o1sWe07751Li9eNPsCW8N4QlZ4yJ2mE6v+MqomW11QxURqyH3JGPqgtbr9DR1gI2EDoRsndtgTYNuIvyK/p5Z+tKcHhAkP5APaw59Y4QvaJPMMpbgc96yQ8uPHVgywGDSzyK1odsCvd5twZcmIaeiCMMc7qv8PsQc+V/w5I0/jK0vC4JllyVaXGk7ueKdHg3SujOhUB6JOtaMn6gom7ZYaoSiY49ySsO2qLn81cxhjYtqHCc/LlZUj3k4ULdKUgg4Yf85qRESzipgbxP0+yZ6byI3kalT5D1Z2jWLMx6fMhL+knbE46rtZIlBYsno9I/g+m7vthOxBjg63OFkOOinlNwL+fWbiwmvyvFm0sDqiRSE3Q6uHBpqOZb18uuDTxe0poN1+/1IqrZpx8H9cl6f33hMa0RWl5g40w4cMHdDQdcGYHSdM8PtviI1IkzLTW0a8/3MNXAM90X0Gs3ePwCCJfHEW7426xm3KkH+u38t/C32Y0qWFqyCY/Zb1cPEU+si4dlJwqAaeN2sHpzYwOmGw8XZNgtI2Z8x3E9QVJEdBCrppYbb1EX1VSlTUJiRCKjk/kpLBhCfasGNpkYZUBQE5C0jpyjwQeJwfqc+jJrX/kPt5yCaeK6eNi7tmyfkf4fE6Pm30pUoWxI4cwURKvkWA3J3TStNRbQ11D3F/bgnIPDg9rn2FchU4yJYPKujawp0kt5aGxf9atwpUS9Z8Qy+r+m7+lH+ccyZY1HHB/NgtRB+RQeuQLK1rsMi0tI8Nfqf1vKYjUgG9VkeAxD0Y5tlNuTzmCyVqYmQIWcWgDRBwgZpVnZdRjZrd03BO1K/I9786Yw+rze++0lHpMqjZrCD/qu3mqUota1t0MacUWFU6JxoqbwBZ4+XNl5vBhGo9u8UUOJWVDiD+yF/YGBto8o75P/MwU0hQbMYJ7sFn+r4c0qgeIYqPk7YjtJVDB1EPXi1G/rt5E2NDTGhcovMlIeRpggw93diE9nvpZpeE7Hg63fUy6HibGTjbGnYrMJWEJ60Oh3jFSZWZTLb3plki7PbokPz9y+A2mO3rdWDhPQtS8Q2SpM7qeiKTQ7zuFYA3eXZKqzuH+VHwiwOD8sJlcf8xwWF9CLR7VzwcOIyPP/4s0JPrZr0/+V26AvNPtthw4Ak4ODzmDxDq3KhVOKo4LQO5nRpdniYZiDHAXpEWJ5oqV87A5q2XOeifhyURjMaGDp900Cz7Ige6u8ro63i/pxlR844jGv6wnZ4CTFODLtk0dHDo20d1hUGs9r7miFBFsobl33XsgcNd9vqny8YQSEkK5yirVoirbHBKUor7l9mA0hNXeQaqmTJLGilc7T5hLquJq5pECsdPoQ2CKdOXhiDdiuIsyDHrcHgIfr3nkRnlttkFoJrhmRoS7dJEitPu+J1Gx69E4IHdF2dl7tO7M1Somb0NCUfkI0kCzKNRkZEJcaDVpFa43eI0ZoilkMiEm6cHZmB1cg2o8gTkWDqGtxMxwLVmTFKt59GhN6ydtNJPbv/xRQeot0FpJm/bMLL9Tc1jRnJF27xg/xQMP6YjMVzFoWC/2Ej8QZ+SnsvOyLf/NKVcrGInqqditXZKCUnJcH7UrniHiKu83z1do2DUf/J1fX1vmPqal8s2QV4WBdpM9Y+iSZRhM16C1ey3kyQa6sf0uScSV8Q0UoxsaNBvwqyMyFOC41mU4qtXzUk1BQwrdRA0lRmdpGBwXDVIL+37t8JoP5AAEUa1jDbktcjpXh99PS0+HECaMqZisQeLrGw++PGUWgee4qbWN+BufnBWiWqWR44w4UFeliQsGgaGZtn63W6rkLw254vUlvfRMeGFm1v/fuNThxFubs4+mn7fhvlPqL2Rz9PLWuq2rZsQ7EfPa+BDgo7wmr2jdE7MRu1VPiIoyxibjBodY0lY3HXRSEq6l8cljU2bjfFbnT0vEC1ZCULQrxj3ZUctcmHRoCz1gZLh52lxA7KyS9loP16/GWSdlnAYa71ruKAvFwAUXR6/tw0OdBosp0z1N//CX0vZHFhxp03qLaeBOmsDwSrCHVPskVH8CQZyxnmfu0ZSSKMHCK/KWeaf92lN+2dXdGovwipbRPtBrJHvOjP5ctHg1sC9k+VrExUt3qjajxdKFB6vAwuFu2nxMhtpWC3qXNiwoemlKaFpKrCQsvTeTiEVSm44pQq17ZiQKG9E3PYhfWvswn7f3OrnX50/YB5jZyvaiwsVreGopL8Bzy1HYjHfL4yJNqor4h/dDEN+24Tvxvjo6d8/MOLPpJ8RBOHf/I4A9eT9ng0iRmKIx2ZE2EpfogNBGeq/2kf2Jaq8kkH80LZte28GxzScyimndQNYvl+u3VPKld2q/JOSEFOBWe/nxgoKdMrOwLbvueqKdoHIF+oY2c4mSuaENMBNjRhdMp6LhHgJsgQ7ew7M+FNowBPK2nn4nzkyVndv+aY99U9d72aEo61Q1dolO/Q8GLXcVFsDhT9wryojRW/qL40KreO0pGZwstpTvZsBuZJswTL3zmXjMH09dyGhL/mv0yf0wy1lVDHxGF38uzKkLFGy2py84i9j3HKvMxdBHxu8icHK33Z9nWFM1+ZIZ/yxmMKPo6UeWdF3N9UqNb1Gdmuz4V8N2srMJ9WPSJZcnUPmU7I10x77NK11cU5Xb+UZZNyWKbIbwOOwQc/jHLsdrAB1v3FNrEErBacQqNGXAVvJb66U+aDAOLk6ffCkr+lsN9Fn+0kAmN5rD4YhtXCx+fU2bekbAcJt0bUUllpktnaInFVRgJVi2l33gTK/eLErhKL7xMCPzqMdVoq6Pa24HKYQW517DDwLDJeTClnsklM7B6fBos6WNirzIZSMq1Mh/8e/2i51ac819K9NsIa56KHAXeMuUdSjsPmhqGKu27+DB04tc8007SmaXjuSxEf/j1wk2jRSKbQj3eRuVcXlrS5Cf+vCB2fiJvPy9jzRJGAn5NehF5ujlGdyWX52EWnltkaT5mjuqkkZE3dxIozvKk0YKCLwo0bjVyl+Otx2f0gbrx3y25lnAkScgGTBEt5nmNbHsCYhhSUrfgkyvgS+8kmBBIdpFDev3Q8A6x6GW0D/hk9zLfDk4DLHlyiZZiL3jZoQcKUyKm2ku6x2SokKPsaUqABanrlcFTkFZShbzGb0pWs7NGREe6eXy3ujIIFhOUVHCbgU8j9YAokSPlygmkMtOmziKeGzyDmhn9o+Aoa3O1bLJH6zyZ89Qz88xjxihbuhX6jUYETevdIE3LgXcy08YZkF8AoedKQaTHA/z8cl+yiY4MjmdjMawxWN/VWNlsjSn1Ft8V3VKDrRN7YO0OOlN29lctYlf3RV/Ja9FTwC2OUmHxFRAFeluuYZDXwX0/7ThhcLYIVExgIPHpJfK0r08cTu5/wc2BoKUflq5O6hfeDV6AsV28w+2xDloX6tZqdi2TnOWHHsAKTXDGmeTYpvZOIr9r0aHp/+vq8kQEnoAY1UXoYkAhTQ2PFYRCfUYyRtfPx4OR9JtHnZUL0XZiLE38RwhwKDYgBpCe6I/ZbSbTuf+iNb4IqfHailzKoRfyFYLpgd7zx3LQJniSh9tr06HclsNugyKtxa62BkmNDkcD+zaZWcjWfmOGFRvSHugNrZAAwWj3ua9ttQ+EN/xspapqTsPeYYH6elom3/Zx5ntfPyRBt0yidll7MUdS9tFw3oH7+9twfS8Wqf9ZmzwCIj+9EtFEGpRukAaP5gFeJFIAcJBtVI3A+V1wwL3cadMf741TeyOSUeumVHoipFR7tHBaveh/jd1P5frhpuCVIAYWSmxXID0K2nT8VE70UZwQZtxRRLW0aiCfBN2nYnj1DXTFyAvj1opW1m0Xpg2j4LURyO3oIV14klS9fIry/uuwFkCLVr4BatkKID6PvZKrBZ8TENnkcuvfOGOjwmKjvU0ZrmIzGBUr3GLMNPAF3P16MFBQmSoYfGywKh3IM3IyXDLVtGnJOXE8mo+YgJWBOUhDrZezth4Vn2YQ6TKBdVLCVhsVXJNlqSZCJ5UdxMH3iSicDJKXyrWZ6UldJglHzZYJP+aN0HxWPYCMS8p+VrPFaMpa0NrP3bkEnPIyKRD6PXPpgpw9mrY5TYPe6vs2icOzHNONAJbSnbYcWyGvFB7HsUUM6A+9Xzq9cFKbFwOhQlAZ0rju/wgfo90qEkqPdO5gvxZUWcSDvVqvF9rGQK0zvEmHYGCSPHrHMkBU4YKUr9Y0nc4rg8m6PkSVpR6E5nZnz4iHbtBclN4DuSnu3OjXUqPoC/Es7i56Eutg0KDdJL11+mEicnUJILNi8fZrcbW/XpHEP1lYa76E2OGdhjkhp1VhS4VuIcZz+OqUIr5rmrX6OGYiouxCvVqA5xo2kTUbjezmcekxDFZ6crtF5gQdFEKNltK/HJBkkNNwAU41uv9pU1WSf0GrcKbpqC0u8pzDso9DACt1bENt/OaPYOR9cvGNldMuGlS7drV+ltNVmjDxvhy5OgFPL4mnjaaVMg3aDHiZtIiv8bT3wHaQn0IMOy73nposELGPFvq+JNzDMfKrFZ1UmtSqSFAQANJkERMnP347lLfK/z4RwEgoE0WxR5qGTWJrsF3RjI8o8U6xcTA/lWVQ4mYbPTOqbDvseqpkkjWrNhmcUohpqZdD1hnD/LKbb9ILt0XVFRbqZ2guxi22lIgH79Dt+fWAv/gfND3Y5ar1KJkbuFvP1zpzl0/0unWhZMXWHG2wKwzLYRhUCaVmyhOhG/V3rtcElbpExPiI+q9d5ps8FeSwy1eWKg3PghxjtgCP4dgoxLW/M1723Hi7fn/EJyYtRGFfnjOf15JHmJy/amt+/wPsBXM35n8dHF7SU0DNhByoE7pLjLW7TYpijaoHTc8KSWAtT/ogITICXgqySR6On6Qq3eP+U9f4BEa4QDjzhfMF7eZCkN91mlxu2qym8nzUn1H29iT6bciop+AQ9xENdjlkn+y76AudyrIOUgx7JZGGct0o76HRlHUDN3bjduLUXjzh7jYsJmLR0JImQWRxLn/DRPAu6cbTI849gcGpj2osyyRx8Pd+eCYcJo9BKhx5KtdKrbqvaEXfhm5guTvqk3Jd0VG9nfjV0OqtL8lqWz2n94/dRSiiy2nT50YLy6fko1isCmislZYFGfuIatT4asfWaF7WBxO2l7JVEa9Ya8r8vLQlKN/rpOK9q78w2Ff5y6obwJX74mPiFakiyIU4k+B2QEJNAJV/f+v4UIgrZ7u6P/+iDiDzyUPWNk4k8Y2BhiuQGkmv+HhWERArXLcfzKHq2FjeIr+qRalQVlidqyQSXaCQNgSybaltY2zA0viTPbSxFkwgBlF67pGTByA+J6dL2UWvbFmRSK9VVce24h+jKKWeZWtZB9gka0j0aBdnIjIGFz83QBX9lOTK81PFgsvz6Umd34irv0djid409ggZ5QWp7bhFBSeK3hxCe1U4hSBSR9wpY91XIOc2exyFZQv5C1X/lbztZzt2nYeWiJ/gUfAbYlvoCIIvlMdgHHNKsBw4MXdPRlKe3+XqOhEaG/d6UK/OFG4epBx9a/ubeotcUJXL4pcfYZDuQRo1Z5htF7S/KAdZkVMjqATJC+V4gAT4JudQ9orY1686gHNE3aIV0wknbF8m0FE8ep7/6cur2xLVVuyZakiJilYNPLnxzrnR90WRjD2N5gwp3wmt07IRZx5QRn0qhFAvK48XYA75DrdVEB5B9KRg9OaCt3YZM6Z4kZbzJTDRu0I4zTLkdQYj74iv16PCL/yXP2SeUnNCTxLx4l+Y6hO12X9+hCA8E/AnCJmU4roe54L6YVef6X4bGeNECUWvanoBQ35RR671slbdMJ5Mr6CPEs4ciJIXPBRE7Y1jC3x0QYBk4yEF4nX8hO7a0BtofKL3YQ9EPkDBmbUvdfA886O7nqzEJ8FRbG/j2PZgnrViA2il9rxgrorA30fD8dYuxOZugjEqFKGgQ2KUw3CRUg2dEPPvn0agPgJjVaRD3Q2TectNjGe/VHY9SsxNJSJXGGC5eRyBFlLcnxcves2UL6w7V4mtTt4EjDJCjIeEa03OD2JWD8AXQgvesDR5YiCmy5I3PZlnxfO/7/IhY4NeAQ/LwYAoL0XKN7hxZpawPVh6/Cz5K3nTBHTV21zIT6HJK6x2T6Y/3F49dkvTJ1Y5ykw6HJeGsu/FUMpExm3iiMqmGLNrI6X6V90fL7ZnHx1z2AizSVzZjnAY0Kwk8ec8DSxU8ActF92DDzmsD8NonKFnJKZfa9qNu4o8zb/g65h2RcMcnpc3HXN334trAqhp562OntKksy3UJBsTbeCKRwzg4hQATwyVwIj9983SQAP4Wdrp0o9v/Nvsq79Vo/ezgcxNBOMimawU2pX86YFcpyjRXBl/wxE+n48X5RKNtCQtw4qBn5JmmWe6kZOFuryBwBGheko+e0KTadCpbRrJOlqcMVanY5CkHhV7iHZCxLwZ/9ixeuVlroPNnE7/edopuh7e9UdzvoWtg3gsf8zcYdeeJ4zyW70bU/UFMm+snK/MhKrzK6yItDSvTcRTl6+kwsff/wyQ59aD0AuRXKsUFEdcErcm2Ck0ukCYXvzgI+W+tMqF9PzpYFKQBttXHU3IVYBDs30GytE32NDYE8EutMhsd4Ieo2kRT1gn38m5qFOYXX6/XVAPUYNN4vc4qthP09AxzUwPYI6vxg1LmpnnnC9WQgNpbkq0mCzGN03FL5nasZ4T8b/X9Qa0ubvZDuiImDQUeSe7EhGGkc8+odYdJiZ9TNYxPm/rAnCnBcrOlAx5ioxkkvdaQFDOhSP5XjKlwX8FryvtZCPL7NYuzSUhWhzmLo65gs1gSK2R93YHJT/2D7WKzQv8X8T339iHGlVNEQqsZX+nZ8h2nmdQzImCDMWblkegM/VB/y0mrtRJScdtGD0Zoe49khjlqETFDWeX7zgADoSKQTYzxl2tb2jC92TehJPFd9ej42KPGydaH7rzsQfspNwDHwYAMj6N88JLMiJ8XYjEet/v7pzP93/Ijnc5X5oEiNZwx9iNqqw0IwDKP4f8Fk4qvOY8G1ybfgJl3V1G4fYW6PGB/xMXnbUXjFrQnr/mfFRR0Z3wFhkMNgvTEElSKOT4MpLi/xy1k1mDsvfIEYRnU7RbSh//noOP5aykToYAQ==.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1793849688,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 6223,
+      "prompt_tokens": 22610,
+      "total_tokens": 28833,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 4847,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0053725,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0053725,
+        "upstream_inference_prompt_cost": 0.002261,
+        "upstream_inference_completions_cost": 0.0031115
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

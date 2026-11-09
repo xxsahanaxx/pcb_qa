@@ -1,0 +1,244 @@
+{
+  "id": "fan_controller/GndShortRandom_Wire2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/GndShortRandom_Wire2/spice.cir",
+    "chars": 52241,
+    "sha256": "b4d3b703ff43cb646aa2ab01fd7b4487e2face32041f40b1f712dc416461d1b6"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.1\", \"U2.4\", \"U3.1\", \"U3.4\"],\n      \"nets\": [\"RST\"],\n      \"observed\": \"Both microcontrollers' active-low RESET pins and GND pins are on the same RST net. That net also includes U1.GND and the ISP connector's GND pin.\",\n      \"expected\": \"The ATtiny reset pins must not be tied directly to ground; they need to be released high for the microcontrollers to execute the fan-control firmware.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"RST\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\")\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"Both ATtiny devices are held in reset, so they cannot run the fan-control logic.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist places both ATtiny RESET pins directly on the same net as their GND pins. This holds the controllers in reset and prevents the board from performing its intended fan-control function.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "U2",
+            "U3"
+          ],
+          "pins": [
+            "U2.1",
+            "U2.4",
+            "U3.1",
+            "U3.4"
+          ],
+          "nets": [
+            "RST"
+          ],
+          "observed": "Both microcontrollers' active-low RESET pins and GND pins are on the same RST net. That net also includes U1.GND and the ISP connector's GND pin.",
+          "expected": "The ATtiny reset pins must not be tied directly to ground; they need to be released high for the microcontrollers to execute the fan-control firmware.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"10\") (name \"RST\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"1\") (pinfunction \"~{RESET}/PB5\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"4\") (pinfunction \"GND\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U3\") (pin \"1\") (pinfunction \"~{RESET}/PB5\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U3\") (pin \"4\") (pinfunction \"GND\")"
+            },
+            {
+              "source": "spec",
+              "quote": "an ATtiny-driven fan controller"
+            }
+          ],
+          "impact": "Both ATtiny devices are held in reset, so they cannot run the fan-control logic.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "The netlist places both ATtiny RESET pins directly on the same net as their GND pins. This holds the controllers in reset and prevents the board from performing its intended fan-control function."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Investigating MCU design anomalies**\n\nI need to identify some oddities in the design regarding the dual MCUs using the same pins in parallel. There's a fan controller board intended for an ATtiny. The netlist shows both U2 ATtiny45 and U3 ATtiny13 sharing power and signals, which seems problematic since they can't be installed together. Is this intentional? The specification mentions the ATtiny-driven fan controller but lacks detailed architecture. I'm evaluating if the design supports either DIP or SOIC layouts while addressing possible component duplication.**Analyzing design options and connectivity**\n\nIt seems like the board design potentially accommodates both MCUs in parallel without any selectable jumpers, which could lead to contention if both are populated. Is this intentional? The netlist shows both components as installed, suggesting they are compatible footprint options. The design might favor the ATtiny45 DIP version initially and then switch to the ATtiny13 SOIC version. Additionally, the naming of the reset net as RST, which also connects to GND, is puzzling. I need to examine the rest of the connectivity for clarity.**Examining fan and I2C pin connections**\n\nFor the J2 FAN pins, pin 2 connects VCC_OUT via a PMOS, pin 3 relates to the tach through R4 to the MCU with a pullup R6 to VCC. Pin 4 handles PWM through R5 to the PWM output, and pin 1 is tied to ground, which seems fine. Now, looking at J1 for I2C, pin 1 may share external I2C power with J6, while J1 pins 2 and 3 are for SDA and SCK respectively. Pins 4 and 5 appear to be ground, and ISP reset shares the ground net too."
+  },
+  "usage": {
+    "prompt_tokens": 15825,
+    "completion_tokens": 2016,
+    "reasoning_tokens": 1552,
+    "cached_tokens": 0,
+    "total_tokens": 17841,
+    "cost_usd": 0.00298605,
+    "cost_details": {
+      "upstream_inference_cost": 0.00298605,
+      "upstream_inference_prompt_cost": 0.00197805,
+      "upstream_inference_completions_cost": 0.001008
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:30:32.202592+00:00",
+    "ended_at": "2026-11-05T03:30:56.719058+00:00",
+    "latency_s": 24.516
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-05T03:30:32.346Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 6386,
+    "moderation_latency": null,
+    "generation_time": 24429,
+    "tokens_prompt": 13312,
+    "tokens_completion": 1304,
+    "native_tokens_prompt": 15825,
+    "native_tokens_completion": 2016,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1552,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.00298605,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849432-tzVML1hIo5NiFNCTn1Wg",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849432-RmZjljOgabJWTViAc93Y",
+    "upstream_id": "resp_01947dcf707c1824016aebf85a7b3c87d1a573e36967736b37",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_01947dcf707c1824016aebf85a7b3c87d1a573e36967736b37",
+        "is_byok": false,
+        "latency": 2577,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.00298605,
+    "cache_discount": -0.00039555,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849432-RmZjljOgabJWTViAc93Y",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.1\", \"U2.4\", \"U3.1\", \"U3.4\"],\n      \"nets\": [\"RST\"],\n      \"observed\": \"Both microcontrollers' active-low RESET pins and GND pins are on the same RST net. That net also includes U1.GND and the ISP connector's GND pin.\",\n      \"expected\": \"The ATtiny reset pins must not be tied directly to ground; they need to be released high for the microcontrollers to execute the fan-control firmware.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"RST\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"1\\\") (pinfunction \\\"~{RESET}/PB5\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"U3\\\") (pin \\\"4\\\") (pinfunction \\\"GND\\\")\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"Both ATtiny devices are held in reset, so they cannot run the fan-control logic.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist places both ATtiny RESET pins directly on the same net as their GND pins. This holds the controllers in reset and prevents the board from performing its intended fan-control function.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Investigating MCU design anomalies**\n\nI need to identify some oddities in the design regarding the dual MCUs using the same pins in parallel. There's a fan controller board intended for an ATtiny. The netlist shows both U2 ATtiny45 and U3 ATtiny13 sharing power and signals, which seems problematic since they can't be installed together. Is this intentional? The specification mentions the ATtiny-driven fan controller but lacks detailed architecture. I'm evaluating if the design supports either DIP or SOIC layouts while addressing possible component duplication.**Analyzing design options and connectivity**\n\nIt seems like the board design potentially accommodates both MCUs in parallel without any selectable jumpers, which could lead to contention if both are populated. Is this intentional? The netlist shows both components as installed, suggesting they are compatible footprint options. The design might favor the ATtiny45 DIP version initially and then switch to the ATtiny13 SOIC version. Additionally, the naming of the reset net as RST, which also connects to GND, is puzzling. I need to examine the rest of the connectivity for clarity.**Examining fan and I2C pin connections**\n\nFor the J2 FAN pins, pin 2 connects VCC_OUT via a PMOS, pin 3 relates to the tach through R4 to the MCU with a pullup R6 to VCC. Pin 4 handles PWM through R5 to the PWM output, and pin 1 is tied to ground, which seems fine. Now, looking at J1 for I2C, pin 1 may share external I2C power with J6, while J1 pins 2 and 3 are for SDA and SCK respectively. Pins 4 and 5 appear to be ground, and ISP reset shares the ground net too.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Investigating MCU design anomalies**\n\nI need to identify some oddities in the design regarding the dual MCUs using the same pins in parallel. There's a fan controller board intended for an ATtiny. The netlist shows both U2 ATtiny45 and U3 ATtiny13 sharing power and signals, which seems problematic since they can't be installed together. Is this intentional? The specification mentions the ATtiny-driven fan controller but lacks detailed architecture. I'm evaluating if the design supports either DIP or SOIC layouts while addressing possible component duplication.**Analyzing design options and connectivity**\n\nIt seems like the board design potentially accommodates both MCUs in parallel without any selectable jumpers, which could lead to contention if both are populated. Is this intentional? The netlist shows both components as installed, suggesting they are compatible footprint options. The design might favor the ATtiny45 DIP version initially and then switch to the ATtiny13 SOIC version. Additionally, the naming of the reset net as RST, which also connects to GND, is puzzling. I need to examine the rest of the connectivity for clarity.**Examining fan and I2C pin connections**\n\nFor the J2 FAN pins, pin 2 connects VCC_OUT via a PMOS, pin 3 relates to the tach through R4 to the MCU with a pullup R6 to VCC. Pin 4 handles PWM through R5 to the PWM output, and pin 1 is tied to ground, which seems fine. Now, looking at J1 for I2C, pin 1 may share external I2C power with J6, while J1 pins 2 and 3 are for SDA and SCK respectively. Pins 4 and 5 appear to be ground, and ISP reset shares the ground net too.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hjm_sxuip62wLgnadaZRUHZB5qhMPeELK72-r8mg5F22F73gPKTCRTpLAePiR6mIPKcx5ALp0zNKUFbY-Rl-vN2V4HxN0qaggeCRPCD8eKmg3Qmi62HGVWRlmz4ROJ7Wt6D3OpYapM0LJC4Ftl10dQI2wAAefs3D4VITlVcMy8kjbE2l3jjBm3Bu1SEob3UW3UhNbdnGiXrb992TnOmgQEgKRZDWk0FtvnUAGY1-HLgY3Muqv4PCl3Sk622EXMl0RAXN-Y4n4XLfC4NX50Wtvh7hSQtnj-IDEVe_WNd4vG7uwiczgKXxLF8ZeTQv2VXxIQBkWnAsPe8gWRiwYAu5Of1XzIV3UNk5Ata6IdJfBMIQzAxK6jHXH2ZdlOKmQZcVTjKWGr4feZBgbYH90MM9z-NRm4g6zY4a73qViHHXZr6X1cI-_9Dgvqxuj4BPuzQZmIbd9oJFxNMjFQMSLe983OFF4pYb_ii6S7qQ9UPaGKoylHJZsPadzXh3KyDu8rww5IJp8j0Xbe2RaLO4CEfhCJ7MBtn84mXRUVsw0y2ETc36VmhdJR7ciKW2YJKlXYTi9OztskCewhNqnVKZ3by4pSwfSRAA7Uiaxtqq1IRDvEwU88Rgou0xSb1LqqSzI_SPmsoqjsoM5qHYpiCwYDXnpbGDvKElue5jYephDoMRcRZG2Px-7LnniMeBIvZ3m7p2CAdjF3z8P9-lOqb1oy1lptEISL1edsjT8zyyMH-SSB_x-MvYoVeFXvfF_yr8TgXnwQR0Nygd_vVtSaHYOolwyJwt0jUDpV1IprsxFvgYuVRT9Ukm4uy_b0wrWMahGAm4rZP8TO3KHwST5eUCukdjOx8iAMtrfJOyrLlAxRNdnIYgfOjpTIHiU6q5WXfqlYhJz-V5Q8L_xRlxIYElWzliWRlrB76BEk4VoACizI6qPi2BqZZjMBMXrJAor89wflHbk8n_OWBT7xjzIvQFvGir_eFV8_93acAHlulMBFevj_2A1i_j611ymxC4Pc7UzmSRs4yNR7tZ55M5xk3w6oJ9l3DU5Ee-ffMGlcqK3sVJF44zfoVA6By1ER0j4FwkGsfpfO4s1d35I1YCaRDB6qFismbNFVjfmXIaL8Sfo3LHXkRrTZDocOjBuFr90TDFTHpllzdYhMZ8u4EqITdjJZ_3y0PpGggM9Bn6UBpXcNCaaoWmDtMVzZoPVBZROkBsFhuKs4qIBxB6adtyyecns-Tk1ARmTv8vHsNR7kkScmRHHp8AbEzo-CQHhoem-iJ7D95l62xNJ1maNntNVzflgT4f_OAWb_uEKDkz5CrQOJpfIl90XgQesZLMO6uytekbwh1-MEAV8Do5Yz7U3p55wFd9esooPtz81k_wydZNRZ0piMK4Z7KjKFpE6BYNjZPScEw-vTv6PiSCGiOF_VhB7hRS2LaCjsF5f_RvDrfn5uIZvlwk20jeYJY6T7hh9CwOzWX39goV2YifQCdPhM-jruMK8PsDWv-0uj3_wixdQPYhZj77ZgH6vhaUcGeWoCcg792gs5j5L6mdFk8BrxVVcBSTvfoK44MkTe84lROzdth7K5hf2PVMIa6ZRnVcm1v0Y2AvApTQtkKl9ZXt6yh_-FWYO804TJI7gGqYUPyaVqXL50wkzD2UfjX1nv28-RVwlvJSsEfgG_lxPBfUYV890aPX7yqKksRfTEQKz2eONwFfdS8XUs4Tux4Q6eWhPlcHaFFCePNWlJ83FbtxB7nKlDXvBNeXbE_MXTEO1UhGNDId0ZtbypWQ6yiQxRcSq19oJPvCuBxNOlW0aJdMvDzK0gnRYnb6drjOYabFX0hY_NLhQi4SePEszOKOagzBAWubQoJaael0zV4dJgJV-QFq-zOzzj2iUQWMtlYzF5n0BDBYXoFYYIn296pouPRWnS78TyInY4c7eyc85XDK-EzPFIwennlqXaRTqfbg9nROfbo-LxSwooQKujW3ymNv2RHhs4oDh3J1y3VBtwyAR5XuGITrsWzud2XoPu-dClUQ5eHEfDygKL0O97hnv2R8YJHjTgux3vaQkYGc4L5kttOzFHOTWnX-hOuxfSIaxmvuxxFNX6-vyEzpqyVQIHfkkVLL1EHsJu-m-VOsoKbXVCUcJEBRzV2t1TBIhAPGD51C9xR8ztfxwVNgFHju2giisNQTHblyoA_l0jYEixq5S8Vio6NBK0uhvty2weJB0JDnENE2tKdIi22qBFBYA3amQ0N4HCp0lXJy5UxMQiyZ_6_guctR0T9Rv0mEYctbhIFCctJAn_lgJzy7dt11FPs1H1tk1vBttVmYg6ZREZeUVGXPI4MlLXo-MiQK9KVvHbT420SlwVHN9qLQSU_7uFWk3LAovnRM6TwwLtGXOssbG0-VV6W0YwheGVKFIoxNbhDtt2Gll4rzCV6Knzw7lKqGnFMEO1D2WpS-QsDNLFJNAeDSXY6FrWNviiWvo02lOy3olC-6peLy80ZU4mx4d0Zd2ALLVFz6nQfNkJVMOcyh76mlFDauV_LCkebzFnwUvYK2nmzbTHtt_24rTr3Kz-KYYIgtt9S2WNJCT22AeDfLaV33v83fyls9M2k1Qah9EMPkHnUZaTT9_ovPjDSvvQaBW42mCbEbaH17kOTkoXFvpV47iAzoptTqEaTZYrV-XBZrK4y58yc2smnyy5xLITYUY6YdnpTPn7w7KMsdX_7De7ddox4Q5geGkcmkd-DwbsCSeyyxtOTObKy-NJwOAJX7i1EPfB9vn-V19F1azz7uo5JrR12Zgg4BgXR5S4g8vVCe1hCgaq6tMPlyf_iDzD9Sus0E0k8p-352ezzJog64dwgV3BQkjpdIVc1VGsssl7fDzgY8ei7uikS8MT2GDWiTrbs8x6G2fIcwQU5WxK7yS1coGvbHxWp9AnbwPILkyD5zcDXb8Ai8UJP-ZRueOmuDHNZ5cUQX7TApLiEMZLKPBjhnt5Mm06emHLis00jesRSxfS6oRz-sTbIzZL_3Hl37XeJNB7pnUjsbdSeDFyeNgrdzB-Pgd2Jp9fpiYOlO9QP9EuoO9m0KPWXtyI5PTfplayjAh_3-wQobXOy6YPLAupiahwdKrMG84NScvVHKK_uyjhxYFopbNphfByjAXZyw7uloBcTFXrIivMEn0NYH51l3SvSWzRWlo5TkLO3V2PB3rAYsD7-pVZCYVx5j1hflBsh9vPaW6Oe3T7VDtUjW49xzIxEv3ptIs4hsKk3yvyBk--y-njitHCusv9-bnZG0HcaDGa_mJRQFYSuJk3DqwBM_1Agg2C4XOCHfoxWucN-RkOcIIVhOTz_bOyZB4_YbjZlgvXczRHjY6SzYBjQ1viNHSYgxh-qakvdPhsxrVj-IjcnfjnhmUKeaptEQxBnM8Pfr2QZDWhuwN6-Z9gwUwODlnI-iaoIIQ6jBOemVWOkvhboOOw4ueEnhjk7vu3BDCccn2wN6FPJtwM4encP6ha5Ws9EZsuMpbGq2zaZ1p4i7dS923c0I1XrU5boCefo4PGC3ismf5ucx8R3inFMMcoJAfdVR1_btHrEl8rqoC0BxRxFykYCaojZZHh-z6TB-9hDjUhHbGN1WcPlSCcvOXwegswFkpZf5DZ2yX1x2PEyXWeJJr1ldJ88--yqXGhSwsI1i8hvWw5vNo4MxPyBs1FCjxb0_p6n8TWTMZVVmTLYhubtFaM9Vbfnq1qTsYmzzWNI0kbZJslstNETayqPN89mmFSWbw_Q3CIuu32uDQSD7ufdY6EbNLlms73gG-fUCU_rq6A_h-7RPT9IxV8HN5xFvJTRLF_syRIRfAhMbEDn4PGidOlUAEdTElte4HxNeZalLbkeSiIDLnecw_WixAxT473lfbNY4xcmV1fhxGjgSBRhPBikux1YgDK2TPWHhcpMII6r-kbFzntukP9eDicRcn-wvzwjeNYOwENc9xHqud7CdKuCInekxcHHZJjw91pc765sv6TQoT0WFayDRspZ2hI00VMAe6NK0JTHjSHyYw3v57EF3p86UeCOfq8OrfMW5BSYJg9Kt97FamAyYTXPC9U6ai6tLSWi4HWW5pvg9It_yMGTGw1mWRMuQupuAJOyhSLAnnFRGSwivpNvpSoLFvqDqEQWuc17fXyRzhsueT9Pc8VwnFXUPyp3jVl-jSFVthlMMnZHo0RVJKQstxeNHurUz6l9EkNxpL_gpNd1q9zIaBIQDnBnW8vgJ8JGtU34rSKND2HR19YrD8SZHcwhMF2BnEqtKGzzaTCVP5kOxrzh77VJ4qAo2Y8pGTa8RevY7d-9UCG_TJrJ__luW4wt7X35Uq1JCHu7X_qRQhj4EMHtgoCF3dRHRd5vBIZ_n6GsXW8sprItzj0Kd56aEN2VfUk3LAnsX94K7sndaRgRBEFNNttqaH0nkZl6KbdE_noupWseF1AZhmVOGp1xMNQRCyGFlycA_DC-E2RvOXQma-xlBoU2kPyzagElGeHTfbFi-o33YxmjV3l0ab_V8IZ68H6-RpC7VSCiZHoafsGxoTueVAWqPHRvmRlKn0D8OTjGA0oG6UzyMj7wOUlYoNxVsPUr--Kno1uplOmSNMOQFO2u4NzLBRtgglgRyXz1LHzeYYABh3XeThWhnb-2AYm7b9QqK59905FgpIb-SecsXXHg_w6RL__NXj0fe4IXAFlZseh_C52YM8Hw278dvKheLC-c-QPSfw3BGf5OGQGqSD-jFr3B3fnuS026HxKsdpbOKX53g0vj5qTa-rFJ1iPaUptUv_DbhiK1gU2NBHADfzgkmbg2YMesSTxIJIMfGp4zDq3-VdrQdiW2hH3atepSr_awZTYNW56ie_yBY-qraA2sKzX3ihVIfMIIgiF8tjGyzIf5x0pmO5dSxewW-RDzZd1Y6uKXxZ8LMv6IrZV5zDZhtcNjchpcGCtFaA0YPef6ZS92SUPTFn6emlVwOuihoI_zvSLyphp2sSlreDLds-t8uM0S4BnSlzdI7PifgQ7Zi7r8axkjrawKki5IQw-RsG-Ms3W3Shv98-Vpis8zy_Y4fvjgC0GkYuNv40VMK_SlNuR1FiAjTMo6lJU_PKVCmiuDUb_iBjMp5yJJZsvqyxNrffTfwmPWnpHY-l9iFUFFRKrtw9Anl56hniPGLauXaK8E3Y9X-KG9y3YFC51vq-cBrFrHVvOoCn4CGvncBcs-0H9pkeqCRMsqK_8wzeL9O2HsWTyHNKRJSqXNIbglWZrRRRsGFQDCVp-NPNNXBI5lh4lx3Ptr2iHhjIK8VIqNcgCt2fRdIiNpSzRRkO7S_BUVBBDBkXU2DqnKZLkSBJZr53fblUPVkJqPePQVbuUV0aJX0chttZ6DH3oI9knaHRslBrH2GorDPK0Xd1G_38P9Vnrkgf553-K985YT8JAHp55xQGzlhtbqGLx_mM1W_t96_GZwAAxbgT104FmJqtlcvLcWIonfnq-Rifydsk5ymc_b8JNGQG3ZIyfgfFBLnplDhEhJSZmkL-rTpwRZ9PH0RlzW2C-arsBwCWJJlzEh-zDdqnGnuy25DuW3nYgSjWIxJ4HB-Dy10KNbhC1eTlGXMGnuUcU5joBrNDcfAjORVoXCiY4PllEvceEJUZBqPvv4MopcfmkH-PpUsWYP3VjKHyHgGKP9WU94coZYJLMd4DneRFWImvi2sV26F8sg_oDbCvJtoB9BTaULw46FytA9y28GSwHKQh_KRc3HRTGTC-cd3LRWfsoNt_49ljUavHvTDjyEM5KYKud5Jf7Vy6w8VXZ-Y9ttULM9v3aueabF5Q4nNqojXgm2J4Thwp2DBO0afcdMzA9tZ5H9AdRNryDyqiRuFxnCLGgPHWUK2a6I3Ak1FUWrsULxAqq7k74Mkpzp6l0ScjPzTbuuWwcNACpWWhWj393_tYOTgTIfnbLLOK2xGgOTsIQi3eSAWagQFOEStHHLbf0QOCyApPARFSHB4qKEYIEj8dvOJsHclNrWarB1hHMo6vSVFp-zy_RgC507XKkR5r_55JQYeu19Twfo_rl6dqRWUBe-5J4lyS9r5FSl_l5m3DRQ-x1gyTPW9VhfMbWQDEVnL4Oe-_V3w61R1iNIEyDlsp1qc5tC8bEyAqPRHYONRziIbv3XdtOlaVB-2EeWcntthu5TU0Omar9ZClDgxUWUhH5w8q13f7y9MYh9uATwQBFx0ossW7dn58IQ-7jVKEOCx6DkxYxxvmtHamvMRpuVKHrmnSxWBklTVvnLzup_KrSaWnV04TBSQ6iHrkXJOqG61m7IvqxwNyqJxDthu3UQMFgpCH5t7TdVBVLkFVUrH1RDdNT_JOQH9pUY37BgIIOtN2Ft_eQueaRx_wQ-7rfHbIpP2ee8ZZn2pxawcIlVr5nHfJb6hYkFb1vHQd4bvRVh34sYd950HPp_Di9KKlQobGR8m7_I0eXJe8JItq99pwcz6BMbviOBiIWiYQFqAsznwQdMuWNCbuJ8saGoGl5srjAUW5iEjAf8bDhPfop5Ka7XDQ6CRpZ7_iPc9JUX03p-11Ab6MUIRj-wCVDKjVxuQPMBCwy0rIM5H0PFViFpZ6s8JfJ2t1jIHpdKVOMR5wkb8qfJS797FMeS-e50GgeggrWy8zbrItM2LfwLkY59FLZHoQ7ME213kXw--b0hbldHUhlCNImlFx3g8NF8OK5CRWrldEJwhYEbUyGq0WXT4ppYWDSp0sd4u47SvtKvzae8cNezBY7It06xEiB7Txv0JUPvnWYfWWrNL5m6lLOgQy_794ZbSMvFPKAa_wpC2IoM1vR4m9lmqiDnb2aL3K6Jpl-EJfQbgiU4XlmfUkkGUmOQXwx3WArPWgqc9ny4POj41InL9iKAVuKCDCHnYYVSx2ntOMTqqXVYnPcLH0RUl7_H_tH342Y8-Gwus7sUF-fPYdUA_P_f-4JH3W-4j8nvqCHOknQg572MAVD7ysii1bqhzPjhNkpMp7K5R8d2tY4ILv0VmPDvA6bEzdcWnCaLZtfG5laPp4F7HeoyBZ3uUSypd0txzW6en1pToPSa1M0aAAJvFTIaA4IN4h6XsLvKLyNrysR79oCR9ftiRxcE5N1-dc52PIN3QGzFuJIda8UdGEld4MgYFhj8rHxPwhV-xZc7__NoknKhxbpVRB2vgK6_u3AlvTDhcMUVZBDUHNF-LA-RpqN70A8bwSPf24hEJDxaRlkFfc4BL4Fv8WaOk65wv829H5tU9Tc5-uRUm2mMeW3w0a5KPR6MSj0OPZBSqUZ_0Xp2gYIgBX4-kz-SFch5AS18JR0hA4_rtzSaiPiYPVcPOrPCycW8D0ECOY4rvT1GQecS39RI0Z8t4kwTrVT9h-ozhWVtoc2Omq7saUGbEqvDpG1Ros9OOouzQV-LHtLFFlQvMj8iAvQ4UwylSwT9JWU5ncNyu9DzzAheTtJO2S2yP1NItl-9BKMECHE8J5RMgSImF1affqPiwV-oVU03DthGfj0ZBTQ6jQpfDg3YB5vcR5_ejtvIy3e_q-BsDHz-xA4z-S02NVMLoBqw3UPk8DQNgfiQHOp4LJZ1S9Mu4zoKAe4x4wo9VD_Y8V9u5JWLdMHgxutMrsV_WZdHeGjzD1_KXoOaQle_SfON3ms_lBPfoZWwYi_KbfBtBChGE_kHluMEVJXBcwm7WRstncZ7lPXyE47g3FXlamz2oR4PHwY8-xCT5TsXv2qSp6HOZ3HhH-ILv1mtWKJrG-x3gq0tqGKPV_GWTOEwV9qthdfezZGMMLItpP0LjoSRN1888Nd_kS7cXuDSPrCnS99fAirXk2uLGlKkN22MbALTyFXY8RM9qYLsnHBmNf1fJqY2eMBba6d5L69xVdVuuwVgAemRGnz8Hyy9RjaR2Oj7gMUCC8Teyd7J0mbUCDhcs8c.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01947dcf707c1824016aebf85b3c3487d18731e8d1b7f9bc09",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hnPlB1izNoUQzeEzx_GbwCn_pb-g-BliUNWBwbR-5RqB28i50arhnOKaPd3bDnfolWN9j8q9X1Yy7MhmZzOb9Vd4BkaQ0KAE-CwL4VYYOTu2FTO2IvNaTlgyOlrnKGhSur1_VpXf4D8bFcPTFSQ8SQjiVAeA5ItaHqM6KLegTmS9pSICZt513_9JrUyZME7OHY79NSL7Te0-HpfFxvlyxqAaanWBpLrm_N1JAxC6ARoaCrK_u-ONdtWBzoWNUoY3lDIKMOtHcj1JSFIV_iYsbA2-MRiSoJ7659C6Nq0y4CMxFiGCljc8VVEie2b5PhA4ja9x8v3ITnLXnDfpfYJS1c52njfmYqCYY8TCkj7G6slhLkTZY8MgH-vWQox68k41Vo-JqUOv_JrW_5jCBmeh9726xzfUefawrfml_EdIKSGJw_2GnM_fyagVUGVsMXcOKKA98q4rwz92LBFHpKHKjfAcAangxs0NT2fm4SK_cfZrICj_E5b25oQP4f5iaqGAN3pzyuqfNOJvWaTpfuCyco8Fa6yIud85UzXfSELSYZHD5R7SfPDaj2ZDV3iEUj20x29FAFYo8OHRs_9gdX-yxoDRqlqLaYZ90Ptr0j-eMh05OmSip909BSaT4vuPK-BGBLDLt529PaXmREPvtSF3_6GtgMsH_p23uWRzxgJQom0bgmjQv7WdOyUlAAnkjGNZxoQfZzI8kXKLlm8Z79x6i-V5ZEqDXoTUZ6FQjEhxf05-lOK0hb5wVvsapkGTBgr5IQgZz66GR0SAp4fSFL4_zOKOFHAB93s5i43-hsQp8OJlsTg_e1SAAGfzgbF2bpv1UE0lhYdVwXO_bWrVTdR8FVu5sgRBJHTR-6KjVRxGUPgEBjwB4oGP_2qQw1BAyw9lDxMRSPx1HC6-S5DWquZsupK3lik-5q4lHUjPiyCcCDc2qQ3WdbeFt2opuGF14Gf1vQvrcHoaeYx8JdWpoN-PTrvMz2QCrVj2n-dUez0ekkwC1HO8jCu2d0GkqtbN833VyLiAsSRGImkHrFEQtkMflnTOM5UUbCRMkUbu44Fd75rt46VIjOHFDjwvBrxDhwB71G8EwL3hg5-eTHUvBUKEnmkxeQdPvhgQwzq2sJGhaVftoMtZB2rc0Fzm_mhtuD-Si9zHWurRa3nr_BbQRZtRUyqBb84cjZ7BB_jOOMCCLKOU88cBl1JIvC0NjrCAX-sWgfIRCZf8SlaxVn7aucdKcZk5pnKgKKfT8dX8FsEz2Nv8jZzId6i96R-XHEhr9zzRx7iCc8MjaXQwD1ep0BiOv_NnWkCaGv-3iaowrvE8w7mbCGaQnAq7tAOUb0rvTGImbKLZfNa2CCy_tXqntiGj8f19L2egdXMfsC-wjl1ODwOQlaBTLYFWr1F6Rnw945Q9mv1S2mimmAjsltp5Gk40350lWKYggptQzy9Yxrpp7srPg1whDrnxGydJSv7MvopLEEYt1x1lz68y-nxJncoW3u6YdKJkV8NwY2egr8pJRqTCDucPI9bBhkwnhGUl-VfgE9kPGJ09kB7YkiNpf4s49xKMzCV257mciE3IX5kWYQBmF1M24jmxyQ4ax4oaaAr_jSVm9lHq1ckhdp7qQi8emF8WyHOk7-8PvmfhuiuXk2H8uYQ_ndJAVmMHA8afQuFLnT-4iuZN0FIv2RMH_Yw9xtMaYwN8Iyq65arvEAqhEpZirlEIHKO4TbiWBggI0pTnSHRvm8L-1ZdPXXphmIY6NV0EQTjyfcMOicJxFLt9XW59NLfaRYrRYbsaMRRxx-BTNQU7MzekM3fMhJmyU17FD8CtWzivj0oxnpCN490vOJSXITjY0kLcmPYCmRACNfB_mkM6YRiKaaXSHNzNulwVPehsQQ8RAigHk-ORZ3IpFId_uUO_iEj_tcQuWok4_PE6cZb96ip9EESabY0gYaatotFmvERYURfSdHj7kpyOUdrhFg9TeGH0buTVaK2tUxgDYsaCHopEfzlJu1NiUmryNeEjSZsWWnZVSFhMHqc7EwrR1PGXjQyR9SIXiVX5enS7LxcaxvjqKnXx7OjNv5A5R9tH2erDSOxNg1O04mMKpteIXk_nMcRMpwkmDM0aNhjSWoVB4lk9Pu0AZCkkqRZ_o0hvNeZfnUrXVeKk4E3YFU1yM1eRB9Fl43veGo69J7QWgH33MCD_LS9AlU4DTmI2HizbUMXR_t5YB5dPgAxgupLKvpG0fQvoOb5QUyPsQcC8V5vnWk9FohX_rMm3J1FxVz_ve1by4HjyPJmnnkwBlbM91b3gOho7sC_uyheB2V3fuRvrxCNrGy1CTradMRE9ZxyRuI6tgq_b7jhfdO9TNaySAEs5ZBtKmq8zpiK87RKtgI8sSfr_WShZCQqrSXhwMWZd9jr2KhVcCYW8FKjSc4jiBgICLu8QVejM5nKp3tkO9MVDMHB0m2M4W2Nk68sR0fEcqoTOQOZYIHCa3HwnISpS7Jw1oOvzz_pDsjXZAgLNZLo107xKQDiyytTW2xpw1BNS8Dx8B4rojfH2D_Lw_7cD7kfFK6EbQzyYsS6h4yw1UGL6UdW871c-wZj3c1iV-d_MEzGe4_gBABkuFIXmSb0C5YASjnV1Js12y888VMsqfCUv1_jQWSTTUncfRzm1phTU9AOYtaAPShleJhlfRYvZ7UzjNqdEIfQE67QgWUW8SlaIbWX20hxs3df2t0NkKoz0sKnYYj7Sx_Z8F_24XMC0L_zYSl9oT0SfE50_R8dFwNFYdDfAmYYqhu6F0_FaWwIzOub1XT94GdtPD8GuTkwFYDSNwjaIccrwkoETTm1gIjTJQlorYKEyMZCnSi46Ufw07u9lA7R0C7fNBNQuxQWVKbTLJ1pEL0nLn-ccWanxXfZwn6jtaBQrcA97ojCX0R_B43X_P8fa__zdy8bF0TnFVRtjeetDAWMUPtNkLkMCaC2up5YfLF_o1ABmGjpejz49jxc_b4YHqgLj-WIXpzRq8g1vu8etKc7zFaKT4_uVWjXzWq6ulFwQr0iS5B-Sgw-ouqdoONtNZ26wcUHTA2p6srPDgRplWujnhzuzdTjDeKKuid_dmViQybgno3_1KjPOGA7-aHuYu_ZGxh4Pw4Czf2EXsXX4syWTYwY6LXCFJ8tIxRjsY395oQOWXLVmgnVvxvnEYCOgh_w4PKlOmnt6biLVnyYM9EyWfbjo3USn5bB4cdWEIilYLt0uq3-WFKaupeZxVX7C6Z4WvdcfkYrWI3CVLKoQGWkze2qlV_0905A3mFHnhSA5Kjzh4G70_xspeCGRnHW9UiK-HIRRZyk7gLz9E6xVu7IGll1yZjXrLjtJfFiArFufWYdnVUr5EagWQNOBP-lqmX7cI535CXOfy9sZLNiXBditS-BQLJ5ckdoyVDDJVWzweAHxiox35frpa159BtpmQyAaVAFqFEkDDhXDPPfN-3UK1IwF8NuY8zhENULutNqSKKoaMtMvsPcfU1oem_XyiUK8i_rid5zakPVQqBpgheEp02W9L9gSQVFAvRfhlcIM36NeAewTEE9cf8u0X798IGcNxEHwZdBAeSX6tJjI-h_dUFf3Q7qQeG5CrRsG46pZ4trrBoaRT787_AN7GzLejnOl7-akeaQj0k6XnDcXRarWMCcU_AfI1R3bBYlo83EEceZ71cZpsRpTLbwR8qByhLT08mMSK0hUkR1IO0H5EqAUG1grYXrWqkTA9e14TojmqCNPKiEBqiyr2JrOwsXxyeZz94R6cPPR9jU1AlRbmBb8cWx2WBZdCLo4_kY9DaP_lG70qxhz1k3GCsJzFEfQqrbLcBrDi2PxrBxMIvN99IATEpxiZqEzqiJIblqbYDT3-G2coWOrRv7YYrgGlVuDycYjh-HtEgIOhnYgFvOet-3H42-PZkLE2mgGXilfUWxJVewp67lF5R9T9VxZpd0nVNycBB1_-cvJ2wuGoBTvy6RYo9z7PrCFsgtlRyjzyTDVI_wwDJqGN0ocm0w_KHxX1A4P4yQb3GsMFfLsMty371vkIJPR_Pv0ilG5yViPXy0Kv7SF2_PQPQVt6kRfg6xp0HhZguTR62ViPzOWaJBk8mCE-yK4mG-HfmoM6QHtUCKtbDPUc3qhjZ5G9pkEI-GAESQy4VUxhY7BZsogM1Gyw4qjF-W7pSDmodz87myziC1xd6wJL4bHyrZr6Xa4FO1JsZkpNCiQTSCmcttK9-iqqrDDttnTN67o1JZafN_5zI47UsHHlD5sFtSOzgyDw6Jjcua9xPCtR4FjOsY6cfPJ6ARSMvEc0d3uUkon3n90vU-kmsa2ItZP4C17gNZyE3RbXDDZbiFzfUyeEFBimyrsBRH2sm2XZh0aIpGR29j3O2qm-JN3-c5f6sFvEG2hjVrooVcGq7309NXhwTp-Pmpj_hVmj_XvNFEj8ykjdjkMO3Q811KTM2fG3yhCi772e0uJs9oVQ0IO9CRLMCgBAHELKhNpKsr3rULMdvSYYYnJCKT-EgZ9eH2UZ9G6CXdSUo0mwLHXmf8tlaGc_LT00rHA4VDqyT7Jt0UckZBfzDgPzSYAZlq3gniDOaz0Mv9h0XkiHTZ2y7_NuuXI6kC0rwo1sh6SgzZ1iyRKeUviE5KStD8nAXDeyyiuILFg6ELuJ26IT7k-ro7vzBPYHfzDFCLOhx2JaavbqRre6Cdipg1fRjQ6dkMBCSjpzTprA6gMVm5hVKXw_e4ToK93meF-rKk8HhuArbSjuK0qXlmgnkyMM3QqtWGWHJHs_JPu1a6_TVneB1cu_uw7S42yUuOBLIOzMCL452YAz0x9JD85VPA_qzcuTYYUXnwBRBKEZfV6KbQSPPUezGnn5XMRQ7l6buDfr-3wu_LlSNgzbTvPmyIXxjnnw6GkktjSd2xNi2ModuIby3P7zWK2yX3R_xr7u-3FoufKz2JjCTjiKOT0nVCrvtj3AGEYCa-lVLvtAUEIGUmpigZ9UrM3uUv9KgMWbERNknrczeFEI6WJTtSAIWtEHynl0zbdtc5Dekyj1QWjGlYlidtFk49O-yGCML_mUZFu30wO6pJFFnNyJnhuVmD8AR2VQB17I5D1M65nT4RYx1YhapCIWv4JBgKL4g2Ay9zZV8UhSgqsMHDrvcfBPwjY8MX0acNzjwYvmDN8b-ZlK_vsh8hPPUs-x7kQ8zsBgVZtb_MiaolYcHP2JsrqTw_pXHZa7rlFO5D64Mn5ThIja7w3PLNKKLdYopDzYEykw3L064E-uOAJse6T3SjwKIGJ7qavsTMj7y1Qe0asHBnvihfge-g9N4FuklQcd_YaoPLSQDbTW-OYn-nz3yng_ymbzItJ6wxMVTLUlKsyFRzyhVs7xK7a6la_ISn907na3f5p8ULYex7Vzt9gwMy8VG40B3jfq1htQAWpWJGDX6vdRnr_GCmKFzFel2JPWIyrSTTNLLPuFsrGyAattXrbvwK2lX7-sI2pPkuaJZT8nv3fqX7np79avsuJFKtlAHqYB7HG23LnpyveKwkHrm6YCnP-JIh17pnVfDxrfgpJ-b5oE43UCsYGNjGF9tVqRyUonb1OmkD5PjIY0e2oQUQIoBFdJ7OimchnvBqbNeZ9efyFOHfSDnASSkmTxDltFv-EIErmdkcN3MVMEwAIEScoYnsiSfHZAMyHzu9l6sLcjOuLzqCV8yX3e-TDIgfqfMekvEcIGIzh-gby5YRgZMAeOonikHzF-YfTG5OsrJtlvz8_K3p7GmzuCo0o35qZijB7Y-jME9fjGPu5DCJE70oRcSCSsOXqgAaDfFAWAexVcupY0fH8bG82oC5kwL4KrmLNgGunEPslDkEofQpuN669Hfz2_cMyr8_dz44qxlo3VsaX2-4vFmfXvqIOy9nYaT1GQEiOGgGMHj3B-XvuRgZzEPDfH1ODcuYos2MhtvNjLUykcSzPJSEDPywd37qKXpyNMHgzsOg4ApnbWWWBkFw3tQdxzIyqYmHcOEszeI1QJAhvlBBD4Oe-audQBye7fTX6OzuuHR6NvEK9WbwvTfAx9vuwcxCBkAt5i9u6mE2XZwlQgArEMRH063tOsQS80IHc9YiEAcllAZ7xO3FpZq-_TPWi6SStu14gEYp2tPKP8PoUsmAhZAs4l-xPFPzAo3tTe2oshIz1pzv0jPnBj7UKF1u0uVm-LpfnffMBNnd6LeXtq618nXMcCQSMbcpwKxt46RC3Bwr7twRv53qeZ2qP92u7WOWfTV-_OTHOIla3BDcBb_6qpxgnREKX3_OH3nAETyeLya0NJoBGXttvPfF7UCwJb7mCpYEPE5tNKyFR4gGjjfm3CaGlsQTzhy_YH89zkGlp5a-e_ea-jqx63msTPnJ6UO9gSJEeRlXkpGAjyG361LrsD2kgMBQBClXra6pJkumsDX5ejD3hWADW3es67Cr4xFJI7N2eGXjNwLU0W0Xoa-OBPUrz1rEYRigV_9lDFhfTwKhiH-ytBrb4sGPlEU3p2-oRCam4CBL5kEgvro4vzaQUwtW6VV1cq2DsXknlfwy2nf__QhR54YbKNGt0nBHWqvKs3Pen5wMtoenCpBYIYYPmgE2r70tvy78IgJlXfQFXdJrxjiXf-tomqaDktkNIiHhGrAvgoY1CP8R4Kor6Umt1nSGFppwjnu2L1tBRWdkDbx8MOvUC84Z8fCDhk8Z6umLj5R_yvJRznFry6GmYCr9QNgq0zmdLVeA_g2nvd4FKH5zU9nm6TI4GW5t_QLsQa5YwT9qCDEfdYi2QWCpKEjX_vAsfawQFIBuLuwEW65AvGeRs91s-iZ9FoRFnd1cGlKsJAgZO8CfqmJBx6pmMwItyzQt7XRFFS9N5ry7F6o8or2RquNkVBR1ICmJaQwY1qKm9HEKtJk4_9XGkAeRR2cj8v87RZKhJaRDg4lOLD1U7W4xGHlVYyPqx4f6oplsq_Xdv5x8KqKCZakNAG7KyjkH8C7e75bXXDSxrof0KE0IA2RymcSyP8J_p2bYPtOe18liK4uC6wvblW1iltwOd_nJ4NskJs0MELHLedA28qfL-CTM4g777Wq5G5kAlYVR54UUY-0H6Gw1wNoHFp_S-ALKMnmrztf1KoFL07opyRkjmXZTPwkH7NxmHXcy_pNrjGdGIgc_xW9_-dW4XN_wXmFX0qEx9WI0GCQ4fUrOuWV3Oeq4rWHj3Mb-Y6rkA9HxIq0wmn0k627wa8SXewCUvBqpZQ8dxeWx9A1G5ntaypt4oMCu0ugjoun8R3p8uYiMvHDKVlQEu4ACzQXGOHHGFdV6X4xqK9boDgag4mmULNWV8M1YKSaYEJXIjnKnKDqXTyXV_zNVVvbuw3xM_af4JwP5TrdggsHpEwOEIGwvTduCqz_dZJWI6elLbri1Ae-Qx2sJCRasXjvC6vBMpuDq6HpZVvIYGBiTcpReny_ViJEXwrWpOPIKljMuKg5Cys3JnQZMBpMihMUX8ogohE01su9OELXpkwPLoUvjjwHpmZqC6YEMQyP1jXS7RsJu0zjgwOmIs7BcNVbV-Ws3tbw-sHoHG1LsGQ50COLN0lzADY4K_nEsA9-rRzPA8w4bOPOFuFytQPl5O5Jd35MQJfzhkJNu3QOiNB8EIkOIzEe2bv7zVn2z3VpWO04jaxTJkZ6m5Zr3NLFnXrpd1NIyPb031gmDgEJqg2jA9avgSNS3l18P1KDfIxs6kkzMdqCsOrxxWGp_u7PvSAorhQg00tsPmTTNgbNQ2g3vfUS8md5HRtNNyokiA4Tpc7OcEcEEfcJRt78ZAYJ4cQkPwH-39ymwlQfC5Y9PQ7NKa4AgpKRYr4iop2UMgNM6hiW_p_g7wZr93K6w5pgLgJ-dvjtjpWKfWWxGExVmvs8YgkgoUEQ178sif8SZ6T_HsxxhBHU.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01947dcf707c1824016aebf863b2bc87d190a07185142ff607",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing circuit design**\n\nI\u2019m looking at the circuit involving RST, which is a capacitor between +5 and ground, alongside C1 between VCC and RST. Interestingly, RST is tied to ground despite its name. It seems to me the network labeling might have incorrectly linked ground as RST. \n\nThen, there\u2019s an anomaly with dual MCUs, U2 and U3, which share IO pins that can create output conflicts. Both are listed components, but the board is designed for a single purpose: an ATtiny-driven fan controller. I need to analyze the design files for clarity, but I won\u2019t jump to conclusions if I'm unsure.**Evaluating MCU design**\n\nI notice that both MCUs share the same pin mappings, which suggests one is an alternative footprint, yet both are included in the netlist. If both are assembled, it could lead to output contention, especially with PWM signal on pin 6.\n\nIt seems like this design might intentionally support MCU variants. However, I don\u2019t see any explicit evidence to confirm this. The ATtiny45 and ATtiny13 both appear to be wired in parallel, indicating potential development variants for the fan controller. I need to focus on real deviations, like the reset being tied to ground, which might prevent operation.**Analyzing reset circuit**\n\nI\u2019m considering whether the reset is tied to ground via a wire labeled RST, which seems to point to all ground pins being connected as well. This could mean that RST is a global ground label, leading to confusion.\n\nI want to output this as a single JSON format. The specs broadly identify it as an \"ATtiny-driven fan controller.\" Since the reset functionality is not standard practice here, I'll categorize it under \"short_to_ground\" regarding both U2 and U3 components. Overall, my confidence in this observation is quite high at 99%. I should focus on the most significant anomalies, like the dual MCUs.",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hulPyN19nRrrPOPEmzOHqIKGK2UG1G0Q9vfHuQ839GDf74KjWYxvfhYHZpj2hXjbx2oP_0qIecs8HpfcUO3iMB7flpgzLtR1K1ZWLMVBcbW668zGzTibXDZzuPcaOS5eA7Gv_W7sC0LZqYvGLSUzOfsH_ab5lVYq5jbopc1vTxEN6TcOLjxmN8_S1SbzL3WpqZQqxNgtx3Awihf2T93tqqnOfVKe3d-qiO1m5TEa-sEjJOwl9vT2fWshvcLDi8wSNoA3qIsIrT8avb-lidfsPTI8Y-eY5z6xMMS4EIZUkvZU_XomXUMzhin25JKL8SlQv_pITTpj4eY0S5rWXxdLM57V_ThQzKnNOHtsKT1UXHuw3N2AQf2b1jOqG7Y0g8hO6h_Xm60kASO2RkXzBqGPy7_gzaldq77jTm6EfGmamirRqNyNXkgnaSpy5IBUVLsQrvymuYaO6i5d6f1AIfrhl281eGpUvkaNyM8syXtLlmjzNffmEB-IhuoOc2ibYylMe0JnNurVVngW5EWphsMyputAahv3rPxTo5gUUdGctpwle8uX19dD-mec5LsbCQRKZ7lZCo3yDL8wuRUh7A0XIaR79y-pdcgoc4DT8Ombgm5YAo5IGFt8gdLxZMBNRs8VUdOsDbMfDkms5iQ3pGhb1OYtHsfteWtEbn3fJpfYRnYBZLi_E53eNh18tIqqCRRcLjxL5z-0csRxPTMCcUQftvUA0MiJ7w6Bf9kt0nplt9eIVZGNWRlyVH7Yyb6kIqx13fZJvtHgSB_Vb3yFrhRRprOuV9epTzLtiG51yTduCOWKEJKb2kVK1JzpEApXaJmkqv6LrGIiuVpWzYH_fSENnvhwO7c6tQzQEkxlVxq7vqLBiBy9Kk8p7p6ZflBxS5iOZANVYE7JrVSpdcb2NtWDeqeyVI87GGOosnw56dj5zwfYFM1xGoeoJrMshpEio3Ju0N1XKAoF6Jp_YmOwGtgqOl4EnFIhN6N1xibQ-tQqJKa4r6NCT5XUPAUBozRVwZtgyqb46dQNEs5JbxXWSt8OVUFzLsLmmDAtk9bTrvG95bc2_CDZw5iY5JHMQdr17LWYz6VPyC-_tM0xTUj8kC88mwBQrzTiMIQX0fJ-e0BUcJcr1NNITboF-6vM_fYT2wdLYDPeESIvHFCR2Y7XOFyffZoKgRjLH4MjOVDMwPWMGJk1u-6t6TV0ijJdXLsFdXmUjPaTuyL90MmHgxht0moPTAFCguIq2L8nmNTW2VkzkzmsUfkzmyxBxI3g4dX2zGkQGYMLJXsMWUK_OaUJVfWytYbUJ8vcUJ4fSPpzMykxsEkMlKnEEyDJ8A8I0nosGMNPaXFMIS8_SGLri9iv9GU73gT2fp40Vz8pZb_HLo8sH0VHlVqPMuLGAR5oh-wYODZ-kJkiFS649oaa8N_sMEey9dUrfX_fiuP5ITv0jBcuKrDE6xMhNoN0jY7bQ3wH8TZeScZdbTdJm4Rqs4i7AVLmOsCzjv61t9q4tsV6TvT3TeCXjE0EBj8SpBC6CRihrgBrvMzyNl-po92IxDitoSYgtUbL7ZRbrguKSm1Aje0DUOxR__AVmlGy49JNCnOr0dCBd8wKKG8N1ciFMR84kDj7lNEQR-S4WPlyAH5b5k1HZ7a0sENRx7TurQ0UFhvXKqIQLZP_97vMcdeufO7GTbqeaGMgn2WJDJuJIiRLgoS3zJ7pwoL6TZKwLeJbE4bhudZExNtPwezetGV3pydm-XieLQ9v1qZGSxfyByuvSbpnyBqy59spXJChnI_kzk3Z5nNjinKevnaLUEL1Sm4qs9vKG9eXnz6r8-37jSAFjQVagIxf5j1ewD4dtVx9D-IwZOqiVlzpViZZ2MEPfpryCUbPrQ8djZilKD37lMD8tQfFeIAmPHMoVBgnhyUhVXiVyk9GlZ2bAvTFC_XPuK7rya2mgVPbotU5xQ5BqUdnd72_7uVx9JnhEkAdnNCSaAoJQDNz81yqhwEp-2caMeKC_L76sMXl64Z638gN_fCznsUnE1G6MSh5s1UcDR1jo1UruBP5UMrjMKaaOzb-BUGPtmapZo898n6eYYKjiEJF_foG3pCMXclighDJ3ZIPct26E0tTqAkhWhYMunJKmKaUs6buxjAbvQF7i3LbfGhdXAMo3YTm9Ho06mrJvwAFLZLFx5A0fd61Pty8yGKZ-xPMM4P88BmYjeLv0RDXldIBQ-CbqsJg9115E0NI5D-wIobkr62BFqE7k57tpfkCewMAmN_qzZ2bNZceP3sqXg9or-Uc5EKkQgQx0rzjHanKXQ25wj7CCAsYeOiq6yRv68TAvft5vZ1FFhkq47OVWTj6h_pOtgYFOwkV0WTiP74LwpovJ47PMrBdAnIpqn_TyTCKaWh7vl-jRRuw8ZUDQBfmCFEtJqpIiCnGP8hvXmTqq_uEn3mPfGLe8BPguwmi9oTfGIrzBQa5gGQwNaWt0W0FODmdTHJIDubIADxszSsR6yyOsA3oCZ5zxJ3zLj15hKYA9TadnnAa2HE0-3BFZG6XYWWqsigTcLprnyVTqEzUZboLLk-gKvhBX8zamhzqoXYpVm7Ek7NP1FriyJdo0PMavtia-z6Y-sxuR05cQu8c3-Ns-jk4mZyFUwYtP2YnCtZQXivW6AOFUYU4Mh6eo_BnMgCRfR22XqGCioxzRgulJLo3rWFEIFaORMsvdNuGIA2sspAo07sYUvcNpwep6QUdDi7nMLXXTu-aBnicXZ_vi9HlPgSwPXAEgKFzFcXYdroeIYXNkhcCA52M4skJwB2cFvMoqXjTaz0lueh2vnS1HdviuHErAP7fRmf1h1bMArPSLf44MzmP0NxZRGIg0fcjQCSs4Oa4V2wD7U_2_b26ZvoTlQfNnwMXoWn7x5vdRe3Gd4KeMFGsUSYqaUQxLyK5zTJ7rkIwRoFsTQJMSp0zFaEmuq66Mm4Mxm5cfp0TKHIOlio5cnbv81X8SeDiAcCMi5UA7TPE3Fnb7VcLWSEJQ5ylOp6ncJGNPkMnbg9A84abDkp5pjYGGau0S1uUmqEZHi0guZhY01AgxazsHulLtVEFl_mBsdKXQv7xHIGOB9J_dxxNF80AFqUlQrCmxgWlP3IPGbAy3P3BzgZ3SJbqUQitZOtXjaCl6Ixci9xEKFYyXJWdB8MpFOsKXcCENT-z0P7Irxy3hcRFBHA-uyKveLwHr4aunvmHdwje4GwyqPUVUVLREBxrRr-7i9lTDgVRL4mEFHpUbLEkHFtnvSV4CWQ2xEyfC2GYMuZe16Fc-Ng45D_Lm5liUgWtA-sSIQzHEGxno59M8DQ2h_m0g4KG5N_3oPbsU9WOFMZc_CzC73JyqgjvW8AEbpRM0JP2dB-8qj4S1UqBaR5LRxKKWSZtlQgiC26MM3N7Nmi83pK4BP-bZAuex7kSDVz3yd-y2sR5HEoh8UsH435mdc11UZb8P8eIIsHwSeX5JU46qWqqWmIrJ613b3YqE9X4ZxwTPeeq3T75aMKWTbH_UFEaKXpesGnqR-_xrIL5GEF3D3n1ViPt4qTHCbd_6O19F4VbCBtVSvLM5j_B6iDMWG9I4lGR1w31H8QD-A-UdEh-42cMM8WcOjew6Zvz4qQfIV4iXyHXUpt0uvPejd0jRDX1DkDCrwC_ivKk9mysRCsiEm_hUjLYG0oMVMVnEd0OUuNFJ0qtD9NbHxPgkUmFrCnLxBo5qsKTP0iIsX4tqZeR8kFqL5T0NqdlO3DgT4uRA4Dkvscurla2KLzBiTGuwQPGXU3GYxDB0qYI_9XCh0SvCXiHI9an-roOEoQP6k33ZTHMxWyxBN1bDy7Eye5MauiiIcvTunX5jp5SrUjz1yrWJcy4eig6VhNYXpuJ1rdoXwz0DxAMDy30bnHtI8dKGZH1ajKp5eUQ_IQJvNo3YFb8gy14ZjcQCoYKUpNqNOQBQRqXo1KDN056TmN4Oz0bgPEsI06UCByAlp1CaEi6zMUxuDUDY7-G3RMGItgs-O1ZPHA7VqTSr07Hefc683wewjqv7XCvzsd3KojuvNkHyXfG1yVbNbn5M0L-RVPBhWapaC52D49Vl11-F7txgkUH15oJCiJCFLLaiW1ToZGKw49XEDMzS4KyvJRUzOjLoidSqf5-S6ehzm18DChHM5pSq8j8eeg9mdkK6Wols4AymqDVdJLcG13RNIxYjC1vvApxvjq_2gwfeZF3JF6SyF8Q6-CBNC0esJ7HFpPwhXA063Nt0XyAce4Ykav134D-YffzETqLl_bJp20BCpAo9zAF8eNMnxxw4FCokI8MMfm862xwFI_rjYPTjZ71wOoZCFINeG450Q9zhdR8bATjcGlnOSM0HyDArqlbTwxJ2FF4Qjs0lUaAz5oBFjx8h0wBY3hIR7e-qKYSxht5nCLAjEoy-_8x7DOEEOaOlQ55dhaL2yQZ-ZtaYo1ll29R4lqL0cNRjIxjC_aEJeVylZV9aDdFZUHx8leQVRj-6NqfU1pRFvzhjK40rcbYaRsVZS6GTYvJq3bJOAjAg0De2yalZkXmGfnzpUJjzFmVpqG37YE8LzRW-TK91DPggGh2Z48k-XXxqrGSxET1V3aDLkfAP86n9oDaRdZBRamLSzYFYTSdAQDzGYdz2r9P420HGz-Cjti37eFnYqKbvHqs1edR4CFkITwfm6pvKS5IidJofcuU9IxBN7Z-9aQi1SBg410ou_rnB___mqpo-PAH0bNdEbwCYZAVWhnuM5piFYhLERs_iiccvVkMsJJE2VtsfGH7D1FPjbMdGOFPkhx450f9CWNTAYGD6q8LDcZjqNo-MCe3Vo_IlGCYHmwPRVj_S7aXLHErsWyCbL_DZwH5436gw9PzoRTXZHi04O4cG5a4drL0PwgRoWRg_hlHCNXC7CpKP-a3U7bG-ORdUMoR7BT3IQg1f9nZ7uNnntFOXGKcYb0sCi-8T0gSzUCYSa00Gh_reupw006F5zUHDf0IhOlmsWSzHNzznAOAsQ4NWCZC4gooyo3u5zej_ZMKt4QjcLGnP-addudCkWKHxld1PaGW6sYV_qsP4eGMg4svBWgME9nF3tXPZP750Cn0Woo9VzHQIDR8IyBv3u7fRdrRuK2HnUFuuRrz7xuJd2cUxsj3z8cSrjysgxX9xAowdjJrTMSAdaHhZoHrxZ5sHpaqAxxuVZLaXXYc7QE5KmfNFPWgyuQGU1J-D8zGjWeuY_IGrBW78Hg_UvC1-aquuCDs4wgDG1LditplweoUVUa4PTT9zD4V_yE5U0auYDo31Kf-IuxS66ec9GZCHU_xwWVv90NwHbNMXoiOqdfJs8f_hKBjMwO9J0l6NwFtIr3oFliGNzu7o7bUMU13AkKnhJsA5KC_b8vShzTnHfkwnXf8EF3Gx3CVKKnveg3RVUkbTIW99wMELxHBE0eKQ1d9jlmpjg_HGq8vvR2XInTp2NvevvgwC6hoxkGg3u2-7TIix9HMxBgmMQWMZG1PpHsZ1DelCyWlb22uXtu4c7nP0Iaiu-UquFh6ryH-qMzTUD98cnEGQCUDIY_6_sFZQa4Zz7A6ujN9yQ9foulL4iKLl75CqUG9hIq3iGHVTravGQXtb8f_77Y42hOV7yPT0jfTN9pJmgV9BmiQxPrDJSNaR5UXqD4WOmjkxnlTdqnNdO7bukIj4mipIG3D1BurKX7xdMjwrLAGgZRSU9lH2_1Rg3Me42d5F_fxrpN1mPfHpS3kJYWtEEvWINQrXUnffL3b8xHCB-6G9A_01KvU8jUGN0z_74fWoTrhGHgHU3dTP1THtMgTOlfVG4nfDvgHseUb1djulZsi6jyWSU2nMrj45f-RMzezhxMde07sui6Lj6OAKtNW4QZjqaCIf0roTqvubS98Vwjk6wD7kniIK0eJvTBi4yXWh0OCPx7luJXPCQBqbjJLNuflhZ5xqkU3IDjhAvOXCN_EThJ3N6QZGyNHzcJdttJ5Z6as7wo19-mv_9V_IBE91t3PJbVDiTSLMjS12KM6S0m-HGXtdhk5gxV0fyY2L6wy6kU5aBGAHlhTkj5NfROgiDhlDVvUHY8KwUoOrNDsjxry5ybe0XuPclQDIbrgkXzFGb-XfoKytj4DkUOuPOfarVLegTjhmvlbwmrA-_T1mvDx7owT_8lrWYPg2U3AEAxyAukm6jbC4uxMqnHvh3qOWAqD5UAIPOCwu51nAGpXVjA5Iq_-ebgkak_O0-hOu2BmEpDDLRYwBuAA0lZTnWDap_tfS09sHaDgu1M2pVx_p3snyx8oTazokVALrsJAX4nkVSk8pIiNLtPltTAT6bIX_gnpDv5-MQ9g4AipWG65TtphHdbwdD-TcO0_5TPXxsHLn-lvBf-Ey0Rqhk_jS-zoQB5z_PDz33Tre9tbVdxi6Q7j_mXEkef6vwOZPmEgc1s39Ld_NWsKN-ClaKJ5GyCgcZgMj_kJw60pl0kzgh3J-nxYHm1-14FXsM4t7HIXFbAlKB8qvHgzrI0tUIn_VkEWkB35xEIOjbAi_ucFqjbWa24VffWABlN4gdYPKm7pHT07Y82bCCTkJmPEh1mGKm5WgwGdGBtNsLZXQh8GGcnuVx298pFI5BOWxLuNXTgwauw3DDod1gmqmUJrKGCqxL41Gofq7wW7VLmf8r7-A_vfnuV3JR_p46fwAS5M_qmk6hAiJJHWYSAdcfQHdPbi0CmxwiNFov74OjIijRKqDQ38mISM9S41HupFYYUetEgz4uHXr13wT_Y6f5W4-oTS4WRuZUzdaDxVieUT3ALnfkqB7QiA5CJ7PgIvQ2N-NRRCIoTDiYUWQ_aoRA4zmiKx8OJiRFqiPb_7L494j_1UK6GXImS-LgRvEKRYFVJzb25tHLP7mCfyT55MwjOA3Y-8hdmCCUegUKEoEZSX5KVX0_O-6IXpD13su8_7jXCiUV0TwDKsAgwizz3BwlxXrrOcLuCMDYr5a1hvlZvhDwC4izp0psw7a8GhO4mlgXo4XZwEiOA-1E_DTMb2ndgkhyn2glhwj-ZzdQjtFTBgY31MHypi3hZyKtQcJqetl4WS8iMxhmiP0YBXIE13w45sMQ5v3qUnd6qhHGq5nGL2r-VQ6ii8-8cK1Eb_F-odzxMhTx1kBReyylBDgP_3ZiNcRuDmMvWHnqBoL1xswggaK16xKNimFR8xDSDKXBRv0QxDslvQH9AmklTCBv4OZ5GoIw3AbLKqNGGymMsoWz07rPzm76AqhbgskznpeGemDkAFujSq7k6g9FtSH2UpzGK06B6FrV4DGsVFqDstL3srolJhD_XxJrFifhy4FJ8S8i3YUmFhnJF0IarjQApUVzi26eFHdoLGytzngI4QcK_xC2YzE2or2wCq0b8ZpQpD0iDTDubAo5haCzb0F6xxWLUBgaulbDYV4G7zaBbSOPI5cct3PWnGR1f7IuUR3pZgQFPSyCahmyVkbsD5ATZiLrWz3BuiolkcmCzcnxpH7rXhEMS6UrvHeEva3vHUeZZlm7rBIIxHTEbVJLkDS3P2gl9QgoYyDvU0C-QR6g1Z0IlNUdcvi-yvoXUVpQoM76laov65lemdYPfeASvplJ5nzYA6Aych_itt1sT_v5mwYFGGtMI3JkVZyZoNyuZH_kV2fA_rJct4qF1K0wXeA9JQDVfwtWrbw7e_cW6EnHljPnK2ucQIaqxyy2axbjwR8VigvMqjGrgYEk27SlJSjNAFZ-BUb--7O2PNs7x0hbfkn0VhQ2ldOjqhr1aaROagZa0xOufJWZh-Su7zpTQvjSddKtJ0oODggyBsI55aYDIYenOP6wDx_NPmfi2t04JQuNJ95_Rhp4QLNH6e_pZKMWrLCEy-jqgOp4bJOx8FgmXyv7zJBTb1GKy4PqiRKPJcm7iNAtox3ySfJZ9QFUB9yjLeQBg6opCxwapDiRT-D_D7UuaZi7AcIg0tvtEWYj5iLfpvmv0Gl-77r8QoasWSgpCVfTLoPynhhz__oybgKo_eKuk4RT3H60IWc5yoNJki-5OEHookR1HMzEbsYV66I7AtDddEHvMzoyKdUeL9lVKwTAtRr8Yk1P6r3krITghnFdVgNFdacHn5pO7noE3R_eLGosvCEQVt4fLZ3QuGMQx5VGCurARI0-b0EF_zYiDmKF9LHNsRY7aqaK7MV5gvz6fRq9uzGoX6BP98QVdzsmgewSr9QZPGQhjI5ZGzrBdvTklYQ4lG6ZldlzQBm8ff8Zy0aCyQTQfjsLyBNyd6eRISm5ml0CdKsU5UWeOILPSLwm_2idxwkMaIqERSslAuj5qRapdS2RDZ71_bulYJ8Xc5iDhj73b9P0aT7_IC3b0AJzQCuEB7zeTr2CKMx5Wg2z9NMGHjoOpTucGOc-qg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01947dcf707c1824016aebf867ce6887d181ef81575e40e204",
+              "index": 4
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1793849432,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2016,
+      "prompt_tokens": 15825,
+      "total_tokens": 17841,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1552,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 15822,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.00298605,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.00298605,
+        "upstream_inference_prompt_cost": 0.00197805,
+        "upstream_inference_completions_cost": 0.001008
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

@@ -1,0 +1,253 @@
+{
+  "id": "fan_controller/CapacitorToResistorRandom_Swap2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/CapacitorToResistorRandom_Swap2/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/CapacitorToResistorRandom_Swap2/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/CapacitorToResistorRandom_Swap2/spice.cir",
+    "chars": 52275,
+    "sha256": "2df834b8293de4488e7a6f518a32e5a13ef5f7fd114535f0a1c803ae669411bf"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.86,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.5\", \"U3.5\", \"U2.6\", \"U3.6\", \"U2.7\", \"U3.7\"],\n      \"nets\": [\"SDA\", \"PWM\", \"SCK\"],\n      \"observed\": \"Both the ATtiny45 (U2) and ATtiny13 (U3) are connected in parallel to the same control nets, including SDA, PWM, and SCK. The netlist also connects their reset, POT, and TACH pins together.\",\n      \"expected\": \"A single ATtiny should control these shared signals, unless the two MCU footprints are explicitly mutually exclusive. No such exclusion is shown in the supplied design files.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"PWM\\\") ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")) (node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"13\\\") (name \\\"SDA\\\") ... (node (ref \\\"U2\\\") (pin \\\"5\\\") (pinfunction \\\"AREF/PB0\\\")) (node (ref \\\"U3\\\") (pin \\\"5\\\") (pinfunction \\\"PB0\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"12\\\") (name \\\"SCK\\\") ... (node (ref \\\"U2\\\") (pin \\\"7\\\") (pinfunction \\\"PB2\\\")) (node (ref \\\"U3\\\") (pin \\\"7\\\") (pinfunction \\\"PB2\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"If both MCUs are fitted, their GPIO outputs can drive the same nets simultaneously. Differing output states can cause contention, incorrect fan control or programming/interface failures; even matching firmware does not make parallel MCU outputs a sound default.\",\n      \"confidence\": 0.86\n    }\n  ],\n  \"summary\": \"The netlist places two different ATtiny devices on the same control nets, including PWM, SDA, and SCK. This is anomalous unless the footprints are intended as mutually exclusive alternatives, which the supplied files do not indicate.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.86,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U2",
+            "U3"
+          ],
+          "pins": [
+            "U2.5",
+            "U3.5",
+            "U2.6",
+            "U3.6",
+            "U2.7",
+            "U3.7"
+          ],
+          "nets": [
+            "SDA",
+            "PWM",
+            "SCK"
+          ],
+          "observed": "Both the ATtiny45 (U2) and ATtiny13 (U3) are connected in parallel to the same control nets, including SDA, PWM, and SCK. The netlist also connects their reset, POT, and TACH pins together.",
+          "expected": "A single ATtiny should control these shared signals, unless the two MCU footprints are explicitly mutually exclusive. No such exclusion is shown in the supplied design files.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"10\") (name \"PWM\") ... (node (ref \"U2\") (pin \"6\") (pinfunction \"PB1\")) (node (ref \"U3\") (pin \"6\") (pinfunction \"PB1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"13\") (name \"SDA\") ... (node (ref \"U2\") (pin \"5\") (pinfunction \"AREF/PB0\")) (node (ref \"U3\") (pin \"5\") (pinfunction \"PB0\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"12\") (name \"SCK\") ... (node (ref \"U2\") (pin \"7\") (pinfunction \"PB2\")) (node (ref \"U3\") (pin \"7\") (pinfunction \"PB2\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "an ATtiny-driven fan controller"
+            }
+          ],
+          "impact": "If both MCUs are fitted, their GPIO outputs can drive the same nets simultaneously. Differing output states can cause contention, incorrect fan control or programming/interface failures; even matching firmware does not make parallel MCU outputs a sound default.",
+          "confidence": 0.86
+        }
+      ],
+      "summary": "The netlist places two different ATtiny devices on the same control nets, including PWM, SDA, and SCK. This is anomalous unless the footprints are intended as mutually exclusive alternatives, which the supplied files do not indicate."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Identifying design flaws**\n\nI need to inspect the provided specifications, which are mostly about the repo overview and the fan controller\u2014specifically, the ATtiny-driven fan controller, but I don't have many specifics. I see there\u2019s a potential issue with two MCUs, U2 (ATtiny45) and U3 (ATtiny13), having pins on the same nets in parallel, including VCC and GND. It looks like outputs tied together might lead to duplicate signal handling. I'm wondering if this design allows for alternative footprints or if both MCUs are truly compatible. There\u2019s also concerning behavior with power management, as the LM1117-5.0 regulator outputs conflict with the VCC setup.**Analyzing circuit design flaws**\n\nI\u2019m examining the connection for two CPUs operating at +5V\u2014U2 (ATtiny45-20P) and U3 (ATtiny13V-10S). Both have duplicated I/O connections, and their pin mappings are compatible, but having both MCUs creates potential contention. The board might be designed for only one MCU to be populated, yet the netlist lists both without a \"Do Not Populate\" designation. There's also a concern about the TACH circuitry with D1's zener orientation. It seems to clamp a positive signal at 5.1V, which could lead to issues if the tach signal requires a different voltage.**Examining PWM and fan control circuit**\n\nI'm analyzing the circuit for the PWM output, which goes through R4 (1k) series from the tach input to the MCU node, and I see a good pull-up with R6 on the MCU side. The PWM output is routed via R5 (1k) series to the connector. The fan supply uses a switched PMOS (Q1), where the source connects to VCC, and the drain goes to fan VCC_OUT. I also noticed that the gate of Q1 is pulled up via R1 (10k) and the NPN (Q2) is responsible for sinking the gate. Everything seems to be handling the connections correctly!"
+  },
+  "usage": {
+    "prompt_tokens": 15838,
+    "completion_tokens": 2312,
+    "reasoning_tokens": 1739,
+    "cached_tokens": 0,
+    "total_tokens": 18150,
+    "cost_usd": 0.003135675,
+    "cost_details": {
+      "upstream_inference_cost": 0.003135675,
+      "upstream_inference_prompt_cost": 0.001979675,
+      "upstream_inference_completions_cost": 0.001156
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:30:01.459900+00:00",
+    "ended_at": "2026-11-05T03:30:28.774815+00:00",
+    "latency_s": 27.314
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-05T03:30:01.839Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4378,
+    "moderation_latency": null,
+    "generation_time": 27025,
+    "tokens_prompt": 13320,
+    "tokens_completion": 1219,
+    "native_tokens_prompt": 15838,
+    "native_tokens_completion": 2312,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1739,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003135675,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849401-5WGA6NonCVDAbThPGq1x",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849401-QkuhB0BJQOAGh3Zq70Cu",
+    "upstream_id": "resp_01850b7e767e250c016aebf83a3a8487d1bf738e374396fb0e",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_01850b7e767e250c016aebf83a3a8487d1bf738e374396fb0e",
+        "is_byok": false,
+        "latency": 954,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003135675,
+    "cache_discount": -0.000395875,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849401-QkuhB0BJQOAGh3Zq70Cu",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.86,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U2\", \"U3\"],\n      \"pins\": [\"U2.5\", \"U3.5\", \"U2.6\", \"U3.6\", \"U2.7\", \"U3.7\"],\n      \"nets\": [\"SDA\", \"PWM\", \"SCK\"],\n      \"observed\": \"Both the ATtiny45 (U2) and ATtiny13 (U3) are connected in parallel to the same control nets, including SDA, PWM, and SCK. The netlist also connects their reset, POT, and TACH pins together.\",\n      \"expected\": \"A single ATtiny should control these shared signals, unless the two MCU footprints are explicitly mutually exclusive. No such exclusion is shown in the supplied design files.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"PWM\\\") ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")) (node (ref \\\"U3\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"13\\\") (name \\\"SDA\\\") ... (node (ref \\\"U2\\\") (pin \\\"5\\\") (pinfunction \\\"AREF/PB0\\\")) (node (ref \\\"U3\\\") (pin \\\"5\\\") (pinfunction \\\"PB0\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"12\\\") (name \\\"SCK\\\") ... (node (ref \\\"U2\\\") (pin \\\"7\\\") (pinfunction \\\"PB2\\\")) (node (ref \\\"U3\\\") (pin \\\"7\\\") (pinfunction \\\"PB2\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"If both MCUs are fitted, their GPIO outputs can drive the same nets simultaneously. Differing output states can cause contention, incorrect fan control or programming/interface failures; even matching firmware does not make parallel MCU outputs a sound default.\",\n      \"confidence\": 0.86\n    }\n  ],\n  \"summary\": \"The netlist places two different ATtiny devices on the same control nets, including PWM, SDA, and SCK. This is anomalous unless the footprints are intended as mutually exclusive alternatives, which the supplied files do not indicate.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Identifying design flaws**\n\nI need to inspect the provided specifications, which are mostly about the repo overview and the fan controller\u2014specifically, the ATtiny-driven fan controller, but I don't have many specifics. I see there\u2019s a potential issue with two MCUs, U2 (ATtiny45) and U3 (ATtiny13), having pins on the same nets in parallel, including VCC and GND. It looks like outputs tied together might lead to duplicate signal handling. I'm wondering if this design allows for alternative footprints or if both MCUs are truly compatible. There\u2019s also concerning behavior with power management, as the LM1117-5.0 regulator outputs conflict with the VCC setup.**Analyzing circuit design flaws**\n\nI\u2019m examining the connection for two CPUs operating at +5V\u2014U2 (ATtiny45-20P) and U3 (ATtiny13V-10S). Both have duplicated I/O connections, and their pin mappings are compatible, but having both MCUs creates potential contention. The board might be designed for only one MCU to be populated, yet the netlist lists both without a \"Do Not Populate\" designation. There's also a concern about the TACH circuitry with D1's zener orientation. It seems to clamp a positive signal at 5.1V, which could lead to issues if the tach signal requires a different voltage.**Examining PWM and fan control circuit**\n\nI'm analyzing the circuit for the PWM output, which goes through R4 (1k) series from the tach input to the MCU node, and I see a good pull-up with R6 on the MCU side. The PWM output is routed via R5 (1k) series to the connector. The fan supply uses a switched PMOS (Q1), where the source connects to VCC, and the drain goes to fan VCC_OUT. I also noticed that the gate of Q1 is pulled up via R1 (10k) and the NPN (Q2) is responsible for sinking the gate. Everything seems to be handling the connections correctly!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Identifying design flaws**\n\nI need to inspect the provided specifications, which are mostly about the repo overview and the fan controller\u2014specifically, the ATtiny-driven fan controller, but I don't have many specifics. I see there\u2019s a potential issue with two MCUs, U2 (ATtiny45) and U3 (ATtiny13), having pins on the same nets in parallel, including VCC and GND. It looks like outputs tied together might lead to duplicate signal handling. I'm wondering if this design allows for alternative footprints or if both MCUs are truly compatible. There\u2019s also concerning behavior with power management, as the LM1117-5.0 regulator outputs conflict with the VCC setup.**Analyzing circuit design flaws**\n\nI\u2019m examining the connection for two CPUs operating at +5V\u2014U2 (ATtiny45-20P) and U3 (ATtiny13V-10S). Both have duplicated I/O connections, and their pin mappings are compatible, but having both MCUs creates potential contention. The board might be designed for only one MCU to be populated, yet the netlist lists both without a \"Do Not Populate\" designation. There's also a concern about the TACH circuitry with D1's zener orientation. It seems to clamp a positive signal at 5.1V, which could lead to issues if the tach signal requires a different voltage.**Examining PWM and fan control circuit**\n\nI'm analyzing the circuit for the PWM output, which goes through R4 (1k) series from the tach input to the MCU node, and I see a good pull-up with R6 on the MCU side. The PWM output is routed via R5 (1k) series to the connector. The fan supply uses a switched PMOS (Q1), where the source connects to VCC, and the drain goes to fan VCC_OUT. I also noticed that the gate of Q1 is pulled up via R1 (10k) and the NPN (Q2) is responsible for sinking the gate. Everything seems to be handling the connections correctly!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hDE9H_XYBXyeDAhs_-HrPm8oTUckbi1kUMxX3-dnyEy8j61TowUypI4tcpZO3Zf1nQHeTKdLHoMom7eLYSit4uQxQtTeU1ChV4UDYglUvJFCDxeZlt7mBPsCEce0hZBEJIQ_egDwIVmj21oRq9T-DSc2lk7cGF1SKEAVYOpo02bvAkLCpjUYC5mKzxxeAZEAmrQOuFEE8c9jkXa1E3HjEaXfHYTmIUz9UirNJ7Y8pLCUYKyhLoaVw8j1YFCCHrqRK_3oYVI2736MRCPfZ_wAOzLwCBenHb-lZzZEYXBKLV0O_TXtfoyEU2AFEx3-LnZCHzBeYqSUohiV-r670ukPUQvsopCsDZzZfDGgYUj2Zckd_CuAYsoVIvzogIUaZXQQUhkyrxG_EFRR9oTKfTTiH5LUXZSbU335EEcOSU7-MphXH3zPaDXUCDWOSkdtZvgTIi_g-IfUrbT0zhD2slHWKC0V2q0pD9aXAlS10qFPmt32QbAgeAiM2NRl8FSGqSd9_9LSHNZHEhy3F8ZZ-8OPHZU3bJ2F2WURBvvj_dDSy1fVoUYOycHNoYUt1qispJbOUp7a9iDFHfrQbLVaiJQQm9u51u0qh5mtJ3108viEyv_9wKlw3bTD9AsAbgPPBFY1ud6_WE9MRQerJufEjMYRRc5tyH3qg9MC1IiHkM0Vc9gTbXZ31fpNvBnAcSCLkfAe9psGYtd5QtmcbbES5X4DSwLvjRBsq6S5WT4LgU1BxgGt9GVwL2DjSnQYE8tg8kfYY1JpdvX6wBnU2C1dwD3HeoafgL1-DGLaXgRtG1gFL6xG02Ixj3fwNmkJJEgKsZX2N_YR_mrQRtaJ_N-zauaZbJVbEFdlbXAfH5iJz2HcQMRlCSln5VniAk3-u1C2JmFLHE8ubBb44e6CVNrXO2pWrZ93_dARV1XRVtr5lHZDEqfpxkDKceVA0iqablYngDPB_69hTY3OCbXzSwBD_-Dymu8q39UTfnoThOmfjkUT6hiOhq2q98L1btjjadSBO5k4UTHklu7H7XJYvZe_v9wtqHLKhHyI3toNaIQcK4YIWU4WnVrSsNIjtxbpB-33NBBI_nyO4Lh6var2tG9IizQRazaitt-2JgPJpZXMI4pkN5tsd9HV_ePymWTQTvcsTxgVgQ19px3sWomXcyGcRc-vRkyp7aqR6ICrdwu-8KX67ASzMiCrQpZgi3lhcoxpHfL0NDlD5tl1ugZCjiqfnRyaCnwhp4GkIrmbZrXqEpe93n31qucauAEGwaQ-zLPeWahGDQyMIMBeHzmSXlN_4HMP-teLv7UKHdhChbLrt8l95j0xgqkPM1AypG1p83JWX2ZvTtdyhbbAgotZ5AQrUHjvtCE66tNo7vsTJDy1oxpqw8doKyJWTpEpJZqAvUHRtv3fgueGZMNVZxWaL7jvWJw8oeADZbaFW8lMs6eGrZxFzOpSwGdSlxbvdSfGonYddWIDspFXKdAxhi8-XiztnrhCodwJJ1mS5AtZpoaH2xVvcRdDc9GW_YrrFSymoIwC8yLbfn9jVzcsmP-1cTO70Y1fadZOxcyMCO-BprDC_Vekimay-LDR8wqALdFqOVe2LQ-0TEdY3MlgorJWXogNQE-u70FyNmDcmECCd1N1_7jwcFbmuHHxscBUVYVJCe9BJ-6nINn8ZcjhHSlW7SEahhqrwJj3uB-vEDoQUMsM0OVnB7H_xTsGtjVrG7sqaYM-vRkXvUHQq4Ixm3PnD6VIolWXAMOwloQqJ1wacFQdukLST1OyA-Vyy2c0BEtIqYlddnf4j7vo8QLmUHyf95_3QmQE7KOYGMCt_ixkTzIiBw0mfMXahPzC3BBN9t_nf4BvojSxDLSoRncUflpj3JObyPFzhtDDHR_B-wazhSjdTeSaGREGJeKIRDWJKRjLRfHbhHPqdxJvqoYsTpmefnwDhl9YYfag4QWA1vbfrTPU4cn-lc4Tq7xagJUPaowaQX5ofnGAKCiwpOr_1bkcyTQn-jP02gPvgohh_nkmdnJ82J8OnqxUsz3Y-S0Iny11cIHR4MQJl4a1ghoNHGd0Il1WyY6OfD9VbEnKY1R7v3fZspnajW3vkgKO7nS6BrfAzfztyM3CdT_GAnWl0wuCGhGmVjmnlzl8PEQjMa9_bIoG4Nzl-NWvkBwsoMYtNxmY5DNRFey7TES9jDj597pMtosW7HW4rb_vf7HsnaIP_1F_b4tYoQnHGS3R4Dfifv2WszvoHKF-yquZq7erEVNARrSvzl4xSA3D4MGcryQ920zLNEgb6zbm03JGimrCdY0o_PqD2pzvSYRz6NwZ0ncmhatVaw7V8dr3Ulte1Op8dhJxRC5ffIzWgWTP4NTc3a9kK3v8vBOwxJuiK672ojTy36P1a218ENh1iqQENweyShbMgxNvkvw8ICyTgFZ2OL9W0X8pLGb-l930gELFQ8MGbIvN6Mz2dG7Sh0mOVHgQAHoj18HavDJOi2bYZ3b1-JqE9QMEJxi__UIcoKUmy2goifqsRRK7-vdbPYMzDJgBmqKqanZKi-J3ORnl7kVbtuQDtAfa3WrQBo4F8bco5uxc8_I5leIW0BD7gyaJ6L69-iGRjxySSPA0Y1EHYsF_-4RmBGdKEMRw2T46BIBBdcGr_EOTgDTpDi9804xOZu2a-EwM9C83wS0DLAM1gBnvXF8p0dSP_x-4eJx-h006dMd8Zpln1UWyR-fJLfDRlZKPLN_QRxaFtec45qaZx9NNgh74p9kf8GlFwRZIjFMcLG581hgYfaW_X8Tm6YoTYsNjBWqK1Q1C9IDev52X_77KfMBXIFYJHF0lDd_MOA8OXMcE8ioAEaM5-gXDzjXrnQNFq6f3MOxhA0Cx1dl0xW0hJWHm6Iy_X1J4wdVf2hAJ0_60Hjxc-93ttoihHaoYEkD_dm6AO9xeUsQWsdHAaL0te1NZRT7esS1IulRzEzUMVnaB3oISmuvUqm_7BxCdUmnETseEj85RT5-nYxH4HnewsQEqVjD6jkj5K-zGoU2flx5QUHdJzzJXIjhKedUvgs3FOemJYRqpMGUur8gcI5RPsA2bpu1EcV3PE2M0eRfJ3RR-nI7tnFwxT0kUgq3BI8gCt8TJtG-U3JztZ434nZmFLWEmfR1W3Dfb89Uy5zkHG0Z0II0iOTvxSueZ1YT8jTa-SVnnNEZYIztD5xdxAekrLjMPul1eimwMgC7TpCa0iJYx6czE9pDuLU79zww4VkEEW9gMEH7Yi3F2w99CfpL5smnU0DyJs5CUaPSzK7Dx5xjWP6oCZ2VycVw0_KfYBCwZ0nONnVLp4YoWGn396eCyl2tRpYsZoBGp1ZdHuzinRn9zN_z04YDfcCEMBeIXR2pdDTcbq5gqlVvdrBiaO6OByd39aApEMI_Fcy_AhOwpSaQ9Eg-CfP9s4zQSVkZFVs4ybUBlaWFBXVmxpOundAGbGq_mZzSbY94EBmgB3W2uupLebOHfwgyYB9WI7Wabi3jB97znLxtFcjhPRknIOOm_w-Rru5x85N6y_ZsyXzzYA71LIIx4tHBlviy_VmRgNQjSCjmxLP0SjBcdAyOUbh9MOQhcdOvYv58UW3HaWPckyxJ_1b_soge42XsM3G7SLC4gCFENEzRJ3XZt7dWzmkOHmHDoMHCmUv-f3vS8j3-MHNywuIdOgN4G8oO8mv-8gbtPAvZPf3M3JNw0oNrKAMT9174QSlqW0v192029HW9s2avNkhW8_0VAX2FsdQqg0BvAac7_BTPql6v60TRyeDI3ZSktXRyD4YBDjPXJf_a9apxXgM3MqvWHlKdmqKhgfSTosb_r5ldlNzsPskQs1IFdZ114iiV75rQGuHjN0jxs8FHlKYn0M28G7rcJX-MnAYI4Bb__OuPfQdEHPMQtoW1lEh4b2wQ-4FVF-Am75aVXzuQJ1j0I7InYihq58wdlKABjFboiun58_fPLh6ogiHZtIrFN-llgWW_8wr7ywEr4R8fs2HBcXBqXGnXDDiC0T-sMn7bPnVVpREnysT2kAKyxmEhZ8c9N4NYpueNAXAAVbrWCnTNJXQ5O719uriMe60NEFSQkZzWH33k9UseucAf0vuxaekDnD9W3tvKtufrxeRUVPmAXX9twX7XkKw2seoOmTgDbCbYq9oW_gtmufS0xNFUipZQ_uZImwRLoBhjw_3B91GiIV5YWv9McRbnBE3vPjvK6W_SRWxPN6Za93T85jNBDiiyAXo35TOGz6dLd7w5Pl_rDG1iPazrqN5Y7zNTRqPDCisRkbxQ3-CqnHxhp7r91TAeNx74xcerSWDYubvMVcVrfAl7HkQNDwTT0kQQCEaCispdgsm8NfgFC2CzE-wf4lw9Itv5JoUSOLZKpD3zB8A94aNrnti0RFBTwNuAvWlK_jC9JiyXmTg5CtCr1l507oEpQOF8sq-zz96qZiUXsXxEz_7Pu7TpXuPO2JNq6u0G8SbAgwGnM9lNc25gkVxHVAF6BoB09weAzHT2KeU8B2YvUiVO4yRrtTyS-NtnX2VepELSHsfTtpifsyGnN5EVBJgXntUjiQL19r1hcqXvvDaQS2nocKebkWUEdbgyzSrN51vjKoIkaNRM_JbVYgWZJxqthq4PuCue1yHUn0LFbqieVpQlAfvj4o7Q0VWA6OF-8y2LKt-0ULrdIHsqERNDejovflMPOVI4eUzPSdJFBT1nVVkBR_ZXPaI2TCL8E0acrUefIMIZwshPqsWKLEmj_7mVKnX3ncOSXb7IwjmQQruokTSSRlI-kAz6HqJG6Xj54zZfHJuwMVYhT9c3CDvogfd3ppiAJ98o9AJxKdqLVz6thNivlzO_jWsLjraKE_3CoF5lLbRUtEbQMQMddSgRzqExsA9YD0srI12P40zDcksaiLzLtskQ8y_nkorGyeJ2xNmNGiN6eVEvJV-MBOiVBXY3lDa0Ic5cehgHZ3y8Rc7-Efj2ZdYL5GBdZy5nu8Cw10_IgIvjZ2h9ldg1wTXJIipwyrxyBPHC4rbvxBGkespXalFAWV6i-7r3W_D5XXeyUyWIZywegqMFgjHnST-b0V09cjA5-lsw-q96XBgzo-ormCSai79WbLnPGToGoubr4l_LFwx7a0hPksbAGwhJZmvAqTHVATprlY85Bn06YIQTsjVWlcNdUSb2S0eydQ4-BFU4RUdf6kuZLRKpdQyItiw7GQe-SyfLViO7xFO2VDZR1pCWUgCuN10t5OWxW7VM5hCzsY60DbbL2J2-yMBhdBCX0Ah4PxHahlDoIh1h8bl4spWs8QcQHoi3kSXYf4saFxzIeFTQut3Aj_pIrZ1m83ouKvjHEgvL1WtV3VW_F2fj5W4voIw77QGyLmfh9Gc6Q_LfQIN1wSx_XlkJu2ECVLb6Nryps1dXi5Cz1BtzsiYvSCm93VIBGJHKRVi6fXhZ2bzqievZzUJW5TqDX_kzeo77v77AXVkH-YcnoyPxQ_vc2BcSqry0QsFEWudo565ul2gIOoRrbJCYGK_jcPoVvUvBV_VnaAojVAgkQXVLIlllwmK74xKhpK_HldEARZSppKBDdIEhuSd04SkkVhApAe838k8wVytl_Lqre00p9w-VoKv6diA8Mqc99OETe9VPfWnJSdCO2H38sqcaDAZC3RU2lbVc6X2j_jcOZGLR6TpVY78nSgOvzThX_17NV2li2xjvgIP3AYObbCaN8CEoTLlDxVQk7ZFv2QGulZfwbs9JeIoRwyubXyiBmBHcr2S9IvgqC7iBxs7d83WyMNje-sylmbsJ_cTbMmvsWTtXFCTbhdxhlzgCIYeqUCurUKBfwxtT8YAIxVgBFEVcDNH6yAW0kcnFYsiztTUrHFW2o0yAGE4vlHtp97tKIB2F_V01nPWRIigBl6t8S8rwe3asDRcmGZsV7XrexZeUr3f751KEWM7Nfi_y4HU6WeWBNx29XSKuxvICG1kwYxQeYOXU0clfJtDpLEQAeKt0VKjOpx0BOIJ92RWnrulEKmXA7Q0cyPdOy4tQuvhIniEqfLLC_o1ahpfJptNrFZWjzCZLZdtfmp6Y2cnJo5TVY7ezyTz6XDqkVj2WYb1-BA5ybZSGTGAtRD0QMQwmUdIrcGBVCoZgMXskA8NzANe0xLJfYm6-UCbHq69lEarjtTLtFfNfhfVnJ1R1r_IglAX7LoiUdaY1iXfCsxEePLaa9eBXmdLUHWpWkYKqH_Ik1K3fyw5vkyVB-rVjXHNnBs_1UmzY1h9UgZWFK7iexILIiWnRa0dGPPP1ihvoO4c9kLNYAFraBoASxi_56vm3_xtcABhz7R6xge9fip5d5TLTTK78YXUUR2MILMiT9ZqAdSOs6pIHpBxr0uz5PVOx8VWqvbCky0iFek54Bdk4MCZAkb3tSFpSLHK8dVlpcHVQILSaTlw4RBDwSftKw6CaUGE7ylY11DtHRPBusS-YJZayR_DlCe--fF5dula4ybqE3H2Isvsrd5-UIkb199xYqtMVLeYoPkkhgHpgUgtaIaROd5a38mmuzPx_t_as7h5sHVlyhg6Zkrgna6LQg3mevBW8fZsvDNooR6MDeYlNBL3yGx1TyF5dzvwAYiOGq_XoUFzbKVUgt4GrJAbE8WGp0ZNDsNRL4pCKSD6yDW9cT2Jjb60b1zslBHyQF8leaVPa8w6EMbpgeiOL9V3XAd8lYIG1tUtffI4oeIFra1rV9N9GtGaSI_-Or2V9t6et9VxAHiRARBqC9-uqRUVwG0-by5P09xDYy0Vvg1ucYzk3Ew2_TIW-k43zjwtY2Lrg4QDCYqK14EQtigLqfzJGxbqRgwv2ffTBMNmdQ_QCHquDzKcCxGHHzd-ffTFE_09EY6oBOq3CY8mFg6NttR6dRTRcGPQxDzh-FOyJSQrTWWqY0IxkDUjA1FNxjJ85tMqwixuFLgyixm99HW8SB6vy_rGSvuRKpl9VhKOmQHv5mMjFzr5ppSRLUIu6J8UbF0xT2QxdzUoH7i2kkjSGENH4PdscSeZ7ynJ9rCN-6hZc9AgkmxV6jBmRPEbzpmRc-e1Te-2xu2A-0wY-HSyLetD8D5KHUG0Ds0oxbjdU_7Oyie8Td0GjZdyv50dY8HnZw9oPXtYqcHvicVel5fOshoAm4_5QNtysSbUxzEoSQB4LJZxlmDfJ68SdAQZth-bQ32E_q_Efss5iizCIPCvoOmazx6kHhqGoG7TS8f8R15l_k9_VjdgiD-bYJis7pk6Fu7kik75u8Hog3FSYXQXJ_bF4fn7utuGJDxLiRjW6AZtmzYWciaWojnYHFbEca0Yl4P7-0GhILifvV1Tcx6-kowTvfBPqBA3tU-yCyC51J0fnzqZGb6yqx0mSbChYbTTb7b8boa6jsbyOOhf_wzYfxeIEZWuCSnSiwVSrn-Oj2DuuRbuD5gdwbVcsjOArjZbjogYiFmpDcATsQP-Chcs3hBeMKjcKRFoKytR7A_19sQYze49fhXSgkm5gzv0sSSapzm2_jMcqx9KLUOUBG63AxIMjOu8o4mmvJI-80sBCqeFREHAgiiufjs28cr61IFeaJMwKShofB5Hy7Nxlg1ThfY9J74JT8Auq0jJzFsK6JeDedG759hs1iNXULczuNgry5_PsDPT8ac-XzNwvn0a6OJ2LkUDdYl5wYoIQ9SywSUBjN-vyN5_Spa2BzSHsLqz7UHYtkytLhCI89ubqRCeSKVWTeOUawUS70CGnkbOOwRXsWwG1s03pBKZZukIWaNiEKJxu5S-yOpECIulIWUIw5JHVZ4bPOpr66xJSbHjUAuQVaa0j3S5o90ajesNSocr3U3iK7B34ugnzOoisG1zbZWF_QWA.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01850b7e767e250c016aebf83b4c3887d1b1ccab9d510ebe52",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Considering board layout compatibility**\n\nI\u2019m thinking about how board layouts can have incompatible footprints that overlap. For instance, the DIP-8 and SOIC-8 packages generally have a similar pin arrangement, but their footprints might be adjacent instead of identical. I need to make sure that when designing or evaluating a PCB layout, I\u2019m careful to check these footprints to avoid any issues. It's a good point to keep in mind to ensure components fit correctly!",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hI0vXCFcgs-yfyqCaKv9LEwm3vWh1edeW6cyFYasx6j5h1qvMBAJ40y5wZZfZl-mOAEdRIXEJMFO_5fEtN1ePbM2sqjpsALTHilrkkE3BBZUHjLqIFE67dUMjptBVuGWlmKOsIafemhnNLF-BUA2R1wL1ryE3N_AWxaVAdV_uW7xlc_2MRy6bFVOXDnYEQZjIv-mkHx5khIWCrPdo2a-B3Xw9kpPn27fbEQDRL1Fs_thjbXZwvORGVtc4LWh8Bpq-JN9MnFptJLjC1lbe8jn7capZ266RMaSiNHbD-LeMaLpsbcnMl0Y4R-YprIdg_RCZc2_9EuA-xMKl4CHJXO6f_1446TmXetmfBmzx7QEdZZup_fpZi4p81_r4cH-qy7SKp_Gkk7Sor4bt6cuuR_i6T2C3w63-guXkE_MUiEyy7Fw1-DjQcnOBmSLBmf4OXU41tsdSEotJcrKS3uWQKlAkS8RKiDj0c66FoYkfPOh1OTmbll5hvVJ9F2FfnrVWw_URPTt9UpdTrZ7UkSFpxVoJW3SrIjOIsDyv2kHdrB7NzoUJlCGY56XwOwa42Lym3mkQMpr9nwevlwr9e-L6SEuuxB3oUrGZSq2nMXrOaDvjc2kK5WZngqfek-CE0BZWiv9eUtwphWmlUlv_kvkpoePs4Gt25DPymOLp_ZQIxXB6Lo7ouPs-sjR50J-sILybzjlgrZc9jGZyMIC-B7soYAKlqfb6t1M4Fg4lHPNADbWbbV_LzI9sfttok2goOsS2lt7Ehsy2inYEzHaYtDUdplwj7KVoP-HE95eb46DVhXbpo1-QtxPUaDmqvjcpZ7SHATEo7meqAsKTvgvwAUelPDpTEe30dCBBb2s3Ae6zkzBf0HRXknJc8mFLC8FzTAWti2xm0KT4YkTFA4f6xgnCBWFPhd-daO1nfqqDGjysOMyRlqo54BQYLrgfKip_87xpphwpKbK_zuiZlbI6CxRD0kLD-miZ2EL2P91I657eQ-5pdugF9k8CRXGmfDsgFReBrZRE-Jez7UmaGmVGLli2eRLdJGJkg-IVzUKB1clLBsGT1k5euxrHtAh9abRK0LCXRlWvOeNTF0zllvSX7QB6-KMH2_meDog_5czp4ZxLwQ2cNibcr80AfO6bZWrAKnIMeYEMQqTTSsK86oYahnBly50qqkcR6jW_6-343TnG7VaYetnE0FsNLUUHI4fDkkeE-ACpajfCEw1s4yZRwQWrfB2wPMJ-rZn25ebnF9ZYUhpbHt9_bXWAxN4QvOftBnjnmGV7CFuMMEoXl8HJzTrVkaEFPnhM0kAsXcYnizN-grSbot5TZcoUU1wJLKfDouQJZeMJJJzdNcEQsjDN0MbWNy_qzh60IWikWQbyulWulh3oH4zh5GHx2-IWN1b2XVUoONj7QWMIl06VmUKjbRjve_MBOt8KEc67fVrPnI-eljCanyRy-dfzQhVXt5zBU-tNVnMhStwOgv72YvVnV744D1zHVPVbz0O4q_lia56b1WgbNNfPbLilq4b22d3polKHvSOreFxCl3xqNcUm3LlqtepO_JvLOVJVAEry8HghvHSXlyxkNV8SOp25AgG1IAS9GyNqaAw130ddoJGmOWTc7YhWImqqDEr3_bBpXVKlm1D8pcF4jRDNL-qMxMzR16Q5ClproV45PRhqp2ev7s4BCVKYIRCWCYXacAEiPhqB4wumcKBvCN1v_qRD-jHoiiDu3ueIMLKC9RVcEbA0v1SOq51sSwpznk4icFKPZ-Qjhu_yrUgthAIsTRyqh9HA3GOQh7Q_HbwW68-HIKvHMTgCqKlD7Hgn6XhByl1NS-S0kcO9tGed1uVFUUp53fTIAfvwryvBHFJjqSfoUMaeToWjOlRfV_JPnCcPhQaHQV0Gxa1s3DeEQIk2oFKJtjk0T8ExVsqvWNm4NG0emqGLsguu7uSxvUKyLpDlt9Mx6eJ_QuGtSY1UGngeXolgAlZU_KQvQ4SNibCVmiMLaOkBmwYE1evx9AUu4LAlajYNU-ZluxQfaNfESEQDX4yb09Fjq6SYCs6HCHRUh6dvfSVHomifLe2B40ZfHYRTTQnq3XIXiwLfbLhWUrmKrQM4gMG571JHvy-H-nx14sgnjME-n0s9ekcDfCZiZfOdrya9tXxUqAHDXqwrO5v1EQHKzWKRL9ni0l0t-1bs5SzOMVixVVD0dQaDiAqMBQCX0pIL4fKhHVkmLqRvzl7O__yAuWyhbCVGPGUbDsXpKiNY8xKmIUd_KF20hlb35ubcm9vX-3r2pP5-sxUpM0UYphvffa1ELmrXyxTNCLRPwmknvsxli888USRL6HGJxBOJHOdOPut4KQJ2hcaflmFsLOqS3tlBgB747k67daBkgJEVEcOyR8-89fHs8Qx9-rcYIlv0lYULCKoNbfcPV-Yj8R3f52JZALYeVeTqcZnAbmR0VP3Yctd78dga8q4LKVz9-FkmZQQ5wzXbQ1rXV5zWCt77S06udbqbrd0jejnNsKegwg2tKmW2HdL5Vsivra6LspqS3oPVHVp3eJyuSxxy0ZLznt-0M1tURlj1P0qtC_YWGWQG-CGgxJLHg53l4C6vKM4V4GvLFksO-RHBczM2k8RDoQKaSxtuup5Y_NSWWtXPNoQuZaF9YdtkPUvqiBenhTzyCwUA8QLOCrvf2iC9Mp2rvylxnqPILaukqvh3GrYK513WBgfm-EpfuZcHOcZlW1aTqJmst2vuoIiQbcrxokiIDES753KgMCHhIEG12J7tj_jjEHOTF7HYgvKqdrdhMNerptSygPUQ3-A-a6PffnOPo8qmnC9lmR548eit7jdkveqv9Userl7iYteSY_rqi4gwzd56Hx-iZlJ0nJuumDcYWt9IFXIcZyXQrBjXsJ3GoSEkNFI7UDyg8sxlRRTOP4xmGewwRwWMzZNYYxb-jIdlyuqwDAug_FGHHpi4fEslqz5Mj3eIwiQTs1hXXg7JAu4k_pX6u23fn3sgooi4CngZXSCAkQL9ZzqQiis0Fy9HTX2ZRQvIjoryS51b5IeK6TWpQU8OzyfeNeo83s1qkUDA-RF5YnkkT0QSkpiSoEEa3MxNnxu8y4KYo5nxMHFUJAwiPermznCF-w0_DWdaV0Ay3FF0Az9eGDsXU4Ak9OuMe6Vxhm481uDqF9n93rFrrOMZnlAlMOs0l7l_YZTfk_o5SrQxWEnbHIOjxdxoXd-yRgqng3D3ZV93bG7XbRP-AUxLxhrNfFSWmKl2qC3s69mu43RddJBf2pRfslPmt7RaRyyj69QpHbuPmNGXYqZUn8efFrme8szERVsVzKes84LDC6DiFUadl7R2n-OHJDQmlNeQFSFA7dzMXAqQaR3riGfhyR0nHXUW7BsDVk02jl1xN4e4jqjgZ3GCTRxUraE5W_WRyouQ5c5cx6hZbsja8k1jRt6t90M5X7XL8WfL1dtHfD3iqRKTT_tF31Vf49Sr6MrauEYKuC-k8lbUtlGc-ZfJersHA-ulQpilkQ9Gk1QEcWQnS3tDQuh_ja5VtgWNW5adbSmF0EZiu8Qr71UKKufdvbLdOV615tBQOJ97arN8S9rP9m-EGRRwizSKM-ILJR4vyF0hy2tVgf4F7zaF23YEaSW13Fv_NAQ-bTMesp15CCXmR7K3w1J3CiFNcs9xUFTN59_TdWUxl5iXXxH6gPjRMxpkMT0T1F41c9EAum1p6DeQXV8eG1l1ke_rRaUrgJ7cE_ncz-0ZOQkA929qNPLUYudpMuTjmxSaSWW1rvHNPocoSir-oriyYuqbsTSkL-NOdkjjM1g9cHVhnnkFAYBeWPUPyhM0d1ZGcpZjjzXO97HAgm3wFjV1p7C1kGt2fsh82z7lrd1yo05-nFU4vGa3-D3CC6SbMkeMRhhl4lQ9djcdarlZEgayPL8dWFsTaqB1Vdjxg8XsmCn0zjJRg2ZVdUmzZZM7RWdPgihemHzSsqMxMElamHz1QvNuTA3KQ0_7MVInR_IaRiOIQCH6tiCN-hqpXBDG_YOaviBYf8Va-I0UgYCJRRy1dttv3OLkPDgOw_KYckK8KFqLIhMrO7D25NkWMY9TXYg3vGdr1h35aoS1t79L3_YPwwGHYoquemzHp_TulFmhnzynZAdoBBtgH3QfOTkEhs7vIoi3V2ouIKvIM-K5iVncrlUoYrQLxy5oTTtvY138GkVY8jWPhqC0kzW-9ReSPFY3MrZKKHKuZ06JflzfGsuYXlcDvPmTT94n00QrXik052ZVXb0A2TLueEYcqyjNrF6fdGheTKCamEb-Yrw-DtSEIjvnNtvxer-yfwPWhoaKhPvcYHmcn1vHSnWbdTsVwZDLetsLV2zmzcD-HVo639Mcnpl01JD4AwvtWfPucIAIxK3Rxx5MKPPnOHLSnCK629ajxDfX5ENwG2ZacTmiWElmQmUQGFjIOl2B491EHhwLLxMO-JG3nUO_9l2Gts1Fz1md6f8zLlglai1S7Sdtr3O5oCr1htOm7vasuebpqbkXImN8vjtU8CUtPhE87Wtu0IMYj8ssDkZUUgJfBeEeMCeUxVg2IXU0RPox0QSnJiIL4eweMwsD3EesBq43ePExE-AYbfCTi571MNZaF5aAWR153BS9LCQb5G53ePVMpZia_6fJoN6AFZhC_3ybPz2ywMgevTXkqJtG3BlEnMOEYvtNUQ3xLx9Nnsi0E7hD_sutIwA7l1253IRekk_XoJ2MI5ydwVwEkqC5HZikjRoiKWz3u6_FOpxt7qE_pJver6rXikPQKnEVjmdi5ngnWNz8t7CiYkdNQMg7Tl6tIPNttAYA_Poo6anb2sKe-kBVUp7ajO9M0ABi2IZMFuKFNSgAehwhQ6oU-j7BVE3ZuJFl7DGjbb-k13jSFE4SvPO3nlOL7pSwvAnmG33fXMGij2eeNUwTYiGlr3tPr5sh5Nmqls-P4XQ6n5uPk8xAoTZH2DG0Qrycyqp-q_KIwntR259--wcp6hHfhYzyR2ll9q7W3kos_qkJv8yloFFU16HxWAVLpbhhNCo48tYtZmLydVCBCPyrZeR_SeTEH7hzTnb4IcEpqEyW7gXYobzotKMo9kA17-t28iYxYcrvMJjpWyzkQfNq4k6S1SKIHqs_Ds9BaoVCowwNwwRYYlH0xd1YSY9yyS0Jt6d9JFBnG9Ix48EtmZB8X5iVmr5AVwFUU_RDxSBda-BVXxxLnwRJBAVJIZCM_JReyDq7huKNdUQLD21_F-4zbmTAzMDm0FOTblPZFFSdLWcW9E2TYJsTxtFmGbWEkt86jJQYaaYnb0uvzji7Jp943lVSxACqWLGaeYReMEnXiVQrtVejDL32dte_KXDh2_EuJufRTZQ7gxBCQa2NSyS-1Ve7Dg98Bi3oyFkVvtL4n9AlWTGvzN_Gpn5BE9a4ksCL_guoOsR940ptBIEbo6vofOzmti2C_mcEqgv2mYZmbLqVBubzUR8W7iMdii97vkfDqidRSLqjMs9EhXgeMdXjxLnKYOVOLoQKH983x21kCCGpiO_y0UtWeaofa4zR1JdMATFJhE5vV59sssC3p-OBs8MiGyCrDo3aR-T4uL8n12K-IdKqumXOk3S5OqVH7Ovt5kRojnV37-kDIj28U1arhMBk8_eEa3kPLQibkhEzJ_Y3SeZhH9cC8nyI-o1fooUGcvvtSiGmEHo9e0VbnLetFTobk7v75KzyY9izgz-4kNaoI0tdueJosIUjm6YHxgmizpqxOyMpoXLtmLpQUuWuv9Y2TsaVBjM4FVpU2l1RkzAsqbI90gUDX0RLvm-r00s4oC3mUlFjufeOYOFSfpiqemGvPtD2Q4Qo5d8iccTU_vdvaEkRG7jwRhp7flmZrEEGufKfKIckptEhnL4yptTSQRaO_Z2lqHHAt2txIYGxW-OBqEsh06HxsK3uvjSJtGLu_CYQAFwOeKDbOQd7kmwXg-gQGTlogTnIkoAInmWCpBgKz4fvprx_ZHM7RVrf-4x3vkZT2KSnAx6oFqJlIpeRfxghfRfUiUjGD_fEDMbuTRLPyZBslRkf_4qOFTaERA5LwQnzqO6DzrntWaLzV3VBg9B2NpAL2xlmDbi_Ipyfz916YnbrwS6itU3aXWzFEEzM3BLqomoKzDujsqBBYvkRpn_lVoXIs5LIptUA91xG2khuOI6cKZRn1rfosk-ZRu8HXDzxuYdFHNPgonaUAdwscXamY8J45Kl96m60wx8RjYsyOa33J8nQqIjwf6qJMFIA66a73bXhfFxNhXIAoIZRmDxUe1vIF-PHEBWV_sW-bHbzVlogMKtS0xahmFL76TK2Say-CBbQ93nD01cvlHFYxnjYZe-TrekpGrWFA0VEEfmJWt_hHGbGRM-IeK5_sZMy8RyYh6MDg0ji5hSm4P-mhc6-MIwHJS26fZgBqgM1PO9QlCMdJqtWzkpNY9VUa43WboSATOzr-dU1sHuF8Uxtc3ArnjbkvQ--h0BO0pMNqA8DeBipzNofEGmYKt94pof7pXTILLAv5uhOV-WILv_iNlKLyH_si0GQdCxUdqoYH2yTSb5JR3w4q1nGYa_5n9iJ-XVmjbRtKor7cyf8tR2wQysPPSWKxFKrwHZ2SooKt9jxAGLwWnuTDUgPjAYjaU5bmiQb-yjbojR2bI24N-KNki6gdCW-fp_EX_QKpBvqmVE-CX28po0w5git9xtjPuqCtOUWRA0z7Ri9fCbAVkKTdleaUgfjnrJAVttOs3wcpDRe0G8n4T3sSDwr8AVgwjCQSky2ZMceuFtN2IMhr6Cxv6dCZax_b6iX-qpOfLdAMcUtxt0mDzkkoeVhYDLZ8r_lYiewlhlVz0_1OyL3Fa-jsYsXXxm7uqI2liCaYPeQO0bMBxc_axo5TZzJWeWMkhH6YLDn0fg4rXqroNH8YTwAmIBPtxtNdUEkIllc8i5-x6O5kQKcniUIO5MJDThWRog5t9iASDQCIgrOFx1ibetd4Y-rN99ILhPSfSczDlPKTpYqf3YS21qNhiwEpgX5dVqTFiBugdGQqC2rsRavjsIFITle30h1oRjpS4yjfdMKqFiSYdTkaeoTYF8xjV9pxxmtpHTVI6dLIZjmuW685NnfQKnwpMPCvGpzbIVZTm4u0Vi_ziBpuf8EiFNiiSBWWTc1ymcRIPH70ws_7QssZ2TloOFuGI4O8zxozg8yfA93nxzULx4PgQtuKLtPblrsmBxsWlh13TSWIkAaPNSpZ1CBt68Prrz6QVwDnLqfFH4njrcQffLFJiwpcedGoz-R1ZHBnYO4iwzZuX3V94fA2oRo1h0AL90vvYL1zEFzqMk9eT0v25zsYpSqUSdEbIytSMyoeS1uB9JHq2jCcuMMo5HYGHFhUFp0A3dvzBqzSjkk14kHa8YGzeEGxao94jblUAmk_vwtxckK_LRLPFHJ9J9we4G9NAED_AkT4FJ4PJPII74JpEZzEiHbLQQwcm3rDRA2YiLo37raz90bq_NQzXdE=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01850b7e767e250c016aebf843a7ac87d186c10af371a70b61",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hO-7fYy-MS8WejYroHf1TZDuUNkM1nNzEs6FQLNhYJVkjRiLXRYOx4ZqyL2iQOn9Xz9xdHXJ6na9KtoXCvuLGrrQ970uDhADfNNPB_0Mewp4GCUb0RGEWh9FIwQ02ivx4AejZo3gqIJIqCD150swD_9svakwCawbhfplhyQ1U1YGQmYXE8hLyLwb02sdPq5a-B8IThcNqmWOC7ncfQisf-fiNoR_CEwJe4gudFa59aB9ek3AJeYLKAVeS53chPARR9XlSy3SQemjAhd2_knv07533v-daableKwNMVZEhmZdFs_Y5y0dIO84t5lud6OmBuvEfY0m6H6ah2UjaGv9cCWIW0HQD12R376dp32uO3MTciknA5vfMnQWpxanxEIaLl1GO3YaZWxaCcqEWtya_-e_V5gGTyPVkEys2dboWO7WCLlkqd7EYFl4DF8auXgzMr7IjOv18E0CxbbZK52HPz_F-Ju9W5z8Jkugq6LMUll4jBuGtZRb9OCqkbFcoSF_b1xPY9qW-OWOR1ItD_Y6P9AVTczkgtrGefepxV1XyLnmOODmWL5B1GRiFtalKWDhJNMsITTDVrqAg2LBy6iovPirXrkx9qhWPjoe9xHuaprCaqxDr2bcwLx-FQqM1fV2anAIjpJjahVln10N6npj08clUtlmyTuk8B934a9BAdPWG1cqUX578lnhv5EmSIRhJ6FPgbYV6lBg562W6ToAjzuOLevbhQw7rLrxpT4IrPdpHnXEw5-C39zwaIBY-xTIexO3GRtofhB3EhtklS3ltx_KBwiPtaCPcuwY607kcfIcqgfXdfmLrKeHBuGxm8OtxboEU8v9TyMhur6DWKYsla8XUvtCWugyBaI0INM7U94cUk9CthPp0_3qMkES5V434XaLp0sB9ags0m2KABG7jFtxenNzDp4JEirD2myNoBZdtlVhbg1Nw-F7v0Hw7IB5sHT6WTPXV0vQD68X0r6ARKxTzSTZkozKFZEBxnTRDzBkrqkYTCLnc34aDuBzgmsh3oPkbPKsxLrQ05opMty3a3gJujL0svPUNagqHvCz_6zg-PtgQGmnMjr9MS7BNh5QPgybaXtFhOdaMKEGzxOAe6lsPrqnp5seAjuSd-VetSFHHL5OSJ1QFqZyIcyl-he23k5VNpL14lQAlBkbHJmSzyzCWst66FXgeXldT-X7QwZSke7E386aYbxpRYfsxUaIipmHJcLz8i9FyrSRTcvferzahLDKWoKK4ibp1onIkXPHtep-vypzcS4CRS-wi9Mz92pSaWaY6Yw4WWGvq5qrGMWP893_eKTeENYHenVPIM88AoMA_NhDdob8XXEdoEYi_G3ZgeK9wUzLB6iucRhvig8jNgQfHE9aXbsd9i-agyauoFnLhX-n1Mn1FJLFwFjyH6RjOxf4EbgTYEGnD1-DMXmaetX57hdledzWJT65oiKABsai-hhB_OSC82wx5k9fZRAUL5I-hszGPCU-UFHZAC3FdM0adw0VdZANY9F4UMCfzgrbG-WJo15IDudS05khDYfx9XbJd6CNEoAuJtLoU2NHcQX5wcegnINXl9Pst7pZtFxYHMc0vbt3CBn6OuyoceWUNn-Zs3J7yzurDso8ATDur_O_QqMZhUug7QuyfKwENyI20fo9WncHM-nTsPY53uIAPbHZmBlXrIcKRYbD58W6ba8EcYtSA-NZwSJ1mcg6fZhYYKP2NMwKiL-qLmgMrO-L118hckwkTUa1j53ZElu21Os4fNinKClC98qRn5jz5uv0qIrXDSgWK87zaqOCVihp6VO5Ese5v3sY52Ya4haXVqI6nqDbs3BBDTmszVmSYJrbGcFUG-qQfoPE8Ldz4BsnqQ7xzCJ3QZHYNZ-qrjpJ-spLbf8dehOjWQitx8IMC8Wv1Q3ZqJ1hj9-SLMgFoNhf4Dun7IdwW3RMIglECERqo2NARBPFTyXdJNoVGZex-oZAsTeUXm62hzBOnnwFRgmAW969ZsYdJAe8Vu10w9WOfbaXfg3GM4WNR3cI3RcEsnE4vnCbVFbaWhOTzHi2MuvzEMdFl90amU4hHf1r8Hyqwj8dvMwCYdxLH8abPoN9sO8TCBPu4U3qAwl78JEnCoZAv_PKQ1Ep6tZTV9updsnRUADMCY9jSk_C99M9Dtr-BnIExL0Ri7hyTJYrmKltNI0oGt_etfXbbzstKG5S-RoGVTYqk8FQFsdaEPoPPn3WOrMidfR_oiyEND8kKzgUQNzHds53dAV-ZbqfwcOd-aWisDejnfwwo03g8z1Ea0lEQ8rJMOnGEXv2FMFmEMcH5FWIBC47thAXOZ79Ve92m6JYQ9uBN-Z8DUSozeozz_Yn_6Qo56WZxZUBsq8va8QJwbYi5ji7P0iGhaG1OnT4HzFiHvke0P00Lo1IvrrftSS7HnAGfdfxFsHDBtcFJXO-ikNRrmUAtaRpsOBwt_matMYP030Yez_JcHHRwxtGK_KVR9vSCgem3G1nOAKWakiQFv7Qvoj9wkrIuEO3qrflIEYbZRFmZFYlp4opduuJA2aM2IAc_MZkMOuceIaTXTwK9GSM_6LxKE3LPWKc6mX2hrNcI0_uDmL-RQoW8dBlovpSJX3luVNi6Y7JE_pP1QgKRSGQM-hd_ibNXBp1C0sFmF1oYep10KsKxsBGPMdGJZ5HnbPTewPauMbDmLwEmEJH3DmOVLUhBhZmRL8RpNtk5yUqXjBKXs5BLJv48uBwmn4xldPmDj16On6Py5ItdwPc5j9aCL7GzkTDuyI_vu6vLgY9Kc73717PPAUj9mN2KJ9NkhKdxBTK44LEjgkoHyI8MNcG9bCHEyPh4lEAFo5vEu9gM0tQhA1GJwrpBsJwDkMXsZAYL1IuQe-KykybZoNiDdEY1cbi6_ClPlFKD82BbFwcGanbCimYgaWFk1VdAsWa0NijBvvF-92xhI61WQyu3Os_m25zgiV6VLc1VY3qEQWX2ma2AGGSuMMFb9Skw5v7dgfuSQf5PFCQtKHUkbYMeMWwhT-9iolMnWdrWNJKh7rJQtlJiGHMUMXO_WGcnURua9uYVkkaD5y9QaWMqfl3GTWL3m6dIkr_-rBsAK-08d32bwjwuoYFRi0X1Ha9od06_xliiHL4I9mABY6WpPuF5jKOswRwvQf9Jy3QSGfQPNUlBwSN-G3_pDnuUzeamc7hBs3fvY5rS22Fv0mzahCxAlwbP7MakKzQIi1scQPwPOvKxXopQS3-pdhgaJrak3EjK81OzMuvJArWpKgXYS_0YMklH9De0_X9qS1kCOR-8yqDZia_jyYgnuxPThXkX90pU2kbfhRD_nznbCjOr9eLvj16dRpQ6r0Mx45oV4nJhRdC2MBv3v5qNzYdzqYx7AsIUYd1AJTUWXL8ClPCip6tHVHOBCQCx5LrOL3p7VgEXAo3n2aFV7jP4LqNVfaH5428ARJEkz0rcgMexTCozSV3a_v3vojfce7Q6V8G9S7Lzvaj3tfoK4ndy2DCX4ChMsAoTJN1q4Cm41z9fXWLhxEnPAy7pWrZMQL1eXnx17lttdHqLfBDkun5ndSNU1aKDPWLdAZJniBfF_Sc02Sn7juwA-C7cvKjkYPj-JRW3znYqcIM2LToitp1aTjdfZ08h_Z184KnfFrf6DqnolJsizkYy5YQZw4CxayLcl6viWA0a3A2WiBBx2y9t1n92PmIacVsJPU2jRrJVKeojXHjLvXLcqJ0CsM5d8oK2ueBGnJY_I_oJJJ_KE9vtrKAy2jvuRYvEP_QTIiS7lNYnpfOZnjp6En3phHG3CWKE4eBOBR8I-Wckv4dHKs-ffWi904i4G_Blhjwlpbu8guPD3OgKTRqlnO8PYx17qt8Hgttm-1gw1zmVDpLQnE1irTeWO2Pr8C4yFfKri0JdEdBGxe8kuNkR3cNLuWq_0CwG9eWpnvmGFXT4KgdRU0lyuvW_woEwU6EQkPE-NiF6MXuXNeOWpn1_InkxzNYWa-E3sqYkQO5uY0AKoiYSCSzz5jLPlEsHA3mIVIqfhZdxPWntt0UJ60i8BKJwlLFOad0GKdkM1YtJxsXGBhmG3zCdqrBSNDsZnXnstFM5XNnjp06ONmsqEyBuyNakQ6vtUb2QRQaV_LNpa_S_-9axxd82I7lfLiReVp_jL17cdKuIZNEb9RlFWn9kgF2ZMj-97gb2m54KXpmjj6xnDPaWDGBlTrGgUH6z-Is8UHmbXu0oBOdU2nnsQoNO9Br2-qTdVLihpsxI0Au8yoKiGxYIPq6Qd771ZUcRW_6v8dd8rcQygU5CI73FH4X8nfthP30-zDvEoCLBHXhKpON4as1UqNUPZwzXssrOl6J29m5KkA3AWEzxa0G1Y3JxL2e-3tsdE3zrQ8IYxUMP0AC7X6SoJZiYyqGfv57i-v5vgpb_tzihPjzcLq2wnf77RolAtU_261l1_qeWKJ2cWpRhXUievhA74U9k9Yor_qYJIbLMSC1N7OUnnA7ASEKAcDKRJG2Vr6S00WdhGB04sJRNVc75yp4FPJ8sg8cThulw_gzeTmJFk8757RONkSiD5DgyYYHtneEKkZojja2mxtL_heNT2AmDySV6d4NX27bHIfuPrtqLE4gJrEmdoLPwD8mYTwihGZpCwLKMF3Ql1HQRa4XNbYtS6mu9ViUobiBoBkuJbOCCJGHqlJVGeYqv09Wbtg88_lbijdsRlg01_-_xgGll1Baej0bAs6IhKZuLbNrrNY1-R7alr3lEuW17s5VlRzWjB64DHM8TBGfCW_O5XBn05rOtYQrthHrEXf8SyRSAYmAIpmzjSkN-mmTSRaWIVQTu0d4LJjZPyaHfbZK59zvZdYq5pShLhBFn_vVDpcqhs1Ql7TuUgNE5k90WKfwQFg1tOaJUOYk5QiDjvdm7Tyu6K1_7Vzf9lVjKPjPuzyPGgT82K2l7PzDfxkbZ3Oq7pGrR1nHx6HyNFi8DdfyW1HClMRyPwPzlInkpyflBwOmxRPBZ2bHgrJFsWwp6wcQnsXXL7QIKjIql_jfnHTMUocOBU-5jmnoxeqHVHufTQkaY2nnxyshXZfoBGQnSc8gWQlllYGXae4wXmNUCUPp5_X8NG9-0_r00ipmvRr61YVHqY0WDIRhBQDM6zR_ClAxXlKxDtt4TdDF8qS8lcW9g3yXc8fiCjN746CXdxsv56Rdz1z4MGKFwxBUZGMb57BUwvzgINeBNlGklZXSMvLaEjiEToJHkfNN7Il9s8JepgtWegTN13N2cpyTmsMzdqF6G0tLY6e1rApafbF0n3HZ3ku7ubsO-yVD4Yz6FRiBbj40Ql_CTqsDUXN3tz88QiJbuIYZWX-dfPmuQnhU_dT4dBRLay9hVsFuV6qJ_80nnkxVMNI7zJ0WSZ1rzeQOnNOjMclL2pPwr2TtyHuKUfLZgpt8BuWeoIGye_NUINW8bAK1frSScuC1m-f3y5rnIEIVCmuUq40Sue6TkfqmSaq3DnqO_7OY-GUYQ614zPfuwgOwo6VFifdefSJlJC6nRyZ6fBh4YbG3uoxN3iKc9PrpwMNbD8Nk4KTmYMHjg1qc9rdutemIf6yzPaFpWCVF2vZ3HRVYnKBE-26y7kgccsgPDrfsExbrpeZ1_YBaq8b21jZBL8W8EvoKTDL0F5cpgAcpQG06quQmWAY75KL1bg2s0-1lZxvca0tNvT153iVn6ybEl38vaGn51SHWOuffygkRdce_Sec5-DA0MaPCGpUCF0hjtoaNYPy96Wl6fxVOzlv8RTMPUh_CXmxkEjCaqkGDo7w2uBUwFGNNJRKiW2uGtetP-LZtY_EBBF8CYuGVpoHh4Vfp4SBRivg6PDb9-5jSxGqhYJo2wm9ORRzoY0sJ-PAvEu2dHUwasG-8U1olItAuAb7J_glrJUmv5ziQkQgJFYwi6wBpr3rLzEvuwMTjJfxb2xyVnGionOpWoT2DChrfKlA5iztO179BkXpVv2vDFMahFtKaiRguwsGPnBTODDmK3lwDpftk36pjblcACVgdrg_AZP6kD65ztRVQFKXG8lYwqYd7u0tYqPuthMvU7sL_djxuf_bv_PLAUC800PHQszRGXrYpck0ofmKj6_srruDmIcOUwZl9T6BKUgji_Shcpuc8J91crfvuDUeCvTqPQwCeRmc86pGlnbgLs6RaktSDSkNWwyvuoobqjNkM1OTj2zzEAtP8SELyZDirgFs4rorI8dDvIDUEtpZhBwA9639fjYHQ7dWM4jOXs_doTATf1PGPnGbzCnBniErdHqS0axMT1iYJTnRD5mcX9GtGL6D880PoMiuAgs7jCwO9gMDD9Nge9Q8gvQj_QAyTayp8sLxLoZsEV9CNT9x_z2S_aUAa2_HMLvyNEwTrfSqyT6S-0FWOBSct3rbLs72tgJ1nJq0Bdl20YekXnLaS7yTbrwwNQHsMgU9jZ2IIKwQ4_1txLAAmfOqLE3M2juCv7ZSvTpGhze4X0BRjTxBmzpyRP735yAngAj_9YQUoHK3SCHfAwHb9dpcP1fT_5ytn97ZxuMxRDNKPMgGo0IgJG1tz6ySSsxJSWhcw7k2MWKpm2jM1_JYptHM3XXr8PL09ULF_JtSc7m6D80p7xWQX1c2YblYyQlmLnf3HMlGqkKUjzKl8EdawZ2UJ03AIHdtxLe13B6t6WziWoXIEDmxmNAXYZwKHR4bS2yyJrxI2oM9I4-eEHYAoFcbAE9h0oDg5-LPnW0RzoSJuHti_iFH-ihZhRRH-eu9AHkWweh4NOKLBVkTSHqGymtrr7EOucW068GUm5_2S3b8S-If0fGIGUoFoV06tc5ERyzCL9ic_mVkmQ_qHhk0yWinW5blx8ML_tAr4qVO_ZV5URgBHiWvvIHNrVrIhsYwxij4B9EF0rM0R8m4tKS4X20ktAAyBu-k5jDzsSLWBD2zidkmUhZdnZyF13lxBWbUluWRze1Yf_wMdYfiCR9lSJvrKBqdIOadyX0brfVQ6F0O0kDwn80vR9mNSHRV1KWzfvGZwYuV5EpjhzUIT1joJ8zCUWXpMpGQU9VYQgMp4KTDUNrQAKsuyfCCmBN8ROq4XlW0IxYi0v1o1b0QjxevujqwmOU7xcGpXPhnqVfHucfEy8rj6qVPAk65_q1RNl4Zl6TKATvcZlnklA51Bflr2okjoHQRNirup8x6H9SWUrgkjPASVHngqin_xZ_n_kjsmln-D6JznHSGGD5vj7heiiAxdReR3orBnX--rvHadKpWOPfU7LLMJbAwWwyoCpXKsIxwfiQZwJeDRIcDMtbVC4IFbxddmjs8ltk_OWgDPNNDrsiPIrjUV6irEa-66zL_sv5hjBaGRP4_C1NE9eF_7NEk6M5t-DUuHSPG9Q2CRWz-zyUfs-01AHviiJUq_Z3Kla16cO0nHEJ7BSF8EddDPc4kDzZTIPsVjdzX_i5TAvJabHeiAjlsWujtgtlTfj4LPDDtrPzXN5eKQ==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01850b7e767e250c016aebf848350c87d1be4550384a97a142",
+              "index": 4
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Examining design considerations**\n\nI\u2019m considering the category of bridged nets since there are two MCU output pins tied together. I wonder if this design deviation is an \u201canomaly.\u201d I need to use the pins list selectively, quoting pins like U2.6 precisely. For three nets, it should be sufficient. Although common outputs can contend, it's fine if a reset net is shared as long as the IO lines are all tied. The spec mentions it's an ATtiny-driven fan controller, which gives me something to work with.",
+              "format": "openai-responses-v1",
+              "index": 5
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_hQ--tgz1X9GzN9TMd9GeBVYaGzQTSn539RiDDqoEE_aI3MDNwRzKTben8oPqa1aFwU5mvOwH3__8calmP0ZiiayAXDMSRC3LdmYwJeXjrjkpuYuytuqxKSf5ZAKsWpr-qHV0X36oLJTIuvgRLWxy3UEzZrS67Uu4mw7SDnsb1mEb9jt6WEiePIcYtBC5syQShIqhxKZ654OR1ph1dg7g4cd07ImNEAd77vBOWrZkf1OSW4wt_D7WfgF66WBZOFXxfftNLJDg4XQSE-nPE3jAk2drJrwoPAa1HuM2pump9172UvO7TOXv5wIOaCvZE5BuKq2-YkVTl9RXyNZJJQufaid2_xotkmjV85fT6gDtvUnU53g9etVXQbnzocJnBLMeWwo58a4o6lFDmjHNr82cO1IJ-rGWOmsC0Fm2ilTK6PAlRG1_hxAacAx4_zc5FXLHBS-bsoyrBURFnIKESEfbcYmgVo3saqDyu0UR8DPLga_LvnHR9NviuyNhETjYYnc84AzOe4_1WiTre01LWO1x_nx4emLfcrR2Zpx-o-RL3xV14kJY31LGaXsfcA6FMaWo0HW4WHtmG4HCCeclgIaLXnOgW6JbR4hVj24iNF_e8QKH91WnDqz2iPafMWpIfl3Qoroy_FP5kdXj-ih59_MDL_2rtovNHdJuvsC9h4wrTNkSLO_N0XySgdJIjAbkRlUJZpgbrrxDWsH-XhTzD0TTrbyGOkmEFu9ktaJsaIoNxBsN8A1dzhUaqkkqJlbk7AeeyePiYP_on2I0rzwEKecFOLVGySJ8gFc9d2KseMh04txRVOTaK7xtg4msQg-oPc-OCffXPrqt1JKaMmSCNi21xVIUvDwbsCFodL9DmcGETX_lMHuYCjYqm3bd3i0lV7azXfgM_s__Z2axEps25z29RpH9Bh5OdTt0j2dUdN1elIh2e5_AcXSxox2Rg0BsCZ7OM_GZIGRi3Cjn3SSsxqwOgK2r-32N4vu_Hgz6OXYYRQpPvJKkQYIg5cqgqd5w_O4gfZfrWX8fSPNU-NlhcbD4bfmz0DcIJ_sjAQJWy2CNEpRZ6pM65ce0c78odRLaH6nQ5yunj53GdYYLLLb14Rf-0xGQs2WNzvXyT3L8dYZqSlw0fEeaZO2gncSKKShO3ODA6-FrxxdVSvn_70oaBGL_BIQthQ8_6XD_zHaQaziWxBKLbQ-V7SVqafdAk6kXGcG_akOOuN7U4Fg1djpw4eBLUBNQm-LGWihrENjpoV8dMQfG9xJQzQ4N_eSJNKM0r2tcQORhnsWbsUNGs2t6pzVGmM1wT0zx_T6RW_sgGbYHshjD9t4L-u62E7ent9C5fw3xBDiXxKG86O_HWQDDroMDnRqutjx6XvMifyD6Afpmu2v_n_Gke1QIUpUTqdNVLQM8ivXUvJKHiI58VDHF-yGZIy8_nXOVlmu29HbQk9E2l3f-w-jRPuEKc29gpXFaNOucKupeOTHXNXciTfLh9qMOJG5fsACZOu8hmC7YNN5ST9DfbKnPMgnDqacmMbtKSSaTGYMu0NrsCOHJNRIo2XzJqoVKk-oaZW9wgOvFWWDxKqb9tOzBaVYTxKZ6UNBzHD88U5eLi76zRLiH05F34d2-xs_rE7-SSsYGZqJ1Zglff0Yq0gjNs7ZHiROJ5c54RCN_EjIOslBSUYo7pd77GKJ3OzAeO2Sk2bWUHIATs3k20Cc9KyPnRYA4MPPMZpWf5t7iXBezShdRdb_HIaBvBcuWS_LQI_DyqdrxSr20IdURHZlyRAHUeNb7OWhzpa_AJD-yxVW89KBrN8te55OZNzKjY-ndcViXBX96qYelNMO2v7rqIbKcqJ7Ju3fxVETryA0NZ3ejP6FkLYu-ypKwpLoeC58ndGeVdfz2E7cfaRQsDsmqTjQOfc_UzoBuhk9KOrRsPzRObmut504yS8VeoLfr67XkIdWJ68E9zWARbbavgVZwUh0tDxIBKQJWF_-sbz_foLVjbSCHLfT3_BBWZH1GOax6W77L-9vys4nRL6rOz7Y6HyWXjF2JMGlyJYu1l7h02_uyHow81CizjZxKWO-mB6i7lDqlyrHpGaPf_SL0WEJ_-R1pRdWhwkuV2D4juZPuIUHw-yzAoSEaXOtrqs47H4M8CM8tc63fx8jZ0Z4yrNymWUnUdL3bWqWkoyU9xVRRuBJliI4innBx5FRoxuxh6zq11SLSSMjKgHI3Ad4uYdNcbNVKhkNYzuN0ZXk0zGr7FN78xndzDbGw50mFu9j7zXFaqq0lySGQzYZTyxU29KkXQ8ObG7aG8AXL4ACmqNVcsDDGJ8YSkIvufvUSNIjLt21xpLOsHGLHq2cG7ou0lLMeBuoYKQtJZTAVVHZ341tSuWTRxdEBtEWe10p0WNoZ0VLeitPwr1lDowdn5KNe0oItnUEFh4TXdEKqMU8GpNdTjR0uSugUF5mA7EtMdjXIR6Ulnt4und7_lMy2fI-lXirXBbSHVxyj3_2kpUjWV-t1SDK5uGnanWTDiugqDDcFDz37md0pTPrbAoJtKZCyZSiSQXPERDHe2-75HTuz63RZdSozvJRdMMNEE_AG75z6IVk-w93-YQOm7cylUqfrzGC_7x5MzxovyL_KmiBguby_I_xG9Xf6oeC0mItCmkm19gX9VCk_9A1ZF6cGWQPQqRzT-1isTgeGYoYSNph-QdGzkLry332VO9Q9zt9jAj8LCS8NSg7dpYlfvtmmOBhgUcWgQHnkjEAAmLNhj-cH6PWUHC7hF6ECXWZE8QNVZP3dH9kzXNdI5_ukX1dF5KJ7zudiP6X2Yh--LDya91I7rlMeZW1Ah5KAux_TnXc4avWKcoxNRXgdUiBopfSa0MGJMU3tcA6IMaLxtDJxf6xMuoZ--eN4D_ctGHJo8AGc-zl0Masl6E76dRIGpsWfPs1QLCxWol-5f-H_Rgz2vZ3W3ZVXn3limp5W7AcQYy2dc_foiNhGzc2ZD1C3xTjtnErpflSZObPNLr7MIqT_xj_h3Xekc6EZve__ucLTugHSb0zCQigJLQrMqbiPCKOEu-LRszFfQWbET9VgTYHaRzpOPG2Zt1jicjRNZ8IGQiG1ohY9CXUtU_R2LZtepZrTInbo4ZjREYUeKGaAoL56qng8KSXjBbPXjpZdE-qxnTA11HnvnKlsnGQQckIu0SwIMM4gfQGSvlvYsWC_SQXV-r4_wpwERl0iUlFPgTzy5n1OlXnbWSKbs_Frp8kPYijwpNlErDAZBl5fwe2JsnyoOWEGh0DObaVL7QBjhfEMOxiO0U5-G1APH-Sw8VJN-EbRbs2ZKN6Y5VSuryDX8wm0yTiFy5DrO6c68XYe2HG-xrISHhePFl1LvtfO12J0s_j0a9kvD3F4GPN_1uRIjCjyBQlLSa28ptzhL2b0II69WySeV-W034CvuY25KV6LgvsWHLuljFrmIdskbzA2lgF9rd0lpvszWz4pwhBRaX0Eq69CKg4AM1OYN1tOvmgMlaKxvCJ8m-8CZMeVa3UXdNtlRDRJs1cAEhFodI3YOSfAzjRFcpu5hoU_LQlW6YNHiCiEAvv3T6htT08I0Pq8eKTbE9Os_WDEqlaUwjMraCw-YYaRTMfXGa8tpww8Usj-XO8i7cdvs1AUukI53wfKX2w6f8ICaBNNEdecqIs1JQBGO3l78rzsIOoueiqLIyJtvUT5_6e8_LUc3trXB7ezfAiTXtiVqPFo_mOLYqxlNrK9K7Eh5lnVdLp2MJFxR2ovr1L5Uyf5f8uqyuEOCsL4URWcZu7ekpdEeTnUUKEEE6SRh7HJqZ_6J2VBXT9vjWa0JUYgsMGXMlAfwWfCSyHDB4ZYnJ1ZFWnie3AV1epkOzTc0z0pHlOXN_DL76QyoW6-tYwSbABznt9lEqXrPyjPoKKCJTkHImXu5rpB-tY9LsWlCBwSxT6hQ1FOnlAtsl2AKTEp9Bnau_sULdli5uH-YNCwH99JePSQBDb-dZRAzhpz2n8cjbp9aTIg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_01850b7e767e250c016aebf84e5fe087d1b233626ab0d08c88",
+              "index": 6
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1793849401,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2312,
+      "prompt_tokens": 15838,
+      "total_tokens": 18150,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1739,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 15835,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003135675,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003135675,
+        "upstream_inference_prompt_cost": 0.001979675,
+        "upstream_inference_completions_cost": 0.001156
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "id": "fan_controller/ResistorToCapacitorRandom_Swap1",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap1/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap1/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap1/spice.cir",
+    "chars": 52319,
+    "sha256": "61f540e9588ea21fcc9abe535a60b404534b7af68726741205023edfc6242e2c"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.86,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_component_type\",\n      \"components\": [\"C3\"],\n      \"pins\": [\"C3.1\", \"C3.2\", \"J2.4\", \"U2.6\", \"U3.6\"],\n      \"nets\": [\"/PWM_OUT\", \"PWM\"],\n      \"observed\": \"C3, a 100 nF capacitor, is the only connection between the MCU PWM net and the FAN connector's PWM_OUT pin.\",\n      \"expected\": \"A fan PWM input should receive a valid logic-level PWM signal; for a conventional 4-wire fan interface this requires a suitable direct or transistor-buffered drive, not a series coupling capacitor that blocks DC.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"2\\\") (name \\\"/PWM_OUT\\\") ... (node (ref \\\"C3\\\") (pin \\\"1\\\")) ... (node (ref \\\"J2\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"PWM\\\") ... (node (ref \\\"C3\\\") (pin \\\"2\\\")) ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\"))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C3 /PWM_OUT PWM 100n\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`Atmel/` | AVR/ATtiny-centric boards: ... an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"The series capacitor prevents the MCU's PWM logic levels from reaching the fan as a steady waveform; the fan may not respond correctly to speed commands.\",\n      \"confidence\": 0.86\n    }\n  ],\n  \"summary\": \"C3 is placed in series between the MCU PWM output and the fan connector's PWM pin. This AC-couples the signal instead of providing the logic-level PWM drive expected for a conventional fan interface.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.86,
+      "anomalies": [
+        {
+          "category": "wrong_component_type",
+          "components": [
+            "C3"
+          ],
+          "pins": [
+            "C3.1",
+            "C3.2",
+            "J2.4",
+            "U2.6",
+            "U3.6"
+          ],
+          "nets": [
+            "/PWM_OUT",
+            "PWM"
+          ],
+          "observed": "C3, a 100 nF capacitor, is the only connection between the MCU PWM net and the FAN connector's PWM_OUT pin.",
+          "expected": "A fan PWM input should receive a valid logic-level PWM signal; for a conventional 4-wire fan interface this requires a suitable direct or transistor-buffered drive, not a series coupling capacitor that blocks DC.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"2\") (name \"/PWM_OUT\") ... (node (ref \"C3\") (pin \"1\")) ... (node (ref \"J2\") (pin \"4\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"10\") (name \"PWM\") ... (node (ref \"C3\") (pin \"2\")) ... (node (ref \"U2\") (pin \"6\") (pinfunction \"PB1\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "C3 /PWM_OUT PWM 100n"
+            },
+            {
+              "source": "spec",
+              "quote": "`Atmel/` | AVR/ATtiny-centric boards: ... an ATtiny-driven fan controller"
+            }
+          ],
+          "impact": "The series capacitor prevents the MCU's PWM logic levels from reaching the fan as a steady waveform; the fan may not respond correctly to speed commands.",
+          "confidence": 0.86
+        }
+      ],
+      "summary": "C3 is placed in series between the MCU PWM output and the fan connector's PWM pin. This AC-couples the signal instead of providing the logic-level PWM drive expected for a conventional fan interface."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Analyzing dual MCU design**\n\nI need to analyze the generic repo overview that mentions an Atmel ATtiny-driven fan controller, but it lacks detailed architecture. The netlist features two MCUs, U2 and U3 (ATtiny45 and ATtiny13). They share power and reset signals, which seems suspicious. I'm wondering if this design intentionally allows for selectable alternatives. Both MCUs appear to have compatible pin mappings, suggesting a dual footprint design. However, having both could lead to output contention. I believe this was designed for flexibility in MCU package options.**Investigating potential anomalies**\n\nI suspect there\u2019s an anomaly with two microcontrollers connected to shared signal nets, but maybe the PCB only has one in place. I need to find evidence showing that this ATtiny-driven controller is designed for a single MCU. The board appears to be part of the original fan controller project, possibly allowing for two MCUs. Besides that, I\u2019ve noticed the U1 LM1117-5.0 regulator, where VCC and 5V outputs feed the MCU, likely from a 12V input. The PWM output setup could be problematic due to the series capacitor, which might block the PWM signal.**Examining PWM connections**\n\nI noticed that C3 is connected between PWM and PWM_OUT, and it might be meant as a filtering capacitor, but having it in series could be wrong. This could point to a significant design anomaly in the netlist. The PWM signal is coming from the MCU's PB1, which drives the base of Q2. Q2, being an NPN transistor, activates the PMOS gate to control the fan supply. The PWM net drives both Q2's base through R2 and the fan PWM through the series capacitor, complicating the signal."
+  },
+  "usage": {
+    "prompt_tokens": 15850,
+    "completion_tokens": 2158,
+    "reasoning_tokens": 1689,
+    "cached_tokens": 0,
+    "total_tokens": 18008,
+    "cost_usd": 0.003060175,
+    "cost_details": {
+      "upstream_inference_cost": 0.003060175,
+      "upstream_inference_prompt_cost": 0.001981175,
+      "upstream_inference_completions_cost": 0.001079
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:31:08.097786+00:00",
+    "ended_at": "2026-11-05T03:31:33.757973+00:00",
+    "latency_s": 25.658
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-05T03:31:08.251Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4232,
+    "moderation_latency": null,
+    "generation_time": 25549,
+    "tokens_prompt": 13331,
+    "tokens_completion": 1485,
+    "native_tokens_prompt": 15850,
+    "native_tokens_completion": 2158,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1689,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003060175,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849468-eawuldbPoLidQ7dUHpMR",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849468-uNSui5m4hkyDFliJ5u2Q",
+    "upstream_id": "resp_0ede304bd7766ee7016aebf87c6a4487d1a1168218fb6fb237",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0ede304bd7766ee7016aebf87c6a4487d1a1168218fb6fb237",
+        "is_byok": false,
+        "latency": 503,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003060175,
+    "cache_discount": -0.000396175,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849468-uNSui5m4hkyDFliJ5u2Q",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.86,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_component_type\",\n      \"components\": [\"C3\"],\n      \"pins\": [\"C3.1\", \"C3.2\", \"J2.4\", \"U2.6\", \"U3.6\"],\n      \"nets\": [\"/PWM_OUT\", \"PWM\"],\n      \"observed\": \"C3, a 100 nF capacitor, is the only connection between the MCU PWM net and the FAN connector's PWM_OUT pin.\",\n      \"expected\": \"A fan PWM input should receive a valid logic-level PWM signal; for a conventional 4-wire fan interface this requires a suitable direct or transistor-buffered drive, not a series coupling capacitor that blocks DC.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"2\\\") (name \\\"/PWM_OUT\\\") ... (node (ref \\\"C3\\\") (pin \\\"1\\\")) ... (node (ref \\\"J2\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"10\\\") (name \\\"PWM\\\") ... (node (ref \\\"C3\\\") (pin \\\"2\\\")) ... (node (ref \\\"U2\\\") (pin \\\"6\\\") (pinfunction \\\"PB1\\\"))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C3 /PWM_OUT PWM 100n\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`Atmel/` | AVR/ATtiny-centric boards: ... an ATtiny-driven fan controller\"\n        }\n      ],\n      \"impact\": \"The series capacitor prevents the MCU's PWM logic levels from reaching the fan as a steady waveform; the fan may not respond correctly to speed commands.\",\n      \"confidence\": 0.86\n    }\n  ],\n  \"summary\": \"C3 is placed in series between the MCU PWM output and the fan connector's PWM pin. This AC-couples the signal instead of providing the logic-level PWM drive expected for a conventional fan interface.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Analyzing dual MCU design**\n\nI need to analyze the generic repo overview that mentions an Atmel ATtiny-driven fan controller, but it lacks detailed architecture. The netlist features two MCUs, U2 and U3 (ATtiny45 and ATtiny13). They share power and reset signals, which seems suspicious. I'm wondering if this design intentionally allows for selectable alternatives. Both MCUs appear to have compatible pin mappings, suggesting a dual footprint design. However, having both could lead to output contention. I believe this was designed for flexibility in MCU package options.**Investigating potential anomalies**\n\nI suspect there\u2019s an anomaly with two microcontrollers connected to shared signal nets, but maybe the PCB only has one in place. I need to find evidence showing that this ATtiny-driven controller is designed for a single MCU. The board appears to be part of the original fan controller project, possibly allowing for two MCUs. Besides that, I\u2019ve noticed the U1 LM1117-5.0 regulator, where VCC and 5V outputs feed the MCU, likely from a 12V input. The PWM output setup could be problematic due to the series capacitor, which might block the PWM signal.**Examining PWM connections**\n\nI noticed that C3 is connected between PWM and PWM_OUT, and it might be meant as a filtering capacitor, but having it in series could be wrong. This could point to a significant design anomaly in the netlist. The PWM signal is coming from the MCU's PB1, which drives the base of Q2. Q2, being an NPN transistor, activates the PMOS gate to control the fan supply. The PWM net drives both Q2's base through R2 and the fan PWM through the series capacitor, complicating the signal.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing dual MCU design**\n\nI need to analyze the generic repo overview that mentions an Atmel ATtiny-driven fan controller, but it lacks detailed architecture. The netlist features two MCUs, U2 and U3 (ATtiny45 and ATtiny13). They share power and reset signals, which seems suspicious. I'm wondering if this design intentionally allows for selectable alternatives. Both MCUs appear to have compatible pin mappings, suggesting a dual footprint design. However, having both could lead to output contention. I believe this was designed for flexibility in MCU package options.**Investigating potential anomalies**\n\nI suspect there\u2019s an anomaly with two microcontrollers connected to shared signal nets, but maybe the PCB only has one in place. I need to find evidence showing that this ATtiny-driven controller is designed for a single MCU. The board appears to be part of the original fan controller project, possibly allowing for two MCUs. Besides that, I\u2019ve noticed the U1 LM1117-5.0 regulator, where VCC and 5V outputs feed the MCU, likely from a 12V input. The PWM output setup could be problematic due to the series capacitor, which might block the PWM signal.**Examining PWM connections**\n\nI noticed that C3 is connected between PWM and PWM_OUT, and it might be meant as a filtering capacitor, but having it in series could be wrong. This could point to a significant design anomaly in the netlist. The PWM signal is coming from the MCU's PB1, which drives the base of Q2. Q2, being an NPN transistor, activates the PMOS gate to control the fan supply. The PWM net drives both Q2's base through R2 and the fan PWM through the series capacitor, complicating the signal.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_iEgEiNcLZhyLyttI7qrXgTUEVWc8TMvQAyrJZAuLEKTAQnsTjx6scp1PdoiTZvUzbv2oT8eC6aXmZKakMvoyXru9g_aOfLPakiz0nGOfVbggowo61Tg0z-xzlBE53coKU5jlrbSAmnlDGY-GgY7iaSFE2-fCNGasxxkxK1Sdvncqdkt8oekA6NnYMeUZNT2bfd2eQj8PvLDwQBAmcQIWRI4fXwm0zMyT_y5FwDZMVj2LFYVn_fa95EBdPU8Xz7VKow32ndHLOVEQw9D2JXMAG0_hOWJ2Upz5BwS-ePFep8Do8m3TF1SWUPh06gQ1FssOLWW_13WsELCvnWjOBBfwftn65lAjK-ns6Lud6wgZ41p7fMJHOVhHTFSDtp-iOKp_HZIis8pXXSFH0cNEl2vLOkTON0gyIWFaQCtNaEFkogc01vPogi2skEjK0rkoC0m0Am_tXp6-aMyxNzgfO2bxDxaU6t-5dHtTcs2mm499_UOJBtk2489RUWAOYOQbpQitZLoME-rRhogYzuch2UqGx7NFhRsy_Am8HfsRa0IDhAxA8_cPtoU0SnTvndRoHQLQNmFuP-NHYTwm7ov-ggFkVrgEqd15zj0XKVad15llkpem8g-zdWH89mSOePXfnd3jSBz7hULXZSlGdzEK0Hjk3fZI6RHWdRvVXFW7dC1jTHk0CbjTfZ3m4WDIuILSAS-X7B1LRoxUQKjGv9dhh7fHa_f4H_pq001vSyH6_tkwRB7Hnc-ifH1CuRGRMS2q2znaIbrowDEvr5QVRLv5ryUJXZkYyAzO2StjqgIJPaztSqaYH-sJeXuYjBaf2-Au-2XwgrVSJ41jzI1Ow-e3ufAgtzfnTy2Z4YBmbpUJPEtQ_JvgW7Gvqpopvx_h7JxFFMj9ee6nObyEKMfJl9QaHvYRaO7Hk2O89V-iAz6vR68GQixXbvD1pNz7LTrRFaVuEBQ20wvBXMBTVr_HNWr78lSG8wVRQWeZYZEIhPS5rhn9wo9fhGp1_KmHzvcbTXUh-I3X_p3Z3Dals5vwolsK4BZ0r6l3FGzXMBzNmMHgcQ__Tpa1eHIvm1QMXRA_4SVHZtXI-iQT_BxN_YYUP1cUbyqDImbnLyvz0YoR4bSXBa9mqU27m1DeLDqaG8wH-CiV665QYxAcUf5RU2ga9f7zoXC8SW8n2Cluf5M2kMXC7-FbZLq0uEMOxzaInu77p5TmToIF97xu8byAZqs5xYbRrOZoN0z12G8PDsfYLrasw3CBBsoPg-yz-3nPmaRwgKpvKwS_pxbFFduX4GWIZoQahSPKNncaPGAUbJBDo3gDEbQ06VslA4VvoeIZZr3zsc-2fndVC_00yn2TVLL_FOAAMEtZDQmxTedvpQsBqC_DG7zcdqOuN_Mm7c9Swd0KLwNgCUASLItXR3Bmgg5ZMse-O6jP16YFBAxBIXqXg7bVEI9_4B-s-cmDtmoOKKNhlpb-HR6ZOsGgx6MTfyE3Wz-kBdUB_NXFSdfQ0G89TL2ULun1b7tsZaxufzErzVRyJglvLTzdstNj2JrVOuwk8PIP2JscUNxHW5pqlwsTduVyKNy_mc9ER-shQpLtpzf8hbyRxKUUQgQzecqDxxl6ZmYCe8rE4swgYX1KAa9j99QVrn-c52QKRYm5vDRj08BXcx2RVTrEteQGLG4eOIT0rM_rtk20qpS6TOefZ8iqwvSRrZM0DZR1MQpBP_9gRl20rgdyEE91iF7Kt8ecerYU1oIBmVYwANg6IwrkN6xijHeT7bMLtDAnL7iWMXYaHKgdpFLmd4SGQ5mSpbx-wmLGywCjcRG91gxamT6Ggd1N9A4ndkyLTxJwvR3MNE1YdW1MG_SDrLspNb5WPCyWRiZO9POPaGYX9EJovtve6Rb75-cp4I8ZH7CTm-gU0poFXF7-MmxJyK2fwa6ZkHIODPHeT3k_BTF2oHeKlTeuU1A2905fvjQdMwxku40IN3BYqlkDT2kpWADk1e8V6qW86HkHWH00h6jPhj0_WQkWFcjVIgaa7-ql-EHANt1pwccRLRDsTG3qwWc6KCgwfhXdGfi9DqC9S9WaxrgzExooyq7M7rFvR_m0f-MOclWvkzHLOhlr6PzWwBJTlk8D5b0cRIh-dXK3tcsACSNeyRGh8GK5oqDt1hva6HT1-8etPH1HdhoYWG1HnUgEhVaQvtZWCOzQ_cx0pFZIrNn6EWjtYinj4X9UiZbOm1H9oEYEF5B9QL8oRZ7zswXim_K3gn61PoFpaZfEQ320SeJY13hrdZcuw24VN4Ff0kGViUCYa4igj6KlyMq-tCw2SpaEb2d0n9CEmeueepqFW-J-j51-mRTdNR5EY_fXP7PgAWCaxa_AqnoeUC1-T4sPmtX6b3p5Izb2AghgB0b6NU4T7efi58DJPTs8RiYhFRoeBuri6Sz32PC0tqGnXKKOUh451m8_kUxcBsc9sxwuZZTvp_tgGGs9HvV2w_aJiP1QF_tRK2NxZtE468zlaQwquiTiilUdrhpWnZyazcTi0utXBIDv233XNs-_rSw5G8RtcAXo9Ca7eF7AM3uHXIsTMg0TYK_jK08zE4t6sdz1-MUaL5wAC2tDofyr9X6IBFnonCPxmcOhkbZ96QPpwRR-6r-eN3fsswelDa-Q6NqQBupzGIrUkvBJU1zg4P1fpbFkBp3ZluWQICRnoE8WVezVW6RVufu8FPgtBuDwE0KXZ5aZO2DIzJiHG-uecunfyOEY8TYCjaNWomAGkCNWBLNihfWGwZv0J-mncN38RF4Nnm9n5XyPojVB6rbwByaAZPCE20zzvMHJQHHaedrK1D8ZEw9muPSlP6DOdZ9Qkgeg6sn9p2WF4hoKVtPNUWq2TE05U7fHBDrJ8LblTQPb-xJJE14kAKFQ4EKaaEhSxBjXBqxal7zm6fgBEltNycihs_VCdc-MSL9jU8pjOxQiIFNBx6n9m_oRNMR5isfYrNq4DNtHIww8lOwzLVJQ-aCWxqKKLfcyUPY_qjF3z_DGXXpQt2k03M4NUSRhtVfURViab7Km-3vYHOrAc0bTv-5N1aZTndlhMD2Mb5WfNHL4vJd1pDuwSQ2kOwsKpSAHc24o195lYOTrFp_cOiG0yZTs4jFxxatyU8grj2Fx65HVjFdDGEpoY0vh06p_TebiekRpsU02MRPCqlLAroyspjF0_8MeQexhGNeT7dxRSOtE8mYPdYy_HxR-Cubyh-l4XyCH-lxYc7WhyZU2JoZ9adnacVL1N-mH7VkqAItIBh1ISycdJccgrF_x0iytiShlw9wk5m-Ha8IIpcCL5PMaxjS7u19IBO5lnWprRdw_tAVtwI8DaTou6OTdT80xgREeprMK1IL3q8_CgU0h1mdtRCnWPEvdbtFD9EWuF63RHlNGVv1hjg0Tz3QoTDdYGh-wZULVxjEZE802vwJCaxaoWtpoANY4Njz9c1UmXtWyPrZZJ26bf1jnkhE0S-Aam_m7FnTuD6Q5GRsG7hn5WiYU3wfRn-he96RRDjjtB-KZOd0aegjWoA9rQ4aZd_sONzQCklsgY6h2kPzLNbCMniy_X4of3Xr6FySxiuBMOtZC4Xozg_UyBdA9ko6JKZAl7VV07ZHN9jY5zhk_K7ExU5conAnT5f9Jv6VB9nEMF_V6SQbQ7CZ8FNLZtNiiBqnIeFziMVYXjp6vHSfuoda4Rsw9XAS1sAk1KjBYp01C3Q4Dp-ZboEKapf8WfgJauyYbeK_CPTjpTVt-cu9jRQnjpqUrIWlR740ogOeaWG7HIWx4VkVHg1wPUXm1AiYExFvBmKCO9hEw0khlslbP7J9hDtJ7PCcKvmf2_OqZJLooB1bB8XM6XRn88zZmnov3zLGYRG9XXARzBR_wTgTe9LHGSLU5TUhy-j5U2OLgKf56aEU9JvQf-fe7QvPXkpHk9tOI_Q-18j_zVngQy6TIoErWBFUUpZ87xaTYuHiuSEfbkf_-Y0LrrWw6bJIMai2IPdecnTHEWnEDHT5bXDI4tCmN-FzqpAt1FlTzAHJbd1p-W1Nuu66DHl8zAAe-142_i5CDgY5LxLAgdOBU8TlmARLuqaGePFZiQ0ziOsdJdjCrzsqc_3SxqrpyjURkkLasi4FXSrS-MR7rhsSg5sfbxfQFTJDN7eUc_8b15BtpN9O8pDxJAjyo9lLNN1d0cmKwsXnfAv8Y613B9OHVz2YWArX0EdYVMZ6lNLFsyC4Tg21kQtfvFSEkkIt-_NIL0f7zaRTf0AWlR-0GfkwhueH_LWROnW7n5PGcVL95enRXUyRmlFs-2XhP18GDzh6kxNczniCZHlPrlZ1yjQhAM9dzMgHmC6jGg88rrTwSAAJcIe_weu1Fq-yJts_XRT-YzXD_cyGJDBLDS98-B7BwBLCn-6AOc78vWusrxh36g2JDnyyHS7f22lWXo6xI2bL9N96UJEX6pUqb8a357wxsnOGec_XaLxlC-vKo2aq4Ic804ysVy1tuhHNXp-3KgWaxtgaDvRIqdwsBFH9w8zAyEDBycD6NjgETEz1cG4sQWpvn1UIJ3jW8DGNfkyRT8wMmH9wIoe58I8ByY3VX78M44N6RaKw0HWP60kG8S42aocIAfqrGvoI1asUPOkrUIMQ5mTy2tlM2X8hlSFJcM5dPaWZVRiLRP6nLSmP0HWprQ8KEm63roCwD9bNffMzQjDGolchnLe81E9iy0UY06CEzdfngXZb_JTmEduSykVqiDoVzjGKdCZCpYIvHdkgVtD6L0RyBdYkJYwQGM1FvFVK00EWWaNk6hh2C_AEOMa8_pYVIrG_eqf-na1rC9lc8kRCPCDzliKNDSLHFRxiWlHsWcYn_zh8MW_Gk7V9THY9X-5KNO6ZNUSX-mk04RPrLGmuxQK6FpZAxKo40N--2r3vbBNb3vor2OgOfhlk0GtCPrlUuh1PKB9yMaZEY10zXvvtPOZYWdLlowkEAYy-VB1GEG_W0LS79ALSKOsGsNrNRHlduhvnVZWOHTM9RL9wYuOrj6n55K5q9MXtsnJROpI8k1rSyMb5Bu_XgRoahTV-2GGTrM4kuvkh6Gl7hmW6o19sWAghwewRFL5aafjWIK3v75cqAZ-lzOf2fcxZny9yzyA5x9FMnoX1UV3TK9nOTtnHyPYE29i55CkDrNzD1-NQ8Lh-cOFoXEQKk8xuy8FUKWrH9c0C_ezrpbCiyEFuw_nOn5jO2ncNt4kdw5pbXp_Tp81vq65ngcjCtojjqtgm8LAbNGtmTO7OjNUgtDJfKeSCFyVLe7sUR33_Swob4wUvO2ZJKYyb3PYFvYanqLR6DMpYsqlZMk2rdadin_TbEFL2caTiA9BkXP2v6sVidySOUraj7unUJhvBg14Plr7S3MbImmDwrg-DfqXyg1qS02Ns_WQsttnyqde9nn50I7ZzPN2nK9Mn-t5sg_CE-32XIbD-nbZeWgj_KjrIjMqQ1XjstRaRv5wfXZyCxv6DTgYylXWBKaExovPn3u7cwgGdOSjQV5QQoi4FrNz2KlVjyfSi0UppZccIocpQhu1mQPscLnSUuNhGN6ZvO8IqaTeog2bjy4SwZMm4DbW4pL6qXano0-ETnAa0NEsKeOnoob8BYsj3tL8GHrxFTNpDpBppNjSEmPL7tZbFPMzMYkDjnHJOHjKjCtxxca8ZaOGhFVCK1VvY88IGnL7EVqltGkYDSnlTnMhkfFw3nv1N0pVfj9kA6l-HQntNqzxw5GeXmAfa3Vu2UOi3cfI4gGYhqKEvZ3n-XXjIups6rU0wt8csx2KzuvFn2mM4cGhezRhXwqrNZNsl6dLtTWGzTwfngxY5BKItqcHqLMrukieKcA_FCcL8AAOnXmoDj5vjLrCI34ibnHpTfMbZ3iUg44J_UlFXyTP_VYs8VciYSdKrlAEh53_LhE4fwf4KtHnV9E2Eog-auN0BCYPq7ZVxBrA4tg52CbM6B2ADKiMD9Yh2Fc14yYmlMz5f0k0okKJV1QJP0VCnVXcT0I1PgIm0QngHRVGjD74tRRY3aEZlV0fop38zVY_jSp0Js_SM8xIUC1gIfY18SMlN6X68AkcDcCry68F2Fog7BtP1ztEf2BmQdpsk_JJVZE0akczr5hTbWpAAy5_9duEzrNJS6ia86WXsQ9SqRguodgm7I3wOao3UkyY30-yWpMCgO3iO3Ee9OMNmo-v7T7kfQxF2frsyhB3czs1YfM8x9PCqKikRBHz_Yzl4Ds_ctGhxKDH_MxnynuGI11V1fMMeTb9uRgZIDtoKDjNGYZNrAeY6Tp7rDrHG2GyA7OSlR31Fehhid_DPJuOkoS7W6PB5zH-46tFRqZ5M5nLHqDbH3Dq1fiNIknBOf_jYdPhrS-rar0VwkwQyks7FqGHfFIxgqmoiYO9sKCsvdUGAEEf7EmygCPej2OoTabSHeMPXpI-JpN1P86eeJVZv4hZhMUpCxyn5HEK9D0dNcGMHTEr6qPOSkgqUQ5j2WLl74YP_aGFKXjOsk-1rb38d6TelKQl6abCyogehVyfUnb_SOCHp7_ZN8zGA_b34sP7tD6IiCPZCY2hXTXCvFRLqYlw4jcRo7creCApbqH1AXrAWJlYDk-zJq4Qb5ifHxMV4I8Bvg-pMKMfJa5PcNAZ40qyEwxaAN1Z3aLgQ1_otb0ctPQS-ciMuaS4b2V6nKhfYotOdBwWcwUi9_NybK5HTuBJ0cZ_cGSao6w5q1yfkaHaS5jxHhrrtdvKcROCNDRd-CGc-RorlLCHSIKtr2d26-zUHX_9wHpAdW_cnYOkisLzuU1bI6ATcCY-OIh8xYq8wR57KRWAGIi1tUfNcbJlW4zZ101rr1__1TGkrFNH7J9wWIC_KZGCNcDVcV9kZgqfE6Qdcbx345l6bkaL-f2MW6b0A3UsY10nJ15LeNYVeTkswkskx_XTa5aA_S6Z2dwTQIsYWZe_t_KtVMn2m0e4WIdHV3J0AYxcaB-6Ve7fnOJO6DmJJcT1uoL9glx5DkeMK0lqc6ZfD7ua7-Iq2aKIVyTbJm25Xhu3CjVM8bHwG67bHfdgbMuJbZiVElhP89Px-UWrzHSp0IjchFQXO8m7y1SzQ8wfi18Ma2iMrz_vh7k38C7QOMglWC4YIqgUuGOPX_Z_sQnTAN6ndSxz0nRW_HhFuoAcy_SyJ2Xhmf-4WiY-ci9_HYgRBzAIwkMiP0XEg4K3y6WjFuwciIMBiufMDNoRHOI8laKWwBxs068aV8a4V91ClKhuKRRSTlWsOVoaaDX33jPKu2bhqM_riqyovKd_UisUAJAdcIRNEHZLyalUpn1fyVw0DlZmstqfo6YL2L7JLGSHRJmgFgVWMTYq9Y5HKedg-6OY9ldd07k1cLYz1wPdn4fMzkGiH4qAY57PDpQ-MUV0aebOWKezg_7z7AE8nx4ukXrASD3oxev5K87exhDhtpHt4k74FmwsNymOO3oMOczSjzgr5bJhcwtqawRNXt8ZMRl0bGxJcDCvFEPA5QyI1hanPRW87ogUjcZKk8HK3jYv7ItIMkyxv6rZeeWEhd6QseD28h5BdXQc2rSFC0ql3pasj_LRRHBh9S_OGJQnMY8-uE4U_HdcIq-Y5v9BtqroIFltTbB2PousBn-kkJXLUJ12bq_hU0_pnzIQKN_5w2hEWfRaXGHmd2xfhwPSfX0Mr1xjoXpY5YHHlY-vXdOGmL4kNSrdGcxjRXS39uBkhf9x73uCIWqR09MJSNMpg8UeFPDEBtZ1TZXKPiaNMTdck1tVV-14IWH4KTIAd1uq5f2DTKhKfVgqb30HSl3VpjeyL9kRsBo40xFqJl1YdtZrHwdFh1RoUuakzl1ZGgy_zcrirFGMl1_amIjEvvG3f4koQaxy0cOXC_yzc2d5f3A8LkcLM4TJXB7itbTDsaIpRr8WxvQ72oP5Sd04_qTRq2PL7Amu7gNQRP4DYtrVC1sVA1PpKcLhtSae_7DvUS4u.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ede304bd7766ee7016aebf87d044887d18b2613771af18b8f",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating PWM Signal Design**\n\nI'm thinking about the PWM signal for the fan, using a connector with four pins: GND, VCC_OUT, TACH, and PWM_OUT. It\u2019s interesting that for a 4-wire fan, the PWM should connect directly. If I use a capacitor, it could distort the PWM waveform since it might not support the fan's expected 25kHz signal. I should investigate whether C3 is correctly placed as a coupling capacitor, and the TACH line connections look good with the resistors and zener.**Clarifying Component Connections**\n\nIt seems there might be an issue with characterizing C3 as a capacitor where a signal should connect directly. This isn\u2019t typical per specifications but aligns with standard design practices. I\u2019m considering that the dual MCU setup might offer users the choice between two package options. The ATtiny45 and tiny13 have the same pin layout, suggesting a thoughtful design for flexibility. I also noticed J1's I2C header pin arrangement is a bit odd, yet J6 shares a pin with J1, which is interesting!**Investigating I2C Header Connections**\n\nI\u2019m considering the setup of the I2C header, which should include SDA, SCL, reset, and ground, while also pondering if J6 is supplying power. There\u2019s a net connection where J1\u2019s pin1 links to J6\u2019s pin1, and J1\u2019s pin2 appears to be tied to SDA. The netlist confirms J1 pin2 is SDA, and I see that J1 pin3 is SCK and pin4 is reset. It looks orderly, but I\u2019ll need to double-check for any inconsistencies!",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_iLTnL76DshUTBvj6oeX0Cjx1oEVJlml-C-U4gXeSE5bC7-PB0Zbkj5cDhYSQYGXjuWYU7P8ujSWGkc1vjGE8Rcd7qQve6p2bYeKDpFs5AfhoQcPT9jKmxRxOVxxZAGMLFLD4bt8cyjAJJ7j7WCNwWyB7ltFugqQPHdtwInCgR5Qkrlmcrp94DlqKgpabWMbxTfPPMGQgJ2ghOcX3Zj05Sx1eIMoIzUsfunhhXfEYdb6RevNFdTjscijrbjqF1Z2rloav3AL4Yl6qsABl522In-AaYhp5KEXyQoWPGVf2JUV8y6mrGSQOShuggIsVsYvn15QGg9L4BAUUymK7b6QjGj0AeDNq2PMKI1JQKmem4TxDYHR4G46uVtjtRxMaAOfstKXfpmfa-3sUl9fZlg59kWOZSgXrMbfl_cFnNZbhIswmy9pYzO0GJOyExb0PKViW7z6KMAC37SsXsVF8ByRxDS-ZZJExaxRsuP6QL0hJ28G8vNCHiNLaSbXUB_qW1HlkvTDjp824QpSQj5nvV6rymJ87rERrcrPIQICHtZDJbVhmvWO5-gH3HdFV7YV3efvO9-EouqA14BaHH9G25UzFnFOyEZfRbtxyd14dHMMvJl_0DobuN866Tiii-k-ZRODqaAia4wnOID4NRt_NPc2PlaCWY34RKmJ3QX9kbp8W6quE-e_vZnTewERk_MsK3mPewMu1k8pPDDL-66tBRDfSWl__er447KLEvdWi7R-eQPA7rpggoLoafmpXCKnSdJEv2evS7dcaUjQ2LPtBzCycwo0B0xt4r6dnAd2ko3QJNxnYQVN-Z299v2ErW3ZK3C56unvyNvC-U_j2EkfVwLRKTdH1YhxJ0Ch2YXa5Lu_o51kWmsbWHWZhqntfma7w_5eU9wiloeVQ6Mo638Txo_SiFPFsERWxD7lQ783Po0K9FHAJJNRsuplDwolmdyU1kdcwOTHWPPQbxWM4kjzalVT1Hh9ke40_60pbmuqw6l1_GtMBzrjqtNx3zq48_J2_D853euw6gp644Y59tl8BJp-1VQ9ohGk4sxEv3-OGiuABcC1OgFAo8vMPUho7w1iWk0-H58b3PISmsPTMVwpOnpLGj43msinVyFbG34Bmw0qXKMzsV90c7__kzfYZ42wO479ZoHWMxDinA-r5gumeO_G5CFjrRP8whUsk8LyW0bIOLbkArjd05KyD8rVpLTJOByM34z7GJ9O1CSxNxQbAsUfGKbRSu77Gl3M9D1vIbA6Az5-noOp3ocRCg6YbkX5WH4LHbi_e04Ho_HIhvRW9LW1J-K8oASIdeIB2YsH_5DxPFLk4h7ewpfj74HaxlU6yJDES9aWoRk5JZQq9MX7dWi6E9BXJKLc0vwTCicWQ9UC5v9d3cxmq3PFhAJBpe7tnZK2VaZ1tcNl9ikMEiMcaCFHERELatpyZWEx4sgMKSsKpxEdlH52E7fw5IdpDAUmzNepwU-i6zgPYXBTGFvjmImi-WR0u8ZVrtPf38M54X6LMIJHvgE-I4GDBxM07AjB4RwM1_x3VoI2cW7UTt5SMcH9kjE_Hueg2gCE3W-6qy0fTUrMM7K5_Abcxl7b8L-JOFq9W3YlXLs-P7S_eBOa3LUYTSieUwYoCZP_o9XoCTHYbmyhLSOcazfnK7Xh7xkbyu-IqUwJVZ11EA6d4ijS6eyaFulfedt2mM2assNsNTuO7T-X1simta8UQfAhrXmIGRzkgQgX2K6m3UYleGmkNJLTrFAm5BsHQv1DF4rMfDGmSbLLXOc8dogq3rbx6yr4E89BjMHCuNab3cnL--SyuLSjtzBFf2luirpNaRgu1x08yDU2w_QIX__FJaXA0UedxMU7e0hA08Xv5PSB1q9qCCC1EWpLggzAtxEdeP8hcnIwlogwTZvkMDL02TqXZMIVkc03K5VRXPyMLA9pBO5AAf_kC6SsX1kdJfvlBFGaoT6rWdb9IRCABX0AEft90yUaQlSHCupc4hNfQMWs2vSwOhnxxuvNa4R_77NhA_-H_2EIxafxhGkz2yIH99gZWM79Pgyirl92jQ823czUcAKdKRoTJCMseyZ0-FrPy0zHlbFRTBQo37Ev4XDfiFfF4BAzSGfYJjMdMnT9UoCd8YQw9dnp0b7c7UX4Acg_0KrEAooYae7ohQpkYas5ihvLIwpDs0gq9JVpGMQi1L7fhzu673UV5yDwc4ZO2ckXnoOr310_tjajhwvFQjC8teMQC9CPkWFaPPH8BHKPWiF_47ziPi_ZBPpwi5RNd_46R8fzqk7ujUtQbaxbJ06Nqn3hgQ_SeXXQ8s1Y6Y-QeZL0Tu5FIYpRUbZFuFFFrrCh0v5Ks5eJzCubmSn-lPsbjJTEFW1lF_QvcFUIbE2mGU4zT1OLjwzaRoqCSZ2FgmMRoPadHHta60HoaslKoforMcaViW19rTgeu0uBwVpx-hmqgoUJ391MKLASAENgoAUDtDGGwyDUk39q49Rz5UCag-EpiEw11TIAJtx772D3m5zyPCHXlPbne9VIhiCKVG9rHeQLMu7O1ZynWd6Edmx0wBdDMsezNXkrM0lKd6otKJjqOj9QLQm_NlZdDmo5i4jHWTOW-XVN_zksCStLudjtmuaiM2zBqXO3jPXkHL0jt9B841C2sN4t_pklo7vYRHWXpzDUsiiLumvloGP5bLf3zngFSpCM5n7tSzpJuuEGw72KuZxluMiRxEWIGkl7IHOHrTVzOZMXQBXqOdR183Fum4cT71dw1h3QltFUJCTU3gC9r_grmy4OjYoWrqYB0o6RBgt2ILVhOy9FRO5S3pD1lLIS3AuOKu4zT27l_VqTrKqbH4Y5m44Gm8BdSJDFfhh6wFRUc-44pJy8V42uE0Du5zY2Sdem4TVpYkaOzZlN0g0k9FzvbXvaVL6R6qEnm_SSaLhBm3oHDvN7zZXizG8kloZ6K58A8zmBfnqMhL64RY3zqmRV_lVm2KCIrfel-5_mN2FMmOhxlUBBa8pL3ffg7kffaBJjAGx1lBpK8myExZdoQxLpwMCoQx8C_Fc-kfn0wUKOfhjnevXNv0iIsi4jtgLpps13uemm5HQ4ZPaMVRJT262wy7gLtKt_OkmsoEgHgQa22IJYRg6UwLW6IgLord9EH1pIjUUSm3uiWrYzQnEqRIKKLj_-fyQSGUgoklh5Zsix2z6VWZr0VlezLUXbvuz84GkZvRIsDL8OcA-_MMPOoSQy_WMYiUYbBU8y0k6Hbimw0wqlbtWjf1at6zi780OGbH4V77lIJwXvAZyvsRyzWbBRb7u70Ao82xanRulMuO2Qn8fXHtXMo-wF421ULlOEe5l0QpSL6OsCRm0bHj6WsWhQ86UwaynVc13xYgPVEUSpZ6pwOZ-2i5nII5V1IgYAXGecO20RI0YAjdLJEYtw14hecVtGwD1U8ocera2OVKFQp1Z1toDzN49TJxWnTfizPphKAdEl1Cc1ElrOqiCmWedtxGFO7aXD9E5NXNhzD-DxZnYGsISt_inLN_Q7Yv977ocePtP83ZYsnZ5mqLf_q-5Ei98CInfF7bk9TBeKUkkUNxkGdzsehq_2rqerneuxoB16RhghmHwhoUpC276t0_Qw9dqNtU0BQYpY4SdY6KP-thKLnSqU2A7hvOMImNF1GayKQK1Zcqj3JOj0y3L_V0K1HcRD5EkZRn4IWcStfowAZNUOmB8fr7X07yJlaT5P9qPOHJQ4zGyLfjLnGz8fX4zP-Csnz7CvMJ_mdZVMMjLrNcxHaByjJRli6_OpsSUdxKjAW90Glc1F76Gp-E0ra9ImRwKZ3l9GAfoeoOmWxdQF0FCAL9dV5u-4TBhmSMxxN6_Eqs-Mi52KqRsmPBckvajy0yfEGUVpKVTFHaf5C0PAnaj4DC4hpsuDlodrZBOEIU5hKFXpaC40LTxJcJRpK-b1TGu3Mx2R3v73IZBedM77DuK32RJwi2nu_1tt9SJxdVHOXJRb8wcFgHT2hfYdH0GVFkosF8aiVRoblxRwMHmWaQTmt07ybd6nL7hMR0n2mBaZHnVCHtAftbuHnKGdFwHrIxnbEtljiTRfJOXUaxg4BQkHoFJlmDINc5i7SaqjUO03ETIK_96QXGYdhcZAy-ASsQLXnC5nTYyfVDxqNOJS37yPqLXgpMCLzEq6RgRykl7jglI6dRxdx8gJC0LWfkzwTCakUqqP-lw79SEdL9NcTt5eS5AW14Yl5xsvW53aUJMcuIDgGcGRSKAVB6Uv8-dNGefDzLvwQdXhJJMW9VHN-bXmNWWcr9rJgnI3KTGk5YTj3hV8XF6Hzu_F2yQeAFCfyYOL0eTVon9CMn0VG-qon__dQhZccDxHQNP_Gq1TCTm_mhhVen0mNpmhJSz5A0hFy3WslubIQbsRn6fIG1XmRWQEEbvca-YESS68s0yjeuI9t3LrEIn7ZfK2LuuthcoYsfDp2G7FsqtweqdQiLZNxTcOTD53ddOMlJ03i7GZEIkbWUEphtgA5K8yAW01rfHD6yqzeqGW2_NkuZHgjRnftm0vElcJvXfVrUbM7VaNGA7p_5S40jBSLP6zFPslPaHYHDaYdCvHhVt-hZ4CUjtlrOQaI_Pmjn_AX1vbgh63ZDsGXn1vbF7aQR4ilXYWM7Q2flBMxQ7PR-kNq67XIWLKMmsVaobor4QuXkSXu7cJHhb6wIBGopDaFXHp2MJV0V50PmR_HgGnepX51Q4omEX3J9uxTMixgF_22UNjhhlNUlsWbhbgRwGv0xsUXD8zuuhDFBSG6QW6tluiGod2z92tMV4eitJ2GsSQxwlZErLQ5lvzI_zUpTCOzYH0HNRqTGaLNN17-S2plsHgqA33a7MAmZIYiNvl8fW25zUpzsIgwlAE-MmOqE8_kCqAGShiCldoxK2_EBtjTSqGMCjI0-sMV38yji43K-OD1w1O7G4Fj1EGANpkdE6Wf_tYzolpPPtfO4UY3WvJfpm1qaOUVBp4hVRzvAofrcimFIfLk7Nyhc-Rd7QGya0xHYakKZyFpokci3pOcj8BGrEvjzMFjvgsL6Up3da271OyysWJxIa_BtJMNV9Dgwh-qfnCuZ7Td8gAnoVriANTm3X35OtjCK6jGn3DIs3-crP7AMCHMSKv7q7XFePt8WEPiEsopBEz_xKzaeTUEeM0Kj3Xo0WxorpnfJtk67Bt8WHDI_M2sKSxmF-9PIye2k30Rb0R7SwqGwrKk9B7s4v1lipba5je_lvP3KNWUBEetK3efRxRTFlYNXek26crEXPaIcRTDmTnlcIC6xOSpNKmoiHisw8c_vbM0lbYRC631hGYu1bJNA-w15wHW4ZtbCcjNpbdjRBLiikhHjFCcnogGPiqYfhJkyC3sNA7JttCCFo4y2AjbYH000q-2nG0ncMyyWAYxDAMG0Asz_Me66fIadS0GsSnuxT_DzaoEoHWFkma7764HYjXlGpEc6OrhqZqLAhPKBm5CYXhTN3GzVJwN5OOJRxP4OhAr7s7OcO3Zf4AoqjXRCU3_7a8jpdjsUimwyk6yj4-mxQsVOxgMKvH7Pfts0au7KbiUvtyEpi818jiXYmi6D-5y1yFAA5-mYYKIQ8oU4ZVEj5zKOHELA7G7VubmBGhmM7oD9MjCIpaZz-mFOkgAlhMYRdd9DlDEopSlLDDXV63vSBnK4Jo3S_5xRJFT23lg3PO60WhPsYqS4gZLlhkmTs2OKquS94lw9yYAUVdaFAxpZ30THv4EezGvaZC_dbo1w4Y7omGHItFqwX3Lox6KiQIf1mXD_6IrbWgb_0gjfIAH4jHvdwIAkoLVVh5-FUyOYmhItr1AhWZezoThbmFQBTac7kC4kDjv1bbkwEkJpRenKjZUDT7saG3q6iR9aipIrQp4ZuQrC9y-Q_kV7_EqfnX0U_WLLZPV5pw2NAzPhNrH-G7ogEgqVuiMao5ClvHMTHSmVLbb453LKMSnKQ4fEaZ6SghYk3S7Yq9ID9G1H4bm0Oeey6gcwj37bgAXyGyKfTzL-yq4Hko5baiGi_DjpfMfRR7JT5RQHtE2cuTsBf7xTZNWX7yu2x08pKinU673k12URUWT4nI7SxIcMWNztougWQ6VvcpHW2G2Va7dMxL7Y017orx-OpqHqYzAox9jJ9BBgU_xlVXIpT6ixB7eAfaoc32hhugZd3UQl97rGHg3MudlgpBVy6iKa747_h2zNECf0ZBWIVp45GangwphMSP8oml6jAY-YIwVkKf4IkWsWjpdtPX8LM2Fzp0cwaONMRPg-izrK02tWcD2GlNWKCVDo7xqBAK1QKUDNaCc8Hdrn8YLIZWN6_n-IoVZrQkyTPN617CZI2jHVje34T5Qa8l-xYuJJIMBaQOqC4nXdAQAINZK9YPffzhvPTQlI7BarSM_BM8S5xT_KfrOo5thHUT5QaOsVTnoElfQ_cJnK4kSzDzF0E4oRBy90yE8DuFtoWj0vuGBYJl4pyWoNnbdcE3KV9QIWia6jSP50IGt1E1fu2O8jRBZXDYYeFv5ScmwBdau1AcR6HEj9gXNyN0p0p_OU4yju_KaGV_0bmAJqeqd3nIH6Avi0IxbvV2M2_4A2VL9m9PteXQ1cflgckverXXDagNXKR89vqzuqpaJv8Ljg1L0Vtg2R-5-6ElljK9jDxCvoWh15nfRSZwj8_V9w_TpPYRNVjdGqObKWWjZfPyU0XzWVgaSDCKjZp2vhotJ_kSiGtFKwrAY1DFAuxcFT1uyV6fTf1FGpUx-kSnr0P1PRk4YBgfYnUQIRgyuA-6CYxMTuiBBMLniw5ZT5S-ypP63jM39khEEmcrhgewq_bGdGhhqReBRGv2c6QG1ECzHgTbm8Imse_bXW60nEKYN6ddwK-PkDb-hTRiFIHXtJbR_fZMv7ZvM52xQoy5sazu5T6tCxHUW-EWWpR-zTr5J4kK7mCwgPiI56qTr8znYsQIir3I6-F4Yb4LbXyLGFaOwCjwrcnZ8y_Q_ziJLf6UtueuKp4P-ldFJzP7UWKlx8zKKp-6jLKgg74bhEiEIPtar6U2tsVRcYNRDjvyQDCWq3RMeWDvDTxxYPLoRV6OzcJsFO-_r38WVR9LefCo6wVCB7g5AGHjzusyJG5uQbP9uM9fKruFrUVkEXyZ-aSCem4RLvsABtZPZ_FQqUfLAS0KhLCyB6Ew79c3relZ7Z9atTBSVK-QJEFULooHeC-ApW-RfzN5LuFymdmDjK4S9_ROWpdevoR5pQ1wpldc3srP1kaCjAEygSadUuY07sDnTVfOYllvglFJRbgedkQa4lk7BDSSdhXuYI8C9OgehQ9MoMZOXCWTCC_DF3P5OYF_OlGPfT7iEiQJQupeMHkcaNYHKiXznVGfrYVBfB3k_nBlk7ZTRHvmjSXbD4oCUpG9CtRayflxdQ0QMUkN0uuPZyCagWdoAnMVhg8S-Xeqa5Yicxw_kVOd0URG0-ibT3l_nwxuuCtYndNmAxnn2qOd9FaajvHBmKz4_7Dp2bZ-pV94VyqTF9sKt_a09jO0M1RkD92mp8iSKJS8BsVAd9t7zzysi3lz-PBvumpdrWpmlExdKdshFwCXXxbjzBcW5To3jZWAwWGRS5AfJzBpYQ8k2gGFtuVB4Ve0e1u0oQJf2r76J501t2n5qvUb_xk.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ede304bd7766ee7016aebf884733887d1aa022741da5c0727",
+              "index": 3
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Clarifying project details**\n\nI'm looking at the specifications for an ATtiny-driven fan controller and noting the project design files signal name, which is PWM_OUT. It seems straightforward based on the overview in the Atmel folder. I might consider U2/U3, but I don't think that's necessary since there are alternate pin-compatible footprints. I need to decide whether to output JSON and choose the correct category, like wrong_component_type or open_connection? That last part is a bit tricky.",
+              "format": "openai-responses-v1",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_iRK-eAwVK122aDlbEKN7O83eOyEkGt_2nmQvDkxDLXpfADEcb_fVxR4BmF5TL6RB_q8wCDYiDQIdHL7mW20ENYQlMJpS2O_JbyUttaYmvR0w05YloxErkdX1jsqGGN-agyGfvB75tn-U_CK3h8LNm9PZwjheOvlLLuNpZYLHTE_44OuXl0xnlTyowLhc3y1VWV6Sw3hvAYWkrek7rL9N40dB-SUY982OWoAT8OBgxzM6xzfFNiBsCfNLmFb-KAOvUkqV5vmX09zlU3teYFkMrAuxtzkaZDegodj1JJxG5xC3KeGzw7hZUeKECeT1xoNLg0AJxXfRi1-PpS7dX0DTtvS1U6IrAihTzu_uZ-ky4fAFX71wIawh4rHInmFVP2PvuuMTiQ9_uaePpPHDgyBlopHSw6HghXBdhre1NHpTaHwFsyPknYYYZwU-QQYexgqe0rAy8vWVSsY_U6mGp1Samg6LBYoDOF_0XCg1aHsTSViM8SWMchENTSamx6q0fyFqRTPXQTClJWTW8OQs71dMrqmzfs-NaCgPeLEh1yMEMoZ70elh8R-MAW855SItc1TiMioeEAvlC1eWLFtKiD-cp5sQPJ1d7D8Thz1D37bpE55nFLCjxlgYfFcprlEdYmwuGk4ZMFDqevuPvagLuq-3IqIXSP8oeeOhHh4xniu7clNKYRPwX_u6dvUYr9oLNpc4hb4Lkq0VUw4xrDFyyd-7Am_DLSBKRVIpWTHq-S753nx-CU5dIxqXVvKZbTKde42Jgh78vL2qsDZpCHUL7R2_piYYiDhFO1b-jkiVAKhWMqBQkNc7nbtqv9QHrPXc9JnYe4AealVjF1QfbNm27fkg3a9kOG-QhUghx8ptP0pnxPTDThgch5qXc6yS5-gpk71oBHpCJXNH3vzqpwRn0nab5YvaVGzbMWOs49EyxK8QI0eItJhDW7OFmiMidlrX8LDPCJvzxSveeZEZUY5cQ28Mzs1KUXoaHCoCMy5Ib96rdA-cP6JR-DwOAjFuk8bp3eXsBzHa1AZfB55PTSO-2EQ5WS6TK6HbEK4SUxA7jdTqxVrH9KxlRY9ZeaCGV1vZG0WW7t50O3InhMLdXvke1oq5D4_F0N015tvsOmZqUKM1TJ_toRUO2xeO6q0_vaK6qTagx0LgL5po71OPMYlm83fcMv7STorSGLDFBs75clEPzfrmAV2JVQ2PpnFwmbCBW-dWYih9ZN5TrqAPBucd-WI-ARinWe02kYBLJtiDUdO-tUGSe60ov_YZhNBzFeOGMFFnnQJm0-DJVUuj8_EdL5xZ9uBx5hHZpaUVh2U49d_9w_EJHSW1nUDo3xt2HxV7jwSOq6dpeVO9KNLTz_fAYwzho6R1W4C-sptP2iQbek3Boz0k4N-NTgj6mpraA-33B2SWMpiWJngjghpG-DH5YW14tnfgoQRYgAYC_044jZT_717dqf0dh8k9hCGk-NXD1pWOZzV8eJQzQjqrxeCRgiob_DhnmRrWvO_IMszQI7hdosEhVLlqrrHQgYyyNupt_eHv9UZHpy3p0LSlBTbI1ZpG_SBz53EAD9f55Uo4ZvlFrEVFEM7za8BJ8yKmWjtgrVs5-tHmt_ugsASeF0oSma22qt3-7G-x79Og_pFxZotEsvWi6iZxtw-wgRaeQHAh7AO9M6OZwoU90MkhK2nH_Ay8nmKbTgdHu-Exd6lsIp1-eDdDBR8-89Gwwt47QwNHICk5pQuV4Aa_v_bvaKKe0A4wJbb-1YBGB--UsrrfedJj2uHdcHT_XZ_DmpSl76eaS7t8KP3lzdpiUdNli0lFzzxsAk0leQfSXmvVZn2_T41V2VpGhtNidWGyi9vQtrfKaUelViyic79mNSmepumg8Kp8su0romHDuuiOjf4Fm4IENa-HF1uqM9a1AYzaBoFyTyqRAIJbrJn_-xPeEYGb8lP-dFAfiGTHZXtXjenQ7o8te8503-CXUzB7SST-SuKQDvuUn1fcjjE3WfxMRQeJ6wys_Qh3XpFwqwkqvo8IrCWRxc91TfEflU7UbJ3HiQEnkaA6Gfn7Pm7lW_kozh76njNgqP3nMFk5SN7vjoEpAHNe0TOnrdq7tbcJoRzGTq7jNtpiAAljrstdXK5Wzc7GnaohCScH2N1b35gUHcpZo7YQ-5IXPSF-lKHg1gIfHrHSulcEqV2vPwOBAhSBgsnwGuYt2O_cbnlT1tvbDF8DUwvkkF_-j6Vnk0AijF4ktUsu0BdawTFPpBsACUmFKqhkLqYg7QmC2uD7_oA1U4r_vlZ-5tWzsA4WdKQljmX91TvWMsWabD2mQRezg2jNuPqW0AMGuTcEa87bDAl0aHX__kVtdXJrvTo3TV7SnjrN1fLRmHWCrxVOuFXqNhbw40CFm_UNU5ofViO1rHge14hqyLegotxUiqiINEEgbIGRQ2gu4_vaYhSj174LZUEmL-jO974ovSxcUNqXe_LDkAiz3VmI3vOLWYN1UExbc5J11by-hr5UzB8PcWOnqpjRGl0EdlDAMNThDJnz2KRMvTnRPdC-qVhfO8IksT-LODv4v2JDK1MJenX6kY6q1kON0HK_Fe45bZ_-OcFNpRFdY-7ypdNa8avdr6KoYWX-l06aOMP_VKaiYJ_V-8xEhucxMzhyUEsZBWwJX3wMewCU7rM0ov21gve9vZrsYa64aC9gLNeIuILrJfJ_MjRziV7ftueGMFSaI9mOzJs0sJiFEwViyy4QkKwsBJJVIYOQkXNoAE1rafolGcfKNkfw3JfbLexaEkOCcOLuIihc2d25r-ajflxz9dsSoM3JX2eeKuKrVkn7CMN_OcbBUvAMZ_IOkTh_ZsgedEUVQdShGt8wxsmln2nRBuZmHI8KFNCwCg9_1bgTV9kEDgNpKR6lydu1xkC6readRrLTVVU5BNxbWAZvJaaSJjhRj2mjI0gJR8Unu907GGZwmUt5Q68i4MhKUOKGMSpwKSfToCMK1JS5cQK-PPCJ4cWCosxGWvvIfcjwRw5mIM5VMd16F9lroOu7MrjmpxXknR9tfdi_hKsGHXJ61j_tbff4-61090T1K3ExtwMLxOFxfoWYnMvdUTisGxfg4ASjS1Pzc0xnCUnirhuEDeo2u7zQGwoVs21H297xsr8kWstwYldnlN2Fq4cd-BPz8DQN0vdixZ7-mh6rULicAzBctc8gmCa1vvcyY3m8IT4WyaBTzYy-CPWc6aEFqMuIPhLS4qOCYsf39OmMDoHc5BQLZmj2woSOqLrAEbLmn3U4QFKTRl9uHAGzp50z-q3rarYpL65YiOm5QV3U5CrNlDwpXAkolwHkOJI8d4nN5pI4ChmjNSASZQfhNWlx8dQmirWyL6s_YrB3kjW450VKuLoiH4p2M1d7jLVO0frMDD_dtauJHD7cqPT-WV_hR44Aqn6sfawND3LHFqMbGBI99bSOWPib8FcPxxQpQfWxfiJO7JTSMjY_2N-iDETdOJdDiHgf5Q5wNeilYMaY0IbK4DGhLaRzKs5Lbm5PLN8Orjx37NKSyeZwHewkVWPBI7Q6TaW4TjQ3w2ucO66lcJLeAhpA7U0TKhPuIceVCTltwY6Wa_BBuJD6gaWoUwdZ3Mq-AGymW-Y3QJ7cJfmh1qYTElRNoCRSvIq6XFA4M1strPI3ez1iRIuS1q2vK0sY5rH2rATuWbvAQw9Ic8TfdFdbQ3NZKG_MIqhCe4O9aPa0e1W6U5MAiOf5nNXQKqf3RlqNO8qFhPR71sZWPKopCeIU1Fih6lD7uk-L467YB2_lOonIdHDHz9rDEz1v_3MtmpP-wDL-3d_FL_7J25RKgG8OFGtxjb8TIRhvHqNQ2fJMurB1B3piZ4NZjt37WN0m3Bidc1VVv_GC4WzhCs1ZZ2Ki3Lmfp0JdnsTjGWM5w9o1ZGHV5c578DZZTH7Kpp4I1K9ldz0StzYMEK0ZG_nrfRF62GLo8XnTn-2wVQK2d6HUM8zSsiG2lD8pVsMPdpvYT9AxLGmPG__TVUACZtFCGaP241FDWGyYLbVsR0nHvv4BM_2Vv821_DJWX_s2cJdelJyzRXtO6CY63ZbrasbG0dXL2j-hiuaHgubcnS6BIvyx5q0mFceHZdr0008s9p3KD7_mTaiUxfxppP3snTry2Hsa3Ufu8_utCar1k8PRhtXkBcLOcQbanGNTcFAXQ-jyLzkJBD1ktehtThZmP0O7jwd4MUDcjEkuIfWf_9_awSUGaw9_v9Ytojn9eTRsk6UMUtEc_tjhdyQ28P47Vftzf0WrxHaiuN8hBCvJNHK1oCdIC9Yw4VEjBmYd5fRKmQGD_6Ecii7zQwV98fEfKksWvfWzdgbxX6VAonSXIZA03MjU9TxxPWCHB7JPMZ4jUc3zr33OW6emXOc3c8UxA5es9rent08LHCeog_UpfvISpgpm28x_tkfjtDcNGz1PSHKuxzP8afW7tj_9ovnPU7vVUGLV-61AGClSe2znT2bLYLRyahNVh6AkenbaTGP9p6lgchNRehY42IPqlhr0JUesh_3FHdmRm1bYXFVgHgavY_JwTDfl9BoizGx9ZyH-yuVW5GXciaKyCnVfAj1UgM4qzjnr3CuarzaJ-0wHiua8BkP9oGs-m0uzPrAg_N7LDkDGrGSH3-FQkdjxibra2Px4ruU_peGVCGHRwvWwTE9sRfpt0U3t7s3lFJwTrbZ92qjgUwyIdUE1dBkt8py4tpJmeKtdFiV6yelhMmB1KA5uS1eInNhU6Hkzl0sq13AoPQK-gycWJxYw4xH3mtVJP2MeKoNL4SIODCT7Y1dUmp9c1PYF2QHqCc6FsH0fUZBNOX-0wAZPYszknrfM_UMKhMDALzos2TVz2vIcRe3xg_2ckKotVoLkNnHtkBmIvzPc4m8ypTZEc0AXvLjjwtch8CuocynCSTNER0iLLTPeQBfHBUAeIJbcTU_wFeB7e5YffOaaiPcLTCss9it1iaeut9Ixr9_IQ6Nxqr0Ck495PoId6_9OPO67L7MD0JLxVRmlG37x4Xgxs9D-7lC52i4Yb3QsSN3Im9tniWGjHG3pehByUgQNIv8VwTETqa8VhGlJkcEC9cWh3rT6QCzQ1UCruANIw2TBokA-4JA8nJ507idOH3JTv_50x2vNN7oxAmop6w6GF5wKGl3y8opnFn-bSNgTsPuz-qAPzpXdF_QBoGlG3lmksT_TzCnNuYwsNxRmHxDvOljN5bei_SkO3F1BuHMI3d9EebCMt_-8mxwt3hRVKqKrLCgZtfS2SEtW6LjgvkeleF1JNR5nyVdyskk-wX-HGDdy2AyPAaeXkppvIcFxzb4QkrEplyeO3eifqLm8vcvNTbqz6T8lNdxudoIirkYR6vnykOp_q8ya24oUFcMQIbKF84Lhzaw6FAbKYRd_eJwlySY7WpLebcGVntuKguotpD4lEJMHecmM57f8KKmWyHtdG9fjrDhRT99PpyDDNRiNdztpZ7obVGbtSVLAdMFgfRN1UHMO0Pktgi5QdmIGahJ3YjQyoKTe84fGlfqNBEZt4iwQgzlXp8UO8mnzZXrD9cBHFf9fBgkRpMatOTRkXHDfOgXxNsRGHuWLmpkEB8gJ7HKQ6fj4F8KD_dKy0vRHXm0QMm5ZCyQBwriaLZMSuSfVF48jiER-sYgBwL5WETFrDnuwlVyYl5eyeeqUMGDtPT6_Fb0uFkduCydkJEkQgADDGcl2Xht7ypCN81a0A5rITn2hW65U0n_GtON1OK28Fo0JWD4Jublc2Z_giFbFPX3xyPhrdlKrIz5mNT-ODtCmwp-M48oFcjUcWHIy-bgZB9u9xjD7fSukM92bDFl2CjVlYrcjkVm9BClgqxwOeTysDj5LqciQjgI6-MYY5wo-ifhLp1tLNjim7Px3DkpbxSAxHGrwr1p-nncHPq1kpaT-OZm0KguUk10xsMOJFX-ZqSHhjzWMzRDkNFzfGeM6Y2X8NfHzRyx7csyjV8l9ppkojul0EdgM3bv5EWwzIaIN4CTioeE_OM5HhFjXMQnCMHxWUlRrcRTbmqZKJfqsy2Ir9jrhHjCZSets3CG8lvHx0bqAz8z-akspyWu8Q3SFvfdmzU3-U_jo8jM4bnZFIWrkCMObjPcIHHfQqAkPEYkCTau1zsIBfdzCQdMWVNPXhl7xPwPBBZnkTEW7Hu4uwPmJDa6nXzvnINpwBCFBLyAZXroyxp2zoO9f3jzHsdp4fAMSAkMTSp6EqiiaWMzeELgQxqKqlfKlf9y95L83MU0uUnukag4ymdyXCwT8YZYd_PLR04-LsfLRl2g0Y9_D2-rMOj6Q9ynzvPzGDsWSJPJpMcO6vCeACKLn48ZoUjaZhJY_4yoGwKpPPdRHGx0Dnf9RBCJ3w1Q_zmKj2XOoxojKZyvWR5IKUn_WwDhlM782CzzpRrYn02afjeZgAaMfUN8_CkLhHl16pBfO1bZXyG7kzx2geaOpOTMjSzL51-dy9jF6-hlsHjbqqzAbhK8nnJEdGTTfIWEStLypZZX_oMSSQKi9RdADYqq95a6mcymhuYTzPRAVkzSgxiB9hpsFlGuBpp2SumysKKpjFwISQR2NST3m3TaFkib-v_npC2HvCD9nxVcSFbOpBbxIrVKJmlaPU99XIhHV74k99XMjt7swMkHBA_Qk4iGLoa2T9ZRNMBu86o9De9jF0W6I0Bfazg3ZH3OtWn85a2T1LmIwdhzywYuHyq_MnOCSts_tXZid_K4BMWCLfZYfqPfGvtf3CaLfqhl9dUJhShr0qNe6HFUIrUEg55cTLWvIDmhVPY7JLSdxqGp4UKhAiqo3NPFfeSVRLcav2agBQJzQ5Q5rtJ1APWFSTMEsji1AQkT2XlVMfu4ZUhsBDnZWX3ktMIJZiW18GR24pqJv9dtQTcJUSEpKbAOOTsXpqFGT9m2l7SSNKN0JwkSphDjf1dYpe_wAy-I7phUTzEUu7yJalwBTrFyYRlspM3OAg92RHYUn2eoDUKqp7-m6Ha3WH9POJOSRJE6isK5ayE_vdUJZtFZyJnLeJO2vhaOKsKGZGLy_wW4PUF_zk7VePbNTVxzrP9Gleup_PNB5ruJo5sIF1VR6OD5czH1I4elXgJKJlyzCu6TkQSCiJLBmRThJIiqSCHJL9t5unKyGXKo5aydJHgwoIExSI9z0Yh3lQxuQTgr6Cf4Nquob7Gplq8XeGTZ7q5sYJexxNihv3W6NlYPFuOvHjRSBIDK-2Fm8ANNeKDfYptQh-r-cdAbEiHwPwyagLk7EOiMVrMv7KyU_OwqnSAr8TxVO1UVXegkPUYxMfMRI9uakDFTm0ZL8cXV81czo-PcYVnzjp8F_MThHg6tBFQ5eAAx0GxuWZqvh4jjCuXUDm5L029AJ1Haz2yfGWV4FH0gsg5aREOXFbewqPYHzUZd7H7-t-N_1_yv1meEbfZ7wyGRROvAUbQZuPiQP6j00IO0p8pS1r2aDEbh6OQ7oCNgkn0JErIpnJq7XJpBLe4NdY_AO2kXoNtrswkd-Q3QQOD1-5KUk10jY_0dAOkBQkOaQUVfy2fATEBTdf3rl3lmvwtMtykR7HdyOvEx-7rkRQZ9p490HyO3AI1QErrStL3aNCf8tZNaD2_ZotaNSuElkZCsnwBMk7XIWc2SEyc-guRipnSuxWAQj588M3ESm4t1Gd20urQEkOUO0uczHy6cznQDSrueCqCX6RNOU2GYPDf3-gcam_cWT9WlCStF6d_Eu_xR_X7OQX7RlJdbi7kYz5nGKnCqSrJVysCJxUfM9d16gC8tz1VLCSvV-8mp1gkI7oZZCdD7OexfibHvQpacqw4x_5vMFySoGde7CHYBqZxl-YL7Km3mBgY6_075o1zsjE3qLc_eQFTozbvriwLpFmI4qSYs5Y_o1rGgSKh6FOjv9WhxT4TJNd0WqphiI88BgaDeIW7gg1hRIxSw6PQRn4vJZk-GaOEqMBGim8f.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ede304bd7766ee7016aebf88b186c87d1a3d86be16c7a56e5",
+              "index": 5
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating PWM connections**\n\nI think I might have identified an issue with the component type being incorrect. I need to ensure that the evidence netlist references C3 accurately, especially with spice corroborating the PWM_OUT at 100n. I should mention an established fan PWM interface inferred from the FAN connector and PWM_OUT, keeping my expectations grounded. For a standard 4-wire fan PWM input, the logic PWM waveform should be driven accordingly. The PWM_OUT could potentially handle fan power, given the classic 4-wire assignments.",
+              "format": "openai-responses-v1",
+              "index": 6
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq6_iS_72xaNuJc8pWcUKNzZA_awraw5x705uZL1K53LYemE2KKq_jVB7IpA8UtjVoMVHxAWg4CDU34SDF-FXrFoKG36_Oh8v8upcEVlYNsFq43LY4ZD5FgZmiv0XX2UvDaCZ1zRXj3VdNmFy-CjoEIcaG8uOWYK777JbHIwD4E-XvRoFP6JCnzGkTIX8eBHuNIJL9HmZupyzLsmSOCOSnb-hlZ0hJX820M1a_57KZa9IZpfSrKyCeFr1L2T5O1obqNHczWjZ2pYspEG7-wddjtPW7lhZ0MKcvrqmjGZ3Ovw4UxyaAG92U4VQ8RTZsknzRBLQJy9WlMX_B2rnlPRB5SLVYPjA_pvpEqzVHkrLdjwvgMdjtITmEjh3JidOPcQKFh9u1u-cO8DdYhjLfo5ywQO0sJZfUqRgphuRroLqZs1aTGDcK8lGpwE68beaPiihIxgHpXra7W5dzMvSWNny0yeGSnelOtdtEhteT-WGB3B-5HOFJGkKEyVylrDRKDqFxwQSX7Hn9rSNR_i2vpY2VRLADlfIGjQy2F3ZggTWbLbGLMqzVRDhL89w0-xcI0K1bXVSY-MBqI6lF_-7381w0nFPR8TX9kMnLSJ6ly9Tjb27C7R8BeWIL7ASnz4-wwACpBZw5kbUdah6UkUAiOG9uOZquGe87t3nb_7eO4fGm7VcPodG4BAobSt9O5_bsE4QPy41BEIldugIcdP1lWQP-5kKiKfiEn9cAEClCE21Xpwd5m8foudT5Yo46TQ-6mVHuuvZSjgXROEQsPwaOARdXyYH2gFORYnBPUlS-LD5V7LspqX2fCjJIuhvh3QSqUZMhakBE_oaCzCvB0Nh-nPH6SVsVWQWpM9HacuYOEEZ_D_gmHYS2A-c3E4qMTsrVGTFyNAN4xUICsxhqsezYB6DldXZCcsONfpkzeUdt7T5P5A6ukVYdHRL93-r6icbpY-uEsD_qhVtUBOUs755Y0U-JWGxVNgWi-omPlHsszFtz_wBvp8zXZvzyE_Ifyw_3oxjcza2hTCeyv21yNIYaamypdjHMLOZVs1py3Tndx5ViXdfkgL5qtXz6A9RtmBd6uyO8GuIJfn3-am2-ShlyS7_7rHCrIr4Kfv1NXNFMbUH9SKYBk8QlOI7xB3MWXR6TBaRSDZKDqaD91y94HraRx03OmwEfATiDgOxV47mk29ua6dbWtVHzJHJNGRw_jV3pw4A_RbltQ8h9hWmt9-UvGjDfVMw0YzzCcXg_6OakHxIP11sBV7D7Gqspo-axP8bgkgxL4_n-hwk1X9bSYhWRXPovA0z3Nm4VD1-wknpL2SfMurAZG2f_TGvpBcgeMEqKZrG0A3Lxev59SZ0xNV3nw4OYI5c6uV5ZUxCl5ZkTdIeMWe2Jq4C-ju85_MeneDQipoHiHyQkxwCMpFWvtiOQUyVYACK153Imvs807HD1NiaOsU9iFmhgWg0QWhi6l1Z9yi0swJ0fy6V4fzBWh56vR87kWvYPXks1ZEUhHSgKjcgSDlI-59GIKaYU1DjCy5NCa9lS-3axSD2IIMFUMeO8et5ColkMNjetcdWEK1PZPBVA23by73uI0vUPgOmmqiWQ__wIHgNiDE3bYxXjLfB60RpuxpnHmTmmfmPQaSyDlSO2QLz9WczUm20qu7dVDfROA4LVSHmuZTLEswNWz5fsA48U6C5GyMAjJQHM809LhQ4xDoRXoqBuURsArncndHvigy1_btW5PocHZB0tRxjxFbTwpjqJgW5LBcRq1s4nTE6Ml7EoyJGkUx-YrMnizsVbAe2Gphfds7O72j29JbOVUqfM5mpcon3VNLbefe7kyXTSXDqLTbZZ49ESDHcy-_858mAzpC8mQHFzeh1tcO7Oa6L1oJCbzVYbdt3RG0UrOIQvNpEHsTH2NTro_MFdkcG9tKUV13rv5kagT3McNtCWuwdVfWTsOHi_DWH6EOp1kvSUv_c7I7m_uRd6Je-ZxQxtv85TxcFyJsWNH31qeI5jHQFjcgTOXaB-yNgFVK0kyL_rGr0JNz6BMgBYEtubc2Smu2MMv2o-IuJ_zhOch3XMAvT8TeNKiFplbpU8ldXALTeO0-rU6ltGOlwy6Hl4MpL71tFY4_4R0F7kWdU1xjg4Mu5E1zIl3HESEpqQ3i36Bsq001F4dbbMAFcohxFuU1X3ldN4wlbz7lSaa5M6KYDDiz88EkMlmzLJNKVpZBlMBiHGqjhCOuC2qy-KHzA1QEeQMOhRRTsIOzFgTMxQwlsGKyRh46UJH5cLihzSS6dc3HgI5vtzTstDyo7e6YuUM-86PN7JCytf3wTEHsIwMjjHQgbkgvNnWy6Vz-N8uUwI9dP-fiLZ-AKlzgleNS-j_s7cqIxmk2IH19sKkT9FzSWupsE-qpavbcQTypvMRASebpWBAAJho2ajwYogT2oK1FPjXLqidYyYuko6hB7ch_vuUOeeJUettrnwIAOKJ8mwx6W6txIrTtU809UahyFJBUdg2eC1NihCuFTaDBeWuhD313me7XiIsdQgdlA4viOmsnS9Z6KCp-ie4D_X6d6YoHfGTEka0dfJxLWJxze3y51WYqVlCeJRNqyoTRP0T1OCRO6roqwOYKWsR5KfIRdbY9fELWGYDNgVA0bkT5BwbViRNxHjWa6m1TqGaHPfMvd7Phymi7x7abRRPe413TeA-2NxCeM2SmUaThgWx-jjRmkTj1GgRj3ewayuXERijmoCB0etroz1ZDUMUVcBEXPu79LQRlEmR8rwOn3d786R2_0QkZMZSn6rrFE0HYoPrpD_2YtqHT4IWzexiFZnti6GvU6g981EnZaBG2t08Z4lmlqEG_qvChJ6952ZGYUnNwikbRGPterxDAMKGdi6RstCXNWWI19ag7cy4RN5daz7NSuKq9mDvU8mUDlZhs6VLoNeL3drBX-RpPs_A4gOfmXuvktlIJy6LNebg7gDG_dF3d3uifqC_MXrhVVUn1p-nxOqnyxI31P_IDpYYYPzcNle7x3n5LRJ9H1o8yrMAhGNj78aT2_pNtYzrCTr-UbDLueZqixudAytzztX3IfSyoAVJWpsSgqkAGP5QPOhtgOxDVFIqkvFgW-uyFfvV0H928ub9hg0_TcBKrEnBKMN16uPPkUmKDs_irhqMIRpmYRprgahh1uAl9gN6RkuiDw_nLRMvYVjQh_VgeZqL9gvddaCwAHvpIg5P_KLhiihvo1er4lZG6oJvENVvA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ede304bd7766ee7016aebf891503087d1b2f9ac6e200f7687",
+              "index": 7
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1793849468,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2158,
+      "prompt_tokens": 15850,
+      "total_tokens": 18008,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1689,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 15847,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003060175,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003060175,
+        "upstream_inference_prompt_cost": 0.001981175,
+        "upstream_inference_completions_cost": 0.001079
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "id": "fan_controller/ResistorToCapacitorRandom_Swap3",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap3/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap3/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/fan_controller/ResistorToCapacitorRandom_Swap3/spice.cir",
+    "chars": 52317,
+    "sha256": "f815eb6929b1165513cf4702099bf5c6c656bcbd8828ceedd12a264d4d4feb86"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.5, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"C3\"], \"pins\": [\"C3.1\", \"C3.2\", \"U2.1\", \"U3.1\", \"J4.5\"], \"nets\": [\"+5V\", \"RST\"], \"observed\": \"C3 (100nF) is connected between the +5V regulator output rail and the RST reset net, which is shared by both MCUs (U2 pin 1, U3 pin 1), the ISP header (J4 pin 5) and the I2C header (J1 pin 4). The other two 100nF decoupling capacitors, C1 and C2, both return to GND. No pull-up resistor from RST to VCC/+5V is present in the netlist.\", \"expected\": \"The 100nF capacitor on the reset line should be a filter from RST to GND, the usual ATtiny reset-noise arrangement, with a pull-up from RST to the supply. Tying it to the supply rail means the reset line is not referenced to ground and gives no noise filtering.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(ref \\\"C3\\\") ... (node (ref \\\"C3\\\") (pin \\\"1\\\") ...) on net +5V; (node (ref \\\"C3\\\") (pin \\\"2\\\") (pintype \\\"passive\\\")) on net RST\"}, {\"source\": \"spice\", \"quote\": \"C3 +5V RST 100n\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"11\\\") (name \\\"RST\\\") ... (node (ref \\\"C3\\\") (pin \\\"2\\\") ...) (node (ref \\\"U2\\\") (pin \\\"1\\\") ...)\"}], \"impact\": \"Reset line is not filtered to ground and has no defined pull-up, so reset may float or be coupled to the supply, which can cause unreliable reset behaviour or ISP access problems.\", \"confidence\": 0.5}, {\"category\": \"missing_component\", \"components\": [\"U1\", \"C2\"], \"pins\": [\"U1.2\", \"C2.1\"], \"nets\": [\"+5V\"], \"observed\": \"The LM1117-5.0 output (U1 VO, net +5V) has only a 100nF ceramic capacitor (C2) as its output capacitor.\", \"expected\": \"The LM1117 datasheet requires an output capacitor of about 10 \u00b5F (tantalum or suitable ceramic) for stability. A 100nF capacitor alone risks oscillation or poor transient response.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U1\\\") (pin \\\"2\\\") (pinfunction \\\"VO\\\") (pintype \\\"power_out\\\")) ... (node (ref \\\"C2\\\") (pin \\\"1\\\") ...) on net +5V\"}, {\"source\": \"spice\", \"quote\": \"C2 +5V 0 100n\"}], \"impact\": \"The 5 V rail may oscillate or be unstable under load, affecting both MCUs and the fan supply.\", \"confidence\": 0.2}], \"summary\": \"The netlist's decoupling and reset arrangement looks suspicious: C3 sits between the +5V rail and RST instead of RST and GND, and the LM1117 output has only a 100nF capacitor. The C3 reset-network issue is the most likely deviation from sound practice.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.5,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "C3"
+          ],
+          "pins": [
+            "C3.1",
+            "C3.2",
+            "U2.1",
+            "U3.1",
+            "J4.5"
+          ],
+          "nets": [
+            "+5V",
+            "RST"
+          ],
+          "observed": "C3 (100nF) is connected between the +5V regulator output rail and the RST reset net, which is shared by both MCUs (U2 pin 1, U3 pin 1), the ISP header (J4 pin 5) and the I2C header (J1 pin 4). The other two 100nF decoupling capacitors, C1 and C2, both return to GND. No pull-up resistor from RST to VCC/+5V is present in the netlist.",
+          "expected": "The 100nF capacitor on the reset line should be a filter from RST to GND, the usual ATtiny reset-noise arrangement, with a pull-up from RST to the supply. Tying it to the supply rail means the reset line is not referenced to ground and gives no noise filtering.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(ref \"C3\") ... (node (ref \"C3\") (pin \"1\") ...) on net +5V; (node (ref \"C3\") (pin \"2\") (pintype \"passive\")) on net RST"
+            },
+            {
+              "source": "spice",
+              "quote": "C3 +5V RST 100n"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"11\") (name \"RST\") ... (node (ref \"C3\") (pin \"2\") ...) (node (ref \"U2\") (pin \"1\") ...)"
+            }
+          ],
+          "impact": "Reset line is not filtered to ground and has no defined pull-up, so reset may float or be coupled to the supply, which can cause unreliable reset behaviour or ISP access problems.",
+          "confidence": 0.5
+        },
+        {
+          "category": "missing_component",
+          "components": [
+            "U1",
+            "C2"
+          ],
+          "pins": [
+            "U1.2",
+            "C2.1"
+          ],
+          "nets": [
+            "+5V"
+          ],
+          "observed": "The LM1117-5.0 output (U1 VO, net +5V) has only a 100nF ceramic capacitor (C2) as its output capacitor.",
+          "expected": "The LM1117 datasheet requires an output capacitor of about 10 \u00b5F (tantalum or suitable ceramic) for stability. A 100nF capacitor alone risks oscillation or poor transient response.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U1\") (pin \"2\") (pinfunction \"VO\") (pintype \"power_out\")) ... (node (ref \"C2\") (pin \"1\") ...) on net +5V"
+            },
+            {
+              "source": "spice",
+              "quote": "C2 +5V 0 100n"
+            }
+          ],
+          "impact": "The 5 V rail may oscillate or be unstable under load, affecting both MCUs and the fan supply.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "The netlist's decoupling and reset arrangement looks suspicious: C3 sits between the +5V rail and RST instead of RST and GND, and the LM1117 output has only a 100nF capacitor. The C3 reset-network issue is the most likely deviation from sound practice."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 22653,
+    "completion_tokens": 4784,
+    "reasoning_tokens": 3705,
+    "cached_tokens": 0,
+    "total_tokens": 27437,
+    "cost_usd": 0.0046573,
+    "cost_details": {
+      "upstream_inference_cost": 0.0046573,
+      "upstream_inference_prompt_cost": 0.0022653,
+      "upstream_inference_completions_cost": 0.002392
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-05T03:34:14.087061+00:00",
+    "ended_at": "2026-11-05T03:34:35.679044+00:00",
+    "latency_s": 21.592
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-05T03:34:14.24Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 17471,
+    "moderation_latency": null,
+    "generation_time": 21504,
+    "tokens_prompt": 13331,
+    "tokens_completion": 610,
+    "native_tokens_prompt": 22653,
+    "native_tokens_completion": 4784,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 3705,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0046573,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1793849654-xGFw9RPjRHNPAk2R5zJN",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1793849654-Ah4ZuJJsQCL1hibwSWVl",
+    "upstream_id": "msg_011Cgj5XjUwKxagXgaYb1Z5h",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Cgj5XjUwKxagXgaYb1Z5h",
+        "is_byok": false,
+        "latency": 351,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0046573,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1793849654-Ah4ZuJJsQCL1hibwSWVl",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.5, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"C3\"], \"pins\": [\"C3.1\", \"C3.2\", \"U2.1\", \"U3.1\", \"J4.5\"], \"nets\": [\"+5V\", \"RST\"], \"observed\": \"C3 (100nF) is connected between the +5V regulator output rail and the RST reset net, which is shared by both MCUs (U2 pin 1, U3 pin 1), the ISP header (J4 pin 5) and the I2C header (J1 pin 4). The other two 100nF decoupling capacitors, C1 and C2, both return to GND. No pull-up resistor from RST to VCC/+5V is present in the netlist.\", \"expected\": \"The 100nF capacitor on the reset line should be a filter from RST to GND, the usual ATtiny reset-noise arrangement, with a pull-up from RST to the supply. Tying it to the supply rail means the reset line is not referenced to ground and gives no noise filtering.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(ref \\\"C3\\\") ... (node (ref \\\"C3\\\") (pin \\\"1\\\") ...) on net +5V; (node (ref \\\"C3\\\") (pin \\\"2\\\") (pintype \\\"passive\\\")) on net RST\"}, {\"source\": \"spice\", \"quote\": \"C3 +5V RST 100n\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"11\\\") (name \\\"RST\\\") ... (node (ref \\\"C3\\\") (pin \\\"2\\\") ...) (node (ref \\\"U2\\\") (pin \\\"1\\\") ...)\"}], \"impact\": \"Reset line is not filtered to ground and has no defined pull-up, so reset may float or be coupled to the supply, which can cause unreliable reset behaviour or ISP access problems.\", \"confidence\": 0.5}, {\"category\": \"missing_component\", \"components\": [\"U1\", \"C2\"], \"pins\": [\"U1.2\", \"C2.1\"], \"nets\": [\"+5V\"], \"observed\": \"The LM1117-5.0 output (U1 VO, net +5V) has only a 100nF ceramic capacitor (C2) as its output capacitor.\", \"expected\": \"The LM1117 datasheet requires an output capacitor of about 10 \u00b5F (tantalum or suitable ceramic) for stability. A 100nF capacitor alone risks oscillation or poor transient response.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U1\\\") (pin \\\"2\\\") (pinfunction \\\"VO\\\") (pintype \\\"power_out\\\")) ... (node (ref \\\"C2\\\") (pin \\\"1\\\") ...) on net +5V\"}, {\"source\": \"spice\", \"quote\": \"C2 +5V 0 100n\"}], \"impact\": \"The 5 V rail may oscillate or be unstable under load, affecting both MCUs and the fan supply.\", \"confidence\": 0.2}], \"summary\": \"The netlist's decoupling and reset arrangement looks suspicious: C3 sits between the +5V rail and RST instead of RST and GND, and the LM1117 output has only a 100nF capacitor. The C3 reset-network issue is the most likely deviation from sound practice.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1793849654,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 4784,
+      "prompt_tokens": 22653,
+      "total_tokens": 27437,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 3705,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0046573,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0046573,
+        "upstream_inference_prompt_cost": 0.0022653,
+        "upstream_inference_completions_cost": 0.002392
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
