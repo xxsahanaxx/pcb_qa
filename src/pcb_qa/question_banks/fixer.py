@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from pcb_qa.parsers.circuit_json import CircuitJSON
+from pcb_qa.question_banks.datasheet_lookup import match_property_text, verify_property
 from pcb_qa.question_banks.validator import load_spice_data
 
 
@@ -202,6 +203,51 @@ def fix_layout_question(question: dict[str, str], circuit_json_file: str) -> boo
     return False
 
 
+def fix_datasheet_question(question: dict[str, str], embeddings_dir: str) -> bool:
+    """Fix a component_datasheet question's answer using embedded datasheet text.
+
+    Args:
+        question: Question dictionary to potentially modify.
+        embeddings_dir: Path to the project's ``embeddings/`` directory.
+
+    Returns:
+        True if the answer was changed, False if it was already correct or
+        couldn't be verified (property/component not covered by embeddings).
+    """
+    q_text = question.get("question", "")
+    expected_answer = question.get("answer", "")
+
+    comp_match = re.search(r'component (\S+) (?:have|a|an)', q_text, re.IGNORECASE)
+    prop_match = re.search(r'have (?:a |an )?(.+?) according to its datasheet', q_text, re.IGNORECASE)
+    if not comp_match or not prop_match:
+        return False
+
+    component_ref = comp_match.group(1).strip()
+
+    matched = match_property_text(prop_match.group(1))
+    if matched is None:
+        return False
+
+    template, claimed_value = matched
+    result = verify_property(component_ref, template, embeddings_dir)
+    if result is None:
+        return False
+
+    if result["kind"] == "numeric":
+        true_values = result["true_values"]
+        if not true_values or claimed_value is None:
+            return False
+        correct_answer = "YES" if any(abs(claimed_value - t) < 0.5 for t in true_values) else "NO"
+    else:
+        correct_answer = "YES" if result["found"] else "NO"
+
+    if correct_answer != expected_answer:
+        question["answer"] = correct_answer
+        return True
+
+    return False
+
+
 class QuestionBankFixer:
     """Fix invalid questions in question bank files.
 
@@ -219,16 +265,26 @@ class QuestionBankFixer:
         r'Is the net ([^?]+?) at',
     ]
 
-    def __init__(self, circuit_json_file: str, spice_json_file: str) -> None:
+    def __init__(
+        self,
+        circuit_json_file: str,
+        spice_json_file: str,
+        embeddings_dir: str | None = None,
+    ) -> None:
         """Initialize fixer with circuit and SPICE data.
 
         Args:
             circuit_json_file: Path to the circuit JSON file.
             spice_json_file: Path to the SPICE simulation JSON file.
+            embeddings_dir: Optional path to the project's ``embeddings/``
+                directory. Without it, component_datasheet questions are left
+                untouched (unchanged from previous behaviour), since there is
+                no ground truth to fix them against.
         """
         self.circuit_json_file = circuit_json_file
         self.spice_json_file = spice_json_file
         self.spice_data = load_spice_data(spice_json_file)
+        self.embeddings_dir = embeddings_dir
 
     def fix_question(self, question: dict[str, str]) -> bool:
         """Fix a single question based on its category.
@@ -248,6 +304,8 @@ class QuestionBankFixer:
             return fix_spice_question(question, self.spice_data)
         elif category == "theory_layout":
             return fix_layout_question(question, self.circuit_json_file)
+        elif category == "component_datasheet" and self.embeddings_dir:
+            return fix_datasheet_question(question, self.embeddings_dir)
 
         return False
 
@@ -273,6 +331,9 @@ class QuestionBankFixer:
                     fixed_count += 1
             elif category == "theory_layout":
                 if fix_layout_question(question, self.circuit_json_file):
+                    fixed_count += 1
+            elif category == "component_datasheet" and self.embeddings_dir:
+                if fix_datasheet_question(question, self.embeddings_dir):
                     fixed_count += 1
 
         return replaced_count, fixed_count

@@ -118,6 +118,77 @@ class TestCircuitQuestionValidator:
         is_valid, msg = validator.validate_datasheet_question(question)
         assert is_valid
 
+    def test_validate_datasheet_question_grounded_correct(
+        self, mock_circuit_json, mock_spice_json, tmp_path, monkeypatch
+    ):
+        import pcb_qa.question_banks.validator as validator_module
+
+        monkeypatch.setattr(
+            validator_module,
+            "verify_property",
+            lambda comp, template, embeddings_dir, k=6: {"kind": "keyword", "found": True},
+        )
+        validator = CircuitQuestionValidator(mock_circuit_json, mock_spice_json, embeddings_dir=str(tmp_path))
+        question = {
+            "category": "component_datasheet",
+            "question": "Does the component U1 have I2C capabilities according to its datasheet?",
+            "answer": "YES",
+        }
+        is_valid, msg = validator.validate_datasheet_question(question)
+        assert is_valid
+        assert "verified" in msg.lower()
+
+    def test_validate_datasheet_question_grounded_wrong_answer(
+        self, mock_circuit_json, mock_spice_json, tmp_path, monkeypatch
+    ):
+        import pcb_qa.question_banks.validator as validator_module
+
+        monkeypatch.setattr(
+            validator_module,
+            "verify_property",
+            lambda comp, template, embeddings_dir, k=6: {"kind": "keyword", "found": False},
+        )
+        validator = CircuitQuestionValidator(mock_circuit_json, mock_spice_json, embeddings_dir=str(tmp_path))
+        question = {
+            "category": "component_datasheet",
+            "question": "Does the component U1 have I2C capabilities according to its datasheet?",
+            "answer": "YES",
+        }
+        is_valid, msg = validator.validate_datasheet_question(question)
+        assert not is_valid
+
+    def test_validate_datasheet_question_grounded_numeric_mismatch(
+        self, mock_circuit_json, mock_spice_json, tmp_path, monkeypatch
+    ):
+        import pcb_qa.question_banks.validator as validator_module
+
+        monkeypatch.setattr(
+            validator_module,
+            "verify_property",
+            lambda comp, template, embeddings_dir, k=6: {"kind": "numeric", "true_values": [85.0]},
+        )
+        validator = CircuitQuestionValidator(mock_circuit_json, mock_spice_json, embeddings_dir=str(tmp_path))
+        question = {
+            "category": "component_datasheet",
+            "question": "Does the component U1 have a maximum operating temperature of 125°C according to its datasheet?",
+            "answer": "YES",
+        }
+        is_valid, msg = validator.validate_datasheet_question(question)
+        assert not is_valid
+
+    def test_validate_datasheet_question_ungrounded_when_no_embeddings_dir(
+        self, mock_circuit_json, mock_spice_json
+    ):
+        """Without embeddings_dir, behaviour is unchanged (syntax-only check)."""
+        validator = CircuitQuestionValidator(mock_circuit_json, mock_spice_json)
+        question = {
+            "category": "component_datasheet",
+            "question": "Does the component U1 have a maximum operating temperature of 125°C according to its datasheet?",
+            "answer": "NO",
+        }
+        is_valid, msg = validator.validate_datasheet_question(question)
+        assert is_valid
+
     def test_validate_spice_question_correct_yes(self, mock_circuit_json, mock_spice_json):
         validator = CircuitQuestionValidator(mock_circuit_json, mock_spice_json)
         question = {

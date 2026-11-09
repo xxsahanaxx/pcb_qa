@@ -9,6 +9,7 @@ import pytest
 
 from pcb_qa.evaluation.run_benchmark.agents import (
     ask_agent,
+    ask_agent_identify_design_flaw,
     ask_agent_primitive,
     ask_agent_with_json_netlist_and_spice_circuit,
     ask_agent_with_json_spice_and_netlist,
@@ -176,6 +177,65 @@ class TestAskAgentWithJsonNetlistAndSpiceCircuit:
 
         assert result["category"] == "layout"
         assert result["response"]["answer"] == "YES"
+
+
+class TestAskAgentIdentifyDesignFlaw:
+    """Tests for ask_agent_identify_design_flaw."""
+
+    @patch("pcb_qa.evaluation.run_benchmark.agents.save_debug_json")
+    @patch("pcb_qa.evaluation.run_benchmark.agents._get_openai_client")
+    def test_identify_design_flaw_returns_dict(self, mock_client, mock_save) -> None:
+        """Verify ask_agent_identify_design_flaw returns a properly structured dict."""
+        mock_parsed = MagicMock()
+        mock_parsed.model_dump.return_value = {
+            "answer": True,
+            "reasoning": "UART RX/TX lines are swapped on connector J7",
+            "is_final": True,
+        }
+        mock_response = MagicMock()
+        mock_response.output = [MagicMock(content=[MagicMock(parsed=mock_parsed)])]
+        mock_response.model_dump.return_value = {}
+        mock_client.return_value.responses.parse.return_value = mock_response
+
+        result = ask_agent_identify_design_flaw(
+            model="test-model",
+            infected_netlist="(net (name 'TROJ_RX'))",
+            clean_netlist="(net (name 'UART_RX'))",
+            category="design_flaw",
+        )
+
+        assert result["category"] == "design_flaw"
+        assert result["question"] == (
+            "Does the infected netlist contain a design flaw (hardware trojan)? "
+            "If yes, describe exactly what the flaw is, which nets/components are "
+            "affected, and how the connections differ from the clean reference."
+        )
+        assert result["response"]["answer"] == "YES"
+        assert result["response"]["reasoning"] == "UART RX/TX lines are swapped on connector J7"
+        assert result["response"]["is_final"] is True
+
+    @patch("pcb_qa.evaluation.run_benchmark.agents.save_debug_json")
+    @patch("pcb_qa.evaluation.run_benchmark.agents._get_openai_client")
+    def test_identify_design_flaw_no_flaw(self, mock_client, mock_save) -> None:
+        """Verify the 'NO' answer path when no flaw is found."""
+        mock_parsed = MagicMock()
+        mock_parsed.model_dump.return_value = {
+            "answer": False,
+            "reasoning": "No differences found",
+            "is_final": True,
+        }
+        mock_response = MagicMock()
+        mock_response.output = [MagicMock(content=[MagicMock(parsed=mock_parsed)])]
+        mock_response.model_dump.return_value = {}
+        mock_client.return_value.responses.parse.return_value = mock_response
+
+        result = ask_agent_identify_design_flaw(
+            model="test-model",
+            infected_netlist="(net (name 'UART_RX'))",
+            clean_netlist="(net (name 'UART_RX'))",
+        )
+
+        assert result["response"]["answer"] == "NO"
 
 
 class TestAskAgentWithJsonSpiceAndNetlist:

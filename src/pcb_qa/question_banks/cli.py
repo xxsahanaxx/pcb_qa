@@ -34,6 +34,7 @@ def cmd_expand(args: argparse.Namespace) -> None:
         output_file = project_data['questions_json_file']
         base, ext = os.path.splitext(output_file)
         expanded_file = f"{base}_balanced{ext}"
+        embeddings_dir = os.path.join(project_data['parent_directory'], 'embeddings')
 
         expanded = expand_question_bank_for_project(
             circuit_json_file=project_data['circuit_json_file'],
@@ -42,6 +43,7 @@ def cmd_expand(args: argparse.Namespace) -> None:
             output_file=expanded_file,
             total_questions=240,
             shuffle=True,
+            embeddings_dir=embeddings_dir,
         )
 
         print(f"  Total questions: {len(expanded)}")
@@ -72,6 +74,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
 
         circuit_json = project_data['circuit_json_file'].replace('./', '')
         spice_json = project_data['spice_json_file'].replace('./', '')
+        embeddings_dir = os.path.join(project_data['parent_directory'], 'embeddings')
 
         for qfile in sorted(question_files):
             found_path = os.path.join(dir_path, qfile)
@@ -80,7 +83,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
 
             with open(found_path, 'r') as qf:
                 questions = json.load(qf)
-            validator = CircuitQuestionValidator(circuit_json, spice_json)
+            validator = CircuitQuestionValidator(circuit_json, spice_json, embeddings_dir=embeddings_dir)
 
             report = validator.validate_questions(questions)
             all_reports[f"{project_name}_{qfile.replace('.json', '')}"] = report
@@ -122,6 +125,7 @@ def cmd_fix(args: argparse.Namespace) -> None:
 
         circuit_json = project_data['circuit_json_file'].replace('./', '')
         spice_json = project_data['spice_json_file'].replace('./', '')
+        embeddings_dir = os.path.join(project_data['parent_directory'], 'embeddings')
 
         for qfile in sorted(question_files):
             found_path = os.path.join(dir_path, qfile)
@@ -131,7 +135,7 @@ def cmd_fix(args: argparse.Namespace) -> None:
             with open(found_path, 'r') as qf:
                 questions = json.load(qf)
 
-            fixer = QuestionBankFixer(circuit_json, spice_json)
+            fixer = QuestionBankFixer(circuit_json, spice_json, embeddings_dir=embeddings_dir)
             replaced_count, fixed_count = fixer.fix_question_bank(questions)
 
             if replaced_count > 0:

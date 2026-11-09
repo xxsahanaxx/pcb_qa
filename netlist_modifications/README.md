@@ -12,6 +12,116 @@ install `simp_sexp`, and `import netlist_modifications`.
 
 ---
 
+## Pipeline overview
+
+The scenario flow, from the clean projects to model results. Fault injection is in
+`insert_modification/` and the conversions are in `conversions/`. The benchmark
+itself is in `scripts/`:
+- `build_anomaly_prompts.py` builds the prompts;
+- `run_anomaly_prompts.py` sends them to the models;
+- `grade_anomaly_results.py` scores the answers;
+- `detect_anomaly_with_design_spec.py` is a one-off check of a single netlist
+  against a design spec.
+
+The prompt and the run and grading options are documented in
+`docs/anomaly_detection_prompt.md`.
+
+```mermaid
+flowchart TD
+    %% ---------- Sources ----------
+    subgraph SRC["Sources"]
+        OSHP["OSHP_files/Clean/<br/>8 KiCad projects"]
+        CLEAN["outputs/Clean/&lt;board&gt;/*.net<br/>clean netlists"]
+        SPECS["docs/design_specs/*.md<br/>design specifications"]
+        TPL["docs/anomaly_detection_prompt.md<br/>prompt template"]
+    end
+    OSHP --> CLEAN
+
+    %% ---------- Fault injection ----------
+    subgraph GEN["Fault injection: python -m netlist_modifications &lt;cmd&gt;-batch"]
+        direction TB
+        PICK["Seeded random pick per board<br/>(up to 3 versions each)"]
+        EDIT["Edit a copy of the .kicad_sch<br/>(source project SHA-256 checked, never changed)"]
+        EXP["kicad-cli re-export<br/>faulty .net + _clean/.net + raw .cir"]
+        VER{"Re-export changed<br/>exactly the intended thing?"}
+        PICK --> EDIT --> EXP --> VER
+        VER -- "no: next pick" --> PICK
+    end
+    CLEAN --> PICK
+    OSHP --> EDIT
+
+    subgraph TYPES["14 scenario types"]
+        direction LR
+        W["Wiring: Wire1-3<br/>GndShort · VccShort · Bridge"]
+        S["Part swap: Swap1-3<br/>R→C · C→R"]
+        V["Value: Value1-3<br/>R ×1000 · R ÷1000<br/>C ×1000 · C ÷1000"]
+        T["Tolerance: Tolerance1-3<br/>R looser · C looser<br/>R tighter · C tighter"]
+        F["Polarity: Flip1-3<br/>diode · LED · polarised cap reversed"]
+    end
+    GEN -.-> TYPES
+
+    VER -- "yes" --> SCN["outputs/Infected/Scenarios/&lt;Type&gt;/&lt;Variant&gt;/&lt;Board&gt;/<br/>kicad/ · .net · _clean/ · .cir · record .json<br/>+ manifest.json per type"]
+
+    %% ---------- Conversions ----------
+    subgraph CONV["Conversions (per scenario root)"]
+        direction TB
+        C1["convert_spice --raw-exports<br/>finish .cir decks"]
+        C2["convert_circuits<br/>.net → circuit .json"]
+        C3["run_spice<br/>ngspice → .raw + spice_run_manifest.json"]
+        C1 --> C2 --> C3
+    end
+    SCN --> CONV
+    CONV --> SCN
+    SCN --> README["Scenarios/README.md<br/>316 faulty boards documented"]
+
+    %% ---------- Prompt building ----------
+    subgraph BUILD["netlist_modifications/scripts/build_anomaly_prompts.py"]
+        direction TB
+        SAN["Scrub leaks<br/>netlist source / date / library paths<br/>SPICE write path"]
+        CTRL["Clean controls<br/>_clean .net + kicad-cli SPICE deck"]
+        LEAK{"Leak check<br/>(paths, scenario names)"}
+        SAN --> LEAK
+        CTRL --> SAN
+    end
+    SCN --> SAN
+    SCN --> CTRL
+    SPECS --> BUILD
+    TPL --> BUILD
+
+    LEAK -- "pass" --> PR["outputs/Infected/Prompts/AnomalyDetection/<br/>&lt;Board&gt;/&lt;Type&gt;_&lt;Variant&gt;/ and &lt;Board&gt;/Control/<br/>prompt.md + netlist.net + spice.cir<br/>(264 prompts with open slots<br/>{{NETLIST}} / {{SPICE_CIRCUIT}})"]
+    LEAK -- "fail" --> STOP["Abort: no leaky prompt written"]
+    BUILD --> IDX["prompts.jsonl<br/>id → prompt, netlist, spice paths"]
+    BUILD --> KEY["answer_key.jsonl<br/>expected verdict, category, refs, nets"]
+
+    %% ---------- Running ----------
+    subgraph RUN["netlist_modifications/scripts/run_anomaly_prompts.py"]
+        direction TB
+        DRY["--dry-run<br/>token + cost estimate"]
+        RENDER["render(): fill {{NETLIST}} / {{SPICE_CIRCUIT}}"]
+        CALL["OpenRouter chat completion<br/>usage: include = true"]
+        GENSTAT["GET /generation<br/>provider, native tokens, cost, latency"]
+        RENDER --> CALL --> GENSTAT
+    end
+    IDX --> RUN
+    PR --> RENDER
+
+    GENSTAT --> RES["&lt;Board&gt;/&lt;anomaly&gt;/results/&lt;model&gt;.json<br/>response · parsed verdict · usage · cost<br/>generation · timing · prompt SHA-256 · raw_response"]
+    RES --> SUM["run_summary.json<br/>per-model totals: tokens, cost, errors, latency"]
+
+    %% ---------- Grading (not built yet) ----------
+    GRADE["netlist_modifications/scripts/grade_anomaly_results.py<br/>detection · false alarms on controls<br/>localisation: category + part/net in one finding<br/>baseline findings from each board's control"]
+    RES --> GRADE
+    KEY --> GRADE
+    GRADE --> GOUT["grades.csv · grade_summary.json · grade_summary.md"]
+
+    classDef planned stroke-dasharray: 5 5,fill:#f6f6f6,color:#555;
+    classDef stop fill:#fde8e8,stroke:#c53030,color:#742a2a;
+
+    class STOP stop;
+```
+
+---
+
 ## Requirements & how to run
 
 Depends on [`simp_sexp`](https://pypi.org/project/simp-sexp/) for value parsing.
@@ -37,11 +147,22 @@ netlist_modifications/
     value.py      # "value" Trojan — shift one R/C/L passive's SI-prefix magnitude
     gnd_short.py  # "gnd-short" Trojan — tie a labelled net to GND in the .kicad_sch (kicad-cli)
     gnd_short_ref.py # "gnd-short-ref" Trojan — tie a component PIN (e.g. C1) to GND in the .kicad_sch (kicad-cli)
+    gnd_short_random.py # "gnd/vcc-short-random" Trojans — N variants, each tying ONE random net to GND or a +rail (kicad-cli)
+    bridge_random.py # "bridge-random" Trojan — N variants, each ONE wire between pins of two random components (kicad-cli)
+    polarity_flip_random.py # "polarity-flip-random" Trojan — N variants, each ONE random diode / LED / polarised cap reversed (rotated 180°) in the .kicad_sch (kicad-cli)
+    tolerance_random.py # "r-/c-tolerance-random" Trojans — N variants, each ONE random resistor (capacitor) given a looser (higher %) Tolerance in the .kicad_sch (kicad-cli)
+    magnitude_random.py # "r-/c-magnitude-random" and "r-/c-magnitude-down-random" Trojans — N variants, each ONE random resistor's (capacitor's) value moved up (or down) one SI step in the .kicad_sch (kicad-cli)
+    passive_swap_random.py # "r-to-c-random" / "c-to-r-random" Trojans — N variants, each ONE random resistor (capacitor) replaced by a capacitor (resistor) (kicad-cli)
     cli.py        # command-line front end (argparse)
   conversions/
     convert_circuits.py  # infected .net -> hierarchical circuit JSON (needs pcb_qa)
     convert_spice.py     # infected .net -> infected SPICE .cir (needs pcb_qa)
     run_spice.py         # batch-run ngspice over generated .cir files
+  scripts/
+    build_anomaly_prompts.py           # scenarios + design specs -> anomaly-detection prompts (+ answer key)
+    run_anomaly_prompts.py             # send prompts to OpenRouter models, save answers + usage/cost
+    grade_anomaly_results.py           # score answers against the answer key
+    detect_anomaly_with_design_spec.py # one-off: check one netlist against one design spec
   gen_trojan_questions.py  # Trojan-detection question banks from batch manifests
   __main__.py              # enables `python -m netlist_modifications`
   specs/                   # example Trojan spec(s): uart.json
@@ -287,6 +408,248 @@ reason (editing the one shared symbol would short every instance, not just the
 one asked for — e.g. `C1`, which is also `C26`/`C120` elsewhere on
 AcornRobotElectronics). KiCad 6+ schematics only; kicad-cli resolution and the
 legacy-project caveat are the same as `gnd-short` above.
+
+
+### gnd-short-random / vcc-short-random — one random net tied to GND or a +rail per variant (kicad-cli)
+
+Same placement as `gnd-short-ref` (a GND clone dropped on a component pin), but
+the target is chosen at random: for each clean design it picks `--count`
+(default 3) **distinct** nets, excluding GND-like and `unconnected-` nets, and on
+each one a random visible pin of a single-instance sheet. Every variant holds
+exactly **one** modification. The picks are seeded (`--seed`, combined with the
+board name), so a re-run reproduces them.
+
+```bash
+.venv/bin/python -m netlist_modifications gnd-short-random-batch [--count 3] [--seed 0]
+.venv/bin/python -m netlist_modifications.conversions.convert_spice --raw-exports --root outputs/Infected/GndShortRandom
+.venv/bin/python -m netlist_modifications.conversions.convert_circuits --root outputs/Infected/GndShortRandom
+.venv/bin/python -m netlist_modifications.conversions.run_spice --root outputs/Infected/GndShortRandom
+```
+
+```
+<out-root>/Wire<i>/<board>/_clean/<name>.net     # clean kicad-cli re-export
+<out-root>/Wire<i>/<board>/kicad/...             # modified project copy (one sheet differs)
+<out-root>/Wire<i>/<board>/<name>.net / .cir     # modified netlist / SPICE export
+<out-root>/Wire<i>/<board>/gnd_short_random.json # this variant's record
+<out-root>/Wire<i>/manifest.json, <out-root>/manifest.json
+```
+
+Each record names the shorted `net`, the `ref`/`ref_pin` the GND symbol sits on,
+the `sheet` edited, the `gnd_refs` added, and the measured `moved_nodes` and
+`merged_net`. A pick is kept only if the pins that moved onto GND are
+**exactly** that net's pins. Otherwise it is discarded and the next random
+pick is tried. The run refuses to overwrite an existing `<out-root>/Wire<i>/<board>`.
+
+`vcc-short-random-batch` is the same with a positive rail in place of GND
+(default out-root `outputs/Infected/VccShortRandom`, record
+`vcc_short_random.json`). The clone is one of the sheet's positive-rail power
+symbols (`VCC`, `+3V3`, `+5V`, `VBUS`, ...). `VCC` is preferred, else the rail
+with the most pins. Positive rails are not themselves picked as victims, since
+tying `+3.3V` to `+3V3` is often a no-op. Each record's `rail` says which
+supply was used.
+
+A global label's name beats a power symbol's, so the merged net is often
+renamed after the victim (e.g. `+3V3` becomes `ADC3_0_FCC`). `convert_spice
+--raw-exports` detects this from the variant's `.net` vs `_clean/` and maps the
+node back to the rail (or `0`), so the rail stays driven. See `renamed` in
+`spice_manifest.json`.
+
+
+### bridge-random — one wire between two random components per variant (kicad-cli)
+
+Draws a single `(wire ...)` on one sheet, from a visible pin of one component to
+a visible pin of a **different** component on a different net, so the two nets
+merge. Both nets must be signal nets: GND-like, positive-rail and `unconnected-`
+nets are excluded, since bridges to those are the GND/VCC scenarios above. A
+design's variants use pairwise-distinct nets.
+
+```bash
+.venv/bin/python -m netlist_modifications bridge-random-batch [--count 3] [--seed 0]
+```
+
+Same layout and conversions as `gnd-short-random`, under
+`outputs/Infected/BridgeRandom`, with `bridge_random.json` per variant. Each
+record holds `ref_a`/`pin_a`/`net_a`, `ref_b`/`pin_b`/`net_b`, the `sheet`,
+the wire's `wire_from`/`wire_to` coordinates and the resulting `merged_net`. A
+pick is kept only if exactly those two nets merged and every other net is
+unchanged. That also rejects a wire whose straight path runs over another pin
+or wire end.
+
+
+### r-to-c-random — one resistor replaced by a capacitor per variant (kicad-cli)
+
+Picks `--count` distinct two-pin `R<n>` resistors on single-instance sheets
+and, in each variant, rewrites one of them in place as a capacitor cloned from
+one of the board's own `C<n>` parts: lib symbol, `Value`, `Footprint` and every
+property both share. Resistor-only properties (`Sim.*`, `MPN`, ...) are
+dropped. The new part takes the next free `C<n>` reference, which is also what
+makes kicad-cli's SPICE export emit a `C` element. Templates with a numeric
+value are preferred, then non-polarised ones.
+
+The capacitor is rotated so its pin 1 → pin 2 axis matches the resistor's, with
+pin 1 on the resistor's pin 1. Where the pin spacings differ (OPNhydro-r2's
+Coert-Vonk symbols, AcornRobot's `TAYLOR_RESISTOR`), one collinear wire joins
+the capacitor's pin 2 to the resistor's old pin 2.
+
+```bash
+.venv/bin/python -m netlist_modifications r-to-c-random-batch [--count 3] [--seed 0]
+.venv/bin/python -m netlist_modifications.conversions.convert_spice --raw-exports --root outputs/Infected/Scenarios/ResistorToCapacitorRandom
+.venv/bin/python -m netlist_modifications.conversions.convert_circuits --root outputs/Infected/Scenarios/ResistorToCapacitorRandom
+.venv/bin/python -m netlist_modifications.conversions.run_spice --root outputs/Infected/Scenarios/ResistorToCapacitorRandom
+```
+
+Same layout as `gnd-short-random`, but under `Swap<i>/<board>` and with
+`r_to_c_random.json` per variant. Each record holds the removed `ref` /
+`old_value` / `old_footprint` / `old_part`, the new `new_ref` / `new_value` /
+`new_footprint` / `template_part`, the `template_ref` it was cloned from, the
+pin-by-pin `clean_pin_nets` / `pin_nets`, and `wire_added`. A pick is kept only
+if the re-export has the resistor gone, the capacitor on exactly its nets pin
+for pin with the template's library part, and every other component and net
+unchanged (`exact`).
+
+A capacitor in place of a DC path can leave a node with no DC route to ground,
+which ngspice rejects ("timestep too small"). Such decks run once
+`.option rshunt=1e12` is added. The pipeline doesn't add it.
+
+`c-to-r-random-batch` is the mirror image: a random two-pin `C<n>` becomes a
+resistor cloned from one of the board's `R<n>` parts, under the next free
+`R<n>` (default out-root `outputs/Infected/Scenarios/CapacitorToResistorRandom`,
+record `c_to_r_random.json`). Resistor templates with a numeric, non-zero value
+are preferred, so the swap is never really a 0 Ω jumper. Records also carry
+`old_polarised` for the removed capacitor. Both modes live in
+`passive_swap_random.py` and share one seed scheme, so a re-run reproduces the
+picks.
+
+```bash
+.venv/bin/python -m netlist_modifications c-to-r-random-batch [--count 3] [--seed 0]
+```
+
+
+### r-magnitude-random — one resistor's value 1000x larger per variant (kicad-cli)
+
+The schematic-level, random counterpart of `value`. In each variant, one random
+two-pin `R<n>` on a single-instance sheet has only its `Value` property moved up
+one SI step (`m` → none → `k` → `M`), with `value`'s token parser keeping
+digits, unit and trailing ratings: `10k` → `10M`, `470` → `470k`,
+`4k7` → `4M7`, `110m` → `110`. 0-ohm links, unparseable values (`??`) and
+values already in `M` are skipped.
+
+```bash
+.venv/bin/python -m netlist_modifications r-magnitude-random-batch [--count 3] [--seed 0]
+```
+
+Same layout and conversions as `gnd-short-random`, under
+`outputs/Infected/Scenarios/ResistorMagnitudeUpRandom/Value<i>/<board>`, with
+`r_magnitude_random.json` per variant (`ref`, `old_value`, `new_value`,
+`old_prefix`, `new_prefix`, `factor`, `pin_nets`, `exported_value`). A pick is
+kept only if the re-export changes exactly that component's value and nothing
+else (`exact`). kicad-cli's SPICE export writes `M` as `Meg`, so ngspice sees
+mega-ohms, not milli-ohms.
+
+`c-magnitude-random-batch` is the same for two-pin `C<n>` capacitors, stepping
+`p` → `n` → `u` → `m` (`100n` → `100u`, `1uF 25V` → `1mF 25V`). Values
+with no prefix (an ambiguous bare farad) or already in `m` are skipped. The
+default out-root is `outputs/Infected/Scenarios/CapacitorMagnitudeUpRandom`,
+with `c_magnitude_random.json` per variant. Both modes live in
+`magnitude_random.py`.
+
+```bash
+.venv/bin/python -m netlist_modifications c-magnitude-random-batch [--count 3] [--seed 0]
+```
+
+`r-magnitude-down-random-batch` steps a resistor *down* one SI step instead
+(`M` → `k` → none → `m`, `factor` 0.001): `10k` → `10`, `2k2` → `2R2`,
+`470` → `470m`. Values already in `m` are skipped. The default out-root is
+`outputs/Infected/Scenarios/ResistorMagnitudeDownRandom`, with
+`r_magnitude_down_random.json` per variant.
+
+```bash
+.venv/bin/python -m netlist_modifications r-magnitude-down-random-batch [--count 3] [--seed 0]
+```
+
+`c-magnitude-down-random-batch` is the same for capacitors (`m` → `u` → `n`
+→ `p`, `factor` 0.001): `100n` → `100p`, `1uF/25V` → `1nF/25V`. Values with no
+prefix or already in `p` are skipped. The default out-root is
+`outputs/Infected/Scenarios/CapacitorMagnitudeDownRandom`, with
+`c_magnitude_down_random.json` per variant.
+
+```bash
+.venv/bin/python -m netlist_modifications c-magnitude-down-random-batch [--count 3] [--seed 0]
+```
+
+
+### r-tolerance-random — one resistor at a looser tolerance per variant (kicad-cli)
+
+The schematic-level, random counterpart of `tolerance`. In each variant, one
+random two-pin `R<n>` on a single-instance sheet is given a strictly looser
+grade from `tolerance.TOLERANCE_GRADES["R"]`. Its current grade comes from,
+in order: a `Tolerance` property, a `N%` in `Value`, a `±N%` in the lib symbol
+name or any property, else `tolerance.BASELINE_TOLERANCE["R"]` (5%).
+
+The edit sets a hidden `Tolerance` property (added if missing, cloned from the
+block's `Datasheet` property) and rewrites every `N%` / `±N%` stating the old
+grade in `Value` or another property (not `Datasheet`, whose URLs carry
+`%`-escapes). A grade inside the lib symbol name is left alone and listed in
+`stale_mentions`. 0-ohm links, `??` values and resistors already at 20% are
+skipped.
+
+```bash
+.venv/bin/python -m netlist_modifications r-tolerance-random-batch [--count 3] [--seed 0]
+```
+
+Same conversions as the others, under
+`outputs/Infected/Scenarios/ResistorToleranceUpRandom/Tolerance<i>/<board>`,
+with `r_tolerance_random.json` per variant (`baseline_tolerance`,
+`baseline_source`, `substituted_tolerance`, `restated_in`, `stale_mentions`,
+`exported_tolerance`, ...). A pick is kept only if the re-export leaves every
+net and every other component byte-identical and the resistor carries the new
+`Tolerance` field (`exact`).
+
+`c-tolerance-random-batch` is the same for two-pin `C<n>` capacitors, with
+`tolerance.TOLERANCE_GRADES["C"]` (1/5/10/20%) and the capacitor baseline (10%).
+The default out-root is `outputs/Infected/Scenarios/CapacitorToleranceUpRandom`,
+with `c_tolerance_random.json` per variant. With a 10% baseline the only looser
+grade is 20%, so most picks are 10% → 20%. Both modes live in
+`tolerance_random.py`.
+
+```bash
+.venv/bin/python -m netlist_modifications c-tolerance-random-batch [--count 3] [--seed 0]
+```
+
+`r-tolerance-down-random-batch` swaps a resistor for a *tighter* grade instead
+(a strictly lower ±%, e.g. 5% → 1% or 0.1%). It's a spec/BOM mismatch rather
+than a functional risk. The default out-root is
+`outputs/Infected/Scenarios/ResistorToleranceDownRandom`, with
+`r_tolerance_down_random.json` per variant. `c-tolerance-down-random-batch`
+does the same for capacitors (1/5/10/20%, so from the 10% baseline to 5% or 1%),
+into `CapacitorToleranceDownRandom` with `c_tolerance_down_random.json`. All four
+modes live in `tolerance_random.py` and use independent seeds, so adding one
+changes none of the existing picks.
+
+```bash
+.venv/bin/python -m netlist_modifications r-tolerance-down-random-batch [--count 3] [--seed 0]
+.venv/bin/python -m netlist_modifications c-tolerance-down-random-batch [--count 3] [--seed 0]
+```
+
+
+### polarity-flip-random — one polarised part fitted backwards per variant (kicad-cli)
+
+Reverses one random diode, LED or polarised capacitor by rotating its symbol 180°
+about its pins' midpoint. Pin 1 lands exactly on old pin 2 and vice versa, so
+the `.kicad_sch` diff is that symbol's `(at ...)`. Bidirectional TVS diodes
+(`D_TVS`, `...CA` part numbers) and parts with both pins on one net are skipped,
+since a flip would change nothing. A pick is kept only if the re-export shows
+the part's two pins swapped nets and nothing else changed (`exact`). Records:
+`polarity_flip_random.json` (`ref`, `kind`, `pin_nets`, `flipped_pin_nets`,
+`pin_functions`, `old_at`, `new_at`), under
+`outputs/Infected/Scenarios/PolarityFlipRandom/Flip<i>/<board>`.
+
+```bash
+.venv/bin/python -m netlist_modifications polarity-flip-random-batch [--count 3] [--seed 0]
+```
+
+Resistors aren't covered: a resistor has no polarity, so reversing one changes
+nothing.
 
 ---
 

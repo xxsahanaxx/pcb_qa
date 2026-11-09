@@ -48,7 +48,7 @@ import json
 import os
 import re
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from ..insert_modification import core as nt
@@ -338,7 +338,12 @@ def run(root: str = DEFAULT_ROOT, dry_run: bool = False) -> List[Result]:
 #   - rail voltages parse every KiCad spelling (`+3V3`, `+3.3V`, `+24VF`);
 #   - the matching Clean board's `.cir` supplies its `tran` line and any
 #     source whose node is still present (e.g. PortalHardware's `VCC`), so
-#     infected and Clean simulations stay comparable.
+#     infected and Clean simulations stay comparable;
+#   - a short onto GND or a rail can hand the merged net a *label's* name
+#     (KiCad lets a global label beat a power symbol), so the `.cir` loses its
+#     `GND`/`+3V3` node and the rail would float. When the variant dir holds
+#     its `.net` and `_clean/<stem>.net`, that node is renamed back (to `0`
+#     for GND; a rail merged into ground then has no node left, so no source).
 RAW_EXPORT_SUFFIX = ".kicad_cir"
 _DEFAULT_TRAN = "tran 100u 10m"
 _LED_MODEL = "D (Is=1p Rs=10 N=1.7)"
@@ -354,6 +359,7 @@ class RawResult:
     clean_template: Optional[str]
     sources: List[str]
     dropped: List[str]
+    renamed: Dict[str, str] = field(default_factory=dict)
 
 
 def _rail_voltage(rail: str) -> Optional[float]:
@@ -374,8 +380,45 @@ def _clean_template_for(board_dir: str) -> Optional[str]:
     return None
 
 
+def _absorbed_rails(cir: str, clean_cir: Optional[str] = None) -> Dict[str, str]:
+    """{merged net name: rail} for rails a short left under another net's name.
+
+    Compares the variant's `.net` with its `_clean/` re-export: a clean GND or
+    positive rail missing by name from the variant, whose pins all sit on a
+    net that kept a different name, was absorbed by that net. Maps to `0` for
+    GND. A rail is GND, a `+<volts>` name, or any node the Clean template
+    drives with a source (e.g. `VCC`). Empty when either netlist is missing.
+    """
+    d, stem = os.path.dirname(cir), os.path.splitext(os.path.basename(cir))[0]
+    infected_path = os.path.join(d, f"{stem}.net")
+    clean_path = os.path.join(d, "_clean", f"{stem}.net")
+    if not (os.path.isfile(infected_path) and os.path.isfile(clean_path)):
+        return {}
+    clean = nt.parse_nets(nt.read(clean_path))
+    infected = nt.parse_nets(nt.read(infected_path))
+    names = {n.name for n in infected}
+    driven = set()
+    if clean_cir:
+        with open(clean_cir) as f:
+            driven = {m.group(1) for m in map(_SOURCE_LINE_RE.match, (ln.strip() for ln in f)) if m}
+    out: Dict[str, str] = {}
+    for rail in clean:
+        if rail.name in names or not rail.node_set():
+            continue
+        is_gnd = rail.name == "GND"
+        if not (is_gnd or rail.name in driven or _rail_voltage(rail.name) is not None):
+            continue
+        hosts = [n for n in infected if rail.node_set() <= n.node_set()]
+        if hosts:
+            out[max(hosts, key=lambda n: len(n.nodes)).name] = "0" if is_gnd else rail.name
+    return out
+
+
 def _complete_raw_export(raw_lines: List[str], out_cir: str,
-                         clean_cir: Optional[str]) -> Tuple[List[str], RawResult]:
+                         clean_cir: Optional[str],
+                         renames: Optional[Dict[str, str]] = None
+                         ) -> Tuple[List[str], RawResult]:
+    renames = renames or {}
     lines = [_RATING_STRIP_RE.sub("", ln).rstrip("\n") for ln in raw_lines]
     title = lines[0]
     body = [ln for ln in lines[1:] if ln.strip() and ln.strip().lower() != ".end"]
@@ -392,6 +435,7 @@ def _complete_raw_export(raw_lines: List[str], out_cir: str,
             continue
         if len(tokens) == 2:
             continue  # unmodeled component (connector/transistor/IC/switch)
+        tokens = tokens[:1] + [renames.get(t, t) for t in tokens[1:]]
         tokens = [_GND_RE.sub("0", t) for t in tokens]
         ref = tokens[0]
         if ref.upper().startswith("LED"):
@@ -438,7 +482,7 @@ def _complete_raw_export(raw_lines: List[str], out_cir: str,
         + ["", "", ".control", tran, "set filetype=ascii",
            f"write {raw_out} all", ".endc", "", ".end"]) + "\n"
     return (content.splitlines(keepends=True),
-            RawResult(out_cir, clean_cir, source_lines, dropped))
+            RawResult(out_cir, clean_cir, source_lines, dropped, renames))
 
 
 def run_raw_exports(root: str, dry_run: bool = False) -> List[RawResult]:
@@ -452,8 +496,9 @@ def run_raw_exports(root: str, dry_run: bool = False) -> List[RawResult]:
         if src == cir and any(ln.startswith(".control") for ln in raw_lines):
             print(f"skip      {cir} (already a finished deck, no raw export kept)")
             continue
-        lines, res = _complete_raw_export(
-            raw_lines, cir, _clean_template_for(os.path.dirname(cir)))
+        template = _clean_template_for(os.path.dirname(cir))
+        lines, res = _complete_raw_export(raw_lines, cir, template,
+                                          _absorbed_rails(cir, template))
         if not dry_run:
             if src == cir:
                 with open(backup, "w") as f:
@@ -462,7 +507,8 @@ def run_raw_exports(root: str, dry_run: bool = False) -> List[RawResult]:
                 f.writelines(lines)
         results.append(res)
         print(f"completed {cir}  sources={len(res.sources)} dropped={len(res.dropped)}"
-              f"  template={res.clean_template}")
+              f"  template={res.clean_template}"
+              + (f"  renamed={res.renamed}" if res.renamed else ""))
     return results
 
 

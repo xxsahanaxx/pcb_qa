@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from pcb_qa.parsers.circuit_json import CircuitJSON
+from pcb_qa.question_banks.datasheet_lookup import match_property_text, verify_property
 from pcb_qa.question_banks.models import Question
 
 
@@ -74,16 +75,26 @@ class CircuitQuestionValidator:
         "memory", "pwm", "adc", "dac", "magnetic", "motion", "clock", "quiescent"
     ]
 
-    def __init__(self, circuit_json_file: str, spice_json_file: str) -> None:
+    def __init__(
+        self,
+        circuit_json_file: str,
+        spice_json_file: str,
+        embeddings_dir: str | None = None,
+    ) -> None:
         """Initialize validator with circuit and SPICE data.
 
         Args:
             circuit_json_file: Path to the circuit JSON file.
             spice_json_file: Path to the SPICE simulation JSON file.
+            embeddings_dir: Optional path to the project's ``embeddings/``
+                directory, used to verify component_datasheet answers against
+                real datasheet text. Without it, datasheet questions can only
+                be syntax-checked (unchanged from previous behaviour).
         """
         self.circuit = CircuitJSON(circuit_file=circuit_json_file)
         self.spice_data = load_spice_data(spice_json_file)
         self._components = self._extract_components(circuit_json_file)
+        self.embeddings_dir = embeddings_dir
 
     @staticmethod
     def _extract_components(circuit_json_file: str) -> list[str]:
@@ -181,6 +192,11 @@ class CircuitQuestionValidator:
     def validate_datasheet_question(self, question: dict[str, str]) -> tuple[bool, str]:
         """Validate a component_datasheet question.
 
+        When ``self.embeddings_dir`` is set and the question's property phrase
+        matches a known template, the claimed value/capability is checked
+        against the component's real embedded datasheet text. Otherwise this
+        falls back to the previous syntax-only check.
+
         Args:
             question: Question dictionary with 'question' and 'answer' keys.
 
@@ -188,10 +204,11 @@ class CircuitQuestionValidator:
             Tuple of (is_valid, error_message).
         """
         q_text = question.get("question", "")
+        expected_answer = question.get("answer", "")
 
-        comp_match = re.search(r'component ([^?]+) (?:have|a|an)', q_text, re.IGNORECASE)
+        comp_match = re.search(r'component (\S+) (?:have|a|an)', q_text, re.IGNORECASE)
         if not comp_match:
-            comp_match = re.search(r'Is the component ([^?]+) a', q_text, re.IGNORECASE)
+            comp_match = re.search(r'Is the component (\S+) a', q_text, re.IGNORECASE)
 
         if not comp_match:
             return False, f"Could not extract component from question: {q_text}"
@@ -203,6 +220,14 @@ class CircuitQuestionValidator:
             if component_ref not in ic_components and component_ref not in self._components:
                 return True, f"Component '{component_ref}' not found (may be acceptable for IC templates)"
 
+        isolated_match = re.search(r'have (?:a |an )?(.+?) according to its datasheet', q_text, re.IGNORECASE)
+        if self.embeddings_dir and isolated_match:
+            grounded_result = self._check_datasheet_ground_truth(
+                component_ref, isolated_match.group(1), expected_answer
+            )
+            if grounded_result is not None:
+                return grounded_result
+
         property_match = re.search(r'have (a |an )?([^?]+)', q_text, re.IGNORECASE)
 
         if property_match:
@@ -212,6 +237,44 @@ class CircuitQuestionValidator:
                 return True, "Valid (cannot fully verify without datasheet embeddings)"
 
         return True, "Syntax valid (semantic validation requires embeddings)"
+
+    def _check_datasheet_ground_truth(
+        self, component_ref: str, prop_text: str, expected_answer: str
+    ) -> tuple[bool, str] | None:
+        """Check a datasheet claim against embedded datasheet text.
+
+        Returns None when the property/component can't be matched or
+        verified, so the caller falls back to the syntax-only check.
+        """
+        matched = match_property_text(prop_text)
+        if matched is None:
+            return None
+
+        template, claimed_value = matched
+        result = verify_property(component_ref, template, self.embeddings_dir)
+        if result is None:
+            return None
+
+        if result["kind"] == "numeric":
+            true_values = result["true_values"]
+            if not true_values or claimed_value is None:
+                return None
+            is_match = any(abs(claimed_value - t) < 0.5 for t in true_values)
+            if expected_answer == "YES" and not is_match:
+                return False, (
+                    f"Datasheet for '{component_ref}' shows {true_values} for this property, "
+                    f"not the claimed {claimed_value}"
+                )
+            if expected_answer == "NO" and is_match:
+                return False, f"Datasheet for '{component_ref}' DOES show {claimed_value} for this property"
+            return True, "Valid (verified against embedded datasheet text)"
+
+        found = result["found"]
+        if expected_answer == "YES" and not found:
+            return False, f"'{prop_text}' not found in '{component_ref}'s embedded datasheet text"
+        if expected_answer == "NO" and found:
+            return False, f"'{prop_text}' IS supported by '{component_ref}'s embedded datasheet text"
+        return True, "Valid (verified against embedded datasheet text)"
 
     def _extract_net_from_question(self, q_text: str) -> str | None:
         """Extract net name from a SPICE question.
@@ -427,9 +490,9 @@ def validate_datasheet_question(question: dict[str, str], components: list[str])
     """
     q_text = question.get("question", "")
 
-    comp_match = re.search(r'component ([^?]+) (?:have|a|an)', q_text, re.IGNORECASE)
+    comp_match = re.search(r'component (\S+) (?:have|a|an)', q_text, re.IGNORECASE)
     if not comp_match:
-        comp_match = re.search(r'Is the component ([^?]+) a', q_text, re.IGNORECASE)
+        comp_match = re.search(r'Is the component (\S+) a', q_text, re.IGNORECASE)
 
     if not comp_match:
         return False, f"Could not extract component from question: {q_text}"

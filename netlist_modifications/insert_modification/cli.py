@@ -25,6 +25,14 @@ Subcommands:
   c-magnitude-random-batch  N single-capacitor x1000 value step-ups, per design.
   r-magnitude-down-random-batch  N single-resistor /1000 value step-downs, per design.
   c-magnitude-down-random-batch  N single-capacitor /1000 value step-downs, per design.
+  r-tolerance-random-batch  N single-resistor looser-tolerance swaps, per design.
+  c-tolerance-random-batch  N single-capacitor looser-tolerance swaps, per design.
+  r-tolerance-down-random-batch  N single-resistor tighter-tolerance swaps, per design.
+  c-tolerance-down-random-batch  N single-capacitor tighter-tolerance swaps, per design.
+  polarity-flip-random-batch  N single-part polarity flips (diode/LED/polarised cap), per design.
+  xor-gpio-trojan-batch  [RQ2] N XOR-gate-on-spare-GPIO trojans, per design.
+  xor-gpio-trojan-sch  [RQ2] Re-realise existing XOR-gpio-trojan records in the schematic; re-export .net/.cir.
+  mcu-bus-interposer  [RQ2] Cut an MCU data-bus line and splice a buffer in series (schematic-level).
 
 Run it as a module from the repo root:
   python -m netlist_modifications <subcommand> ...
@@ -42,6 +50,11 @@ from . import gnd_short_random
 from . import bridge_random
 from . import passive_swap_random
 from . import magnitude_random
+from . import tolerance_random
+from . import polarity_flip_random
+from . import xor_gpio_trojan
+from . import xor_gpio_trojan_sch
+from . import mcu_bus_interposer_sch
 from . import snip
 from . import swap
 from . import tolerance
@@ -168,6 +181,30 @@ def _cmd_magnitude_random_batch(args) -> int:
     return magnitude_random.run_batch(count=args.count, seed=args.seed,
                                       clean_glob=args.clean_glob, out_root=args.out_root,
                                       mode=args.mode)
+
+
+def _cmd_tolerance_random_batch(args) -> int:
+    return tolerance_random.run_batch(count=args.count, seed=args.seed,
+                                      clean_glob=args.clean_glob, out_root=args.out_root,
+                                      mode=args.mode)
+
+
+def _cmd_polarity_flip_random_batch(args) -> int:
+    return polarity_flip_random.run_batch(count=args.count, seed=args.seed,
+                                          clean_glob=args.clean_glob, out_root=args.out_root)
+
+
+def _cmd_xor_gpio_trojan_batch(args) -> int:
+    return xor_gpio_trojan.run_batch(count=args.count, seed=args.seed,
+                                     clean_glob=args.clean_glob, out_root=args.out_root)
+
+
+def _cmd_xor_gpio_trojan_sch(args) -> int:
+    return xor_gpio_trojan_sch.run_from_records(out_root=args.out_root)
+
+
+def _cmd_mcu_bus_interposer(args) -> int:
+    return mcu_bus_interposer_sch.run_batch(clean_glob=args.clean_glob, out_root=args.out_root)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -389,6 +426,73 @@ def build_parser() -> argparse.ArgumentParser:
                         help=f"Output root (default: {magnitude_random.DEFAULT_OUT_ROOTS[mode]}); "
                              "variants go to <out-root>/Value<i>/<board>")
         rm.set_defaults(func=_cmd_magnitude_random_batch, mode=mode)
+
+    for mode, kind, how in (("r_tolerance", "resistor", "looser-tolerance (higher %%)"),
+                            ("c_tolerance", "capacitor", "looser-tolerance (higher %%)"),
+                            ("r_tolerance_down", "resistor", "tighter-tolerance (lower %%)"),
+                            ("c_tolerance_down", "capacitor", "tighter-tolerance (lower %%)")):
+        rt = sub.add_parser(f"{mode.replace('_', '-')}-random-batch",
+                            help=f"For every clean design, build COUNT variants that each swap "
+                                 f"one random {kind} for a {how} part")
+        rt.add_argument("--count", type=int, default=tolerance_random.DEFAULT_COUNT,
+                        help=f"Variants (distinct {kind}s) per design (default: "
+                             f"{tolerance_random.DEFAULT_COUNT})")
+        rt.add_argument("--seed", type=int, default=tolerance_random.DEFAULT_SEED,
+                        help="Random seed; combined with the board name per design (default: 0)")
+        rt.add_argument("--clean-glob", default=tolerance_random.CLEAN_GLOB,
+                        help=f"Glob for clean netlists (default: {tolerance_random.CLEAN_GLOB})")
+        rt.add_argument("--out-root", default=tolerance_random.DEFAULT_OUT_ROOTS[mode],
+                        help=f"Output root (default: {tolerance_random.DEFAULT_OUT_ROOTS[mode]}); "
+                             "variants go to <out-root>/Tolerance<i>/<board>")
+        rt.set_defaults(func=_cmd_tolerance_random_batch, mode=mode)
+
+    pf = sub.add_parser("polarity-flip-random-batch",
+                        help="For every clean design, build COUNT variants that each reverse "
+                             "one random diode, LED or polarised capacitor")
+    pf.add_argument("--count", type=int, default=polarity_flip_random.DEFAULT_COUNT,
+                    help=f"Variants (distinct parts) per design (default: "
+                         f"{polarity_flip_random.DEFAULT_COUNT})")
+    pf.add_argument("--seed", type=int, default=polarity_flip_random.DEFAULT_SEED,
+                    help="Random seed; combined with the board name per design (default: 0)")
+    pf.add_argument("--clean-glob", default=polarity_flip_random.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {polarity_flip_random.CLEAN_GLOB})")
+    pf.add_argument("--out-root", default=polarity_flip_random.DEFAULT_OUT_ROOT,
+                    help=f"Output root (default: {polarity_flip_random.DEFAULT_OUT_ROOT}); "
+                         "variants go to <out-root>/Flip<i>/<board>")
+    pf.set_defaults(func=_cmd_polarity_flip_random_batch)
+
+    xg = sub.add_parser("xor-gpio-trojan-batch",
+                        help="[RQ2] For every clean design, build COUNT variants that each add an "
+                             "XOR gate on a spare GPIO pin, routed to another component")
+    xg.add_argument("--count", type=int, default=xor_gpio_trojan.DEFAULT_COUNT,
+                    help=f"Variants per design (default: {xor_gpio_trojan.DEFAULT_COUNT})")
+    xg.add_argument("--seed", type=int, default=xor_gpio_trojan.DEFAULT_SEED,
+                    help="Random seed; combined with the board name per design (default: 0)")
+    xg.add_argument("--clean-glob", default=xor_gpio_trojan.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {xor_gpio_trojan.CLEAN_GLOB})")
+    xg.add_argument("--out-root", default=xor_gpio_trojan.DEFAULT_OUT_ROOT,
+                    help=f"Output root (default: {xor_gpio_trojan.DEFAULT_OUT_ROOT}); "
+                         "variants go to <out-root>/Xor<i>/<board>")
+    xg.set_defaults(func=_cmd_xor_gpio_trojan_batch)
+
+    xs = sub.add_parser("xor-gpio-trojan-sch",
+                        help="[RQ2] Re-realise each existing XorGpioTrojan record in the KiCad "
+                             "schematic and re-export .net + .cir (overwrites in place)")
+    xs.add_argument("--out-root", default=xor_gpio_trojan_sch.DEFAULT_OUT_ROOT,
+                    help=f"Output root holding the records (default: "
+                         f"{xor_gpio_trojan_sch.DEFAULT_OUT_ROOT})")
+    xs.set_defaults(func=_cmd_xor_gpio_trojan_sch)
+
+    mb = sub.add_parser("mcu-bus-interposer",
+                        help="[RQ2] Identify each board's MCU, cut one data-bus line (SPI/UART/"
+                             "I2C) at the MCU pin and splice a buffer in series; schematic-level, "
+                             "one variant per line, exports .net + .cir")
+    mb.add_argument("--clean-glob", default=mcu_bus_interposer_sch.CLEAN_GLOB,
+                    help=f"Glob for clean netlists (default: {mcu_bus_interposer_sch.CLEAN_GLOB})")
+    mb.add_argument("--out-root", default=mcu_bus_interposer_sch.DEFAULT_OUT_ROOT,
+                    help=f"Output root (default: {mcu_bus_interposer_sch.DEFAULT_OUT_ROOT}); "
+                         "variants go to <out-root>/<board>/<SIGNAL>")
+    mb.set_defaults(func=_cmd_mcu_bus_interposer)
 
     return p
 

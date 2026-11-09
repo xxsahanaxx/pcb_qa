@@ -18,7 +18,8 @@ class ComponentSexp:
         self.sheetpath: str = sexp.search("/comp/sheetpath/names").value
         self.ref: str = sexp.search("/comp/ref").value
         self.value: str = sexp.search("/comp/value").value
-        self.footprint: str = sexp.search("/comp/footprint").value
+        fp = sexp.search("/comp/footprint")
+        self.footprint: str = fp.value if len(fp) else ""
         self.fields: list[FieldsSexp] = [FieldsSexp(f) for f in sexp.search("/comp/fields/field")]
         self.name: str = sexp.search("/comp/libsource/part").value
         self.lib: str = sexp.search("/comp/libsource/lib").value

@@ -14,8 +14,10 @@ The complete LLM prompts used to design these generation templates are available
 from __future__ import annotations
 
 import json
+import os
 import random
 
+from pcb_qa.question_banks.datasheet_lookup import has_embeddings, verify_property
 from pcb_qa.question_banks.validator import load_spice_data
 
 # Question templates based on question_generation_prompts.md
@@ -193,15 +195,105 @@ def format_property(prop_template: str, prop_type: str) -> str:
     return prop_template
 
 
+def _format_numeric_property(prop_template: str, value: float) -> str:
+    """Format a numeric property template with a specific value (not a random one)."""
+    value_str = str(int(value)) if value == int(value) else str(value)
+    return prop_template.format(value=value_str)
+
+
+def _pick_unverified_value(prop_type: str, prop_template: str, true_values: list[float]) -> float | None:
+    """Pick a value that does NOT match any real value found in the datasheet.
+
+    Draws from the same candidate pools as :func:`format_property` so NO
+    questions still read like plausible datasheet claims, but only accepts
+    a candidate that is clearly distinct from every value actually found.
+    """
+    if "temperature" in prop_type:
+        candidates = [85.0, 100.0, 125.0, 150.0, -40.0, -30.0, -55.0]
+        tolerance = 5.0
+    elif "voltage" in prop_type:
+        candidates = [3.3, 5.0, 12.0, 63.0, 25.0]
+        tolerance = 0.5
+    elif "current" in prop_type:
+        if "µA" in prop_template:
+            candidates = [100.0, 200.0, 500.0, 1000.0]
+        else:
+            candidates = [1.0, 1.5, 2.0, 3.0]
+        tolerance = max(candidates) * 0.1
+    else:
+        return None
+
+    far_candidates = [c for c in candidates if all(abs(c - t) > tolerance for t in true_values)]
+    if far_candidates:
+        return random.choice(far_candidates)
+    if true_values:
+        return true_values[0] + tolerance * 3
+    return None
+
+
+def _grounded_datasheet_question(
+    comp: str,
+    prop_type: str,
+    prop_template: str,
+    embeddings_dir: str,
+    want_yes: bool,
+) -> dict[str, str] | None:
+    """Build one component_datasheet question whose answer is checked against
+    the component's real embedded datasheet text.
+
+    Returns None when the property can't be verified (not found in the
+    retrieved chunks, or no embeddings for this component) so the caller can
+    try a different (component, property) pair instead of guessing.
+    """
+    result = verify_property(comp, prop_template, embeddings_dir)
+    if result is None:
+        return None
+
+    if result["kind"] == "numeric":
+        true_values = result["true_values"]
+        if not true_values:
+            return None
+        if want_yes:
+            value = random.choice(true_values)
+        else:
+            value = _pick_unverified_value(prop_type, prop_template, true_values)
+            if value is None:
+                return None
+        prop = _format_numeric_property(prop_template, value)
+    else:
+        if result["found"] != want_yes:
+            return None
+        prop = prop_template
+
+    question = f"Does the component {comp} have {prop} according to its datasheet?"
+    return {
+        "category": "component_datasheet",
+        "question": question,
+        "answer": "YES" if want_yes else "NO",
+    }
+
+
 def generate_datasheet_questions_balanced(
     components: list[str],
-    count: int = 80
+    count: int = 80,
+    embeddings_dir: str | None = None,
 ) -> list[dict[str, str]]:
     """Generate exactly balanced component_datasheet questions with YES and NO answers.
+
+    When ``embeddings_dir`` is given and datasheet embeddings exist for at
+    least one IC-like component (see
+    :mod:`pcb_qa.question_banks.datasheet_lookup`), answers are grounded in
+    the real datasheet text instead of being assigned arbitrarily. If no
+    embeddings are available, or grounded lookups can't fill the requested
+    count, the shortfall is topped up with the previous ungrounded
+    random-value behaviour so the bank is never silently incomplete —
+    a warning is printed noting how many questions were ungrounded.
 
     Args:
         components: List of component reference designators.
         count: Total number of questions to generate (default: 80, with 40 YES and 40 NO).
+        embeddings_dir: Optional path to the project's ``embeddings/`` directory
+            (produced by ``ToolCaller.embed_datasheet``) used to verify answers.
 
     Returns:
         List of question dictionaries with category, question, and answer keys.
@@ -213,39 +305,65 @@ def generate_datasheet_questions_balanced(
     if len(ic_components) < 2:
         return questions
 
-    # Generate 40 YES questions
-    yes_generated = 0
-    attempts = 0
-    while yes_generated < count // 2 and attempts < count * 20:
-        attempts += 1
-        comp = random.choice(ic_components)
-        prop_type, prop_template = random.choice(DATASHEET_PROPERTIES)
-        prop = format_property(prop_template, prop_type)
-        question = f"Does the component {comp} have {prop} according to its datasheet?"
-        if not any(q['question'] == question for q in questions):
-            questions.append({
-                "category": "component_datasheet",
-                "question": question,
-                "answer": "YES"
-            })
-            yes_generated += 1
+    grounded_components = (
+        [c for c in ic_components if has_embeddings(embeddings_dir, c)]
+        if embeddings_dir else []
+    )
+    grounded = bool(grounded_components)
+    ungrounded_used = 0
 
-    # Generate 40 NO questions
-    no_generated = 0
-    attempts = 0
-    while no_generated < count // 2 and attempts < count * 20:
-        attempts += 1
-        comp = random.choice(ic_components)
-        prop_type, prop_template = random.choice(DATASHEET_PROPERTIES)
-        prop = format_property(prop_template, prop_type)
-        question = f"Does the component {comp} have {prop} according to its datasheet?"
-        if not any(q['question'] == question for q in questions):
+    def generate_side(want_yes: bool, target: int) -> None:
+        nonlocal ungrounded_used
+        generated = 0
+
+        if grounded:
+            attempts = 0
+            max_attempts = max(target, 1) * 40
+            while generated < target and attempts < max_attempts:
+                attempts += 1
+                comp = random.choice(grounded_components)
+                prop_type, prop_template = random.choice(DATASHEET_PROPERTIES)
+                new_question = _grounded_datasheet_question(
+                    comp, prop_type, prop_template, embeddings_dir, want_yes
+                )
+                if new_question is None:
+                    continue
+                if any(q['question'] == new_question['question'] for q in questions):
+                    continue
+                questions.append(new_question)
+                generated += 1
+
+        # Top up any shortfall (grounded attempts exhausted, or no embeddings
+        # at all) with the previous unverified random-value behaviour, rather
+        # than leaving the bank short.
+        fallback_attempts = 0
+        max_fallback_attempts = max(target - generated, 1) * 20
+        while generated < target and fallback_attempts < max_fallback_attempts:
+            fallback_attempts += 1
+            comp = random.choice(ic_components)
+            prop_type, prop_template = random.choice(DATASHEET_PROPERTIES)
+            prop = format_property(prop_template, prop_type)
+            question_text = f"Does the component {comp} have {prop} according to its datasheet?"
+            if any(q['question'] == question_text for q in questions):
+                continue
+            if grounded:
+                ungrounded_used += 1
             questions.append({
                 "category": "component_datasheet",
-                "question": question,
-                "answer": "NO"
+                "question": question_text,
+                "answer": "YES" if want_yes else "NO",
             })
-            no_generated += 1
+            generated += 1
+
+    generate_side(True, count // 2)
+    generate_side(False, count // 2)
+
+    if grounded and ungrounded_used:
+        print(
+            f"    Warning: {ungrounded_used}/{len(questions)} component_datasheet "
+            "questions could not be verified against embedded datasheet text "
+            "and fell back to unverified values."
+        )
 
     return questions[:count]
 
@@ -419,7 +537,8 @@ def expand_question_bank_for_project(
     existing_questions_file: str | None = None,
     output_file: str | None = None,
     total_questions: int = 240,
-    shuffle: bool = True
+    shuffle: bool = True,
+    embeddings_dir: str | None = None,
 ) -> list[dict[str, str]]:
     """Generate exactly balanced questions for a project with deduplication and shuffling.
 
@@ -430,10 +549,16 @@ def expand_question_bank_for_project(
         output_file: Optional path to save the generated questions.
         total_questions: Total number of questions to generate (default: 240).
         shuffle: Whether to shuffle the final question list (default: True).
+        embeddings_dir: Optional path to the project's ``embeddings/`` directory
+            used to ground component_datasheet answers in real datasheet text.
+            Defaults to an ``embeddings`` folder next to ``circuit_json_file``.
 
     Returns:
         List of question dictionaries with balanced YES/NO answers across categories.
     """
+    if embeddings_dir is None:
+        embeddings_dir = os.path.join(os.path.dirname(circuit_json_file), "embeddings")
+
     components = extract_components_from_circuit(circuit_json_file)
     nets = extract_nets_from_circuit(circuit_json_file)
     spice_nets = extract_nets_from_spice(spice_json_file)
@@ -482,7 +607,9 @@ def expand_question_bank_for_project(
         return result
 
     # Generate questions for each category with deduplication
-    datasheet_qs = generate_datasheet_questions_balanced(components, questions_per_category * 2)  # Generate extra to account for deduplication
+    datasheet_qs = generate_datasheet_questions_balanced(
+        components, questions_per_category * 2, embeddings_dir=embeddings_dir
+    )  # Generate extra to account for deduplication
     datasheet_qs = take_balanced(deduplicate_questions(datasheet_qs), questions_per_category)
 
     spice_qs = generate_spice_questions_balanced(all_nets, spice_json_file, questions_per_category * 2)

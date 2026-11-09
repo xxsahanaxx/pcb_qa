@@ -182,6 +182,60 @@ class TestDatasheetQuestionGeneration:
         assert len(texts) == len(set(texts)), "Questions should have no duplicates"
 
 
+class TestDatasheetQuestionGenerationGrounded:
+    """Tests for the embeddings-grounded path of generate_datasheet_questions_balanced."""
+
+    def test_falls_back_when_no_embeddings_exist(self, circuit_json_with_ics, tmp_path):
+        """embeddings_dir given but empty -> behaves like the ungrounded path."""
+        components = extract_components_from_circuit(circuit_json_with_ics)
+        questions = generate_datasheet_questions_balanced(
+            components, count=20, embeddings_dir=str(tmp_path)
+        )
+        assert len(questions) == 20
+        yes_count = sum(1 for q in questions if q["answer"] == "YES")
+        assert yes_count == 10
+
+    def test_uses_grounded_value_when_available(self, circuit_json_with_ics, tmp_path, monkeypatch):
+        """When a component has embeddings, grounded YES answers cite the real value."""
+        import pcb_qa.question_banks.generator as gen
+
+        (tmp_path / "U1_chunks.json").write_text("[]", encoding="utf-8")
+        (tmp_path / "U1_embeddings.index").write_text("", encoding="utf-8")
+
+        def fake_verify_property(comp, prop_template, embeddings_dir, k=6):
+            if comp == "U1" and prop_template == "maximum operating temperature of {value}°C":
+                return {"kind": "numeric", "true_values": [125.0]}
+            return None
+
+        monkeypatch.setattr(gen, "verify_property", fake_verify_property)
+        monkeypatch.setattr(
+            gen, "DATASHEET_PROPERTIES", [("temperature", "maximum operating temperature of {value}°C")]
+        )
+
+        components = extract_components_from_circuit(circuit_json_with_ics)
+        questions = generate_datasheet_questions_balanced(
+            components, count=2, embeddings_dir=str(tmp_path)
+        )
+
+        yes_questions = [q for q in questions if q["answer"] == "YES"]
+        assert any("125" in q["question"] and "U1" in q["question"] for q in yes_questions)
+
+    def test_tops_up_shortfall_with_ungrounded_questions(self, circuit_json_with_ics, tmp_path, monkeypatch):
+        """If grounded lookups can't fill the count, the bank is still fully populated."""
+        import pcb_qa.question_banks.generator as gen
+
+        (tmp_path / "U1_chunks.json").write_text("[]", encoding="utf-8")
+        (tmp_path / "U1_embeddings.index").write_text("", encoding="utf-8")
+
+        monkeypatch.setattr(gen, "verify_property", lambda *a, **kw: None)
+
+        components = extract_components_from_circuit(circuit_json_with_ics)
+        questions = generate_datasheet_questions_balanced(
+            components, count=20, embeddings_dir=str(tmp_path)
+        )
+        assert len(questions) == 20
+
+
 class TestSpiceQuestionGeneration:
     """Tests for generate_spice_questions_balanced."""
 
