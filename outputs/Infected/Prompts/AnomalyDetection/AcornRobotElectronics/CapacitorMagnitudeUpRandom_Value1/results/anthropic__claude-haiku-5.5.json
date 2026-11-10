@@ -1,0 +1,275 @@
+{
+  "id": "AcornRobotElectronics/CapacitorMagnitudeUpRandom_Value1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/CapacitorMagnitudeUpRandom_Value1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/CapacitorMagnitudeUpRandom_Value1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/CapacitorMagnitudeUpRandom_Value1/spice.cir",
+    "chars": 528462,
+    "sha256": "8c19ee70e9a9d50a656b4e45d9d088b346d7f792a279ce1e68f1ea3098b05672"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.5, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"C13\"], \"pins\": [\"C13.1\", \"C13.2\"], \"nets\": [\"GND\", \"SERIAL_CAN_PWR_3.3V\"], \"observed\": \"C13 is valued \\\"0.1mF 50V\\\" (0.1 mF = 100 \u00b5F) but sits in a 0603 footprint and carries the 100nF X7R part CC0603KRX7R9BB104 (LCSC C14663). The SPICE deck also models it as 0.1mF. The other 3.3V decoupling caps on the same net (C14, C25, C26, C30, C31) are 0.1uF.\", \"expected\": \"A 100nF decoupling capacitor on SERIAL_CAN_PWR_3.3V, matching its 0603 footprint and the 100nF part number. A 100 \u00b5F value cannot fit a 0603 package.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C13\\\") (value \\\"0.1mF 50V\\\") (footprint \\\"Capacitor_SMD:C_0603_1608Metric\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(property (name \\\"MPN\\\") (value \\\"CC0603KRX7R9BB104\\\"))\"}, {\"source\": \"spice\", \"quote\": \"C13 0 SERIAL_CAN_PWR_3.3V 0.1mF\"}], \"impact\": \"If the part is populated as specified, the 3.3V CAN/serial supply gets a 100nF cap instead of the intended bulk value, or the value field is simply wrong and the BOM/assembly is ambiguous. Either way the rail's decoupling does not match the design intent.\", \"confidence\": 0.5}, {\"category\": \"wrong_value\", \"components\": [\"R36\"], \"pins\": [\"R36.1\", \"R36.2\"], \"nets\": [\"VOUTN\", \"VOUTP\"], \"observed\": \"R36 is valued \\\"24k\\\", but its MPN FRC0805J240TSD and its description (\\\"24\u03a9 0805 Chip Resistor\\\") both indicate 24 \u03a9. The value field disagrees with the part.\", \"expected\": \"A 24 \u03a9 resistor, consistent with the MPN and description, across VOUTP/VOUTN.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"R36\\\") (value \\\"24k\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(field (name \\\"MPN\\\") \\\"FRC0805J240TSD\\\")\"}, {\"source\": \"netlist\", \"quote\": \"125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor\"}, {\"source\": \"spice\", \"quote\": \"R36 VOUTN VOUTP 24k\"}], \"impact\": \"The value used in simulation and the value on the BOM differ from the physical part. A 24k resistor in place of 24 \u03a9 would change the load or bleed on the VOUTP/VOUTN rail by three orders of magnitude.\", \"confidence\": 0.45}, {\"category\": \"other\", \"components\": [\"U6\", \"Q1\"], \"pins\": [\"U6.1\", \"U6.6\", \"Q1.2\", \"Q1.3\"], \"nets\": [\"USBC_VBUS_IN\", \"+5V\"], \"observed\": \"The LTC4412 VIN pin (U6.1) and the P-MOSFET drain (Q1.3, D) are both on USBC_VBUS_IN. The SENSE pin (U6.6) and the P-MOSFET source (Q1.2, S) are both on +5V. The PMOS body diode therefore points from the +5V rail toward the USB input, the reverse of the intended ideal-diode direction.\", \"expected\": \"For an LTC4412 ideal-diode OR-ing stage, the P-MOSFET source should be on the controller's VIN (the higher-priority input), with the drain on the load/SENSE side, so the body diode conducts only in the intended direction.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"Q1\\\") (pin \\\"3\\\") (pinfunction \\\"D\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"Q1\\\") (pin \\\"2\\\") (pinfunction \\\"S\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spec\", \"quote\": \"USB diode doesn't work, I guess need ideal diode to handle more power? LTC4412 controller and p-ch mosfet. need reverse current protection mostly\"}], \"impact\": \"Reverse-current protection may not work, since the body diode can conduct from the +5V rail back toward USB. This may be the documented 'USB diode doesn't work' issue, so confidence is low.\", \"confidence\": 0.25}], \"summary\": \"The netlist contains two clear passive value inconsistencies: C13 is marked 0.1mF in a 0603 footprint with a 100nF part, and R36 is marked 24k while its MPN and description say 24 \u03a9. The LTC4412/Q1 orientation is a lower-confidence concern because the spec already documents this stage as problematic.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.5,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "C13"
+          ],
+          "pins": [
+            "C13.1",
+            "C13.2"
+          ],
+          "nets": [
+            "GND",
+            "SERIAL_CAN_PWR_3.3V"
+          ],
+          "observed": "C13 is valued \"0.1mF 50V\" (0.1 mF = 100 \u00b5F) but sits in a 0603 footprint and carries the 100nF X7R part CC0603KRX7R9BB104 (LCSC C14663). The SPICE deck also models it as 0.1mF. The other 3.3V decoupling caps on the same net (C14, C25, C26, C30, C31) are 0.1uF.",
+          "expected": "A 100nF decoupling capacitor on SERIAL_CAN_PWR_3.3V, matching its 0603 footprint and the 100nF part number. A 100 \u00b5F value cannot fit a 0603 package.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C13\") (value \"0.1mF 50V\") (footprint \"Capacitor_SMD:C_0603_1608Metric\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(property (name \"MPN\") (value \"CC0603KRX7R9BB104\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "C13 0 SERIAL_CAN_PWR_3.3V 0.1mF"
+            }
+          ],
+          "impact": "If the part is populated as specified, the 3.3V CAN/serial supply gets a 100nF cap instead of the intended bulk value, or the value field is simply wrong and the BOM/assembly is ambiguous. Either way the rail's decoupling does not match the design intent.",
+          "confidence": 0.5
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "R36"
+          ],
+          "pins": [
+            "R36.1",
+            "R36.2"
+          ],
+          "nets": [
+            "VOUTN",
+            "VOUTP"
+          ],
+          "observed": "R36 is valued \"24k\", but its MPN FRC0805J240TSD and its description (\"24\u03a9 0805 Chip Resistor\") both indicate 24 \u03a9. The value field disagrees with the part.",
+          "expected": "A 24 \u03a9 resistor, consistent with the MPN and description, across VOUTP/VOUTN.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R36\") (value \"24k\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(field (name \"MPN\") \"FRC0805J240TSD\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor"
+            },
+            {
+              "source": "spice",
+              "quote": "R36 VOUTN VOUTP 24k"
+            }
+          ],
+          "impact": "The value used in simulation and the value on the BOM differ from the physical part. A 24k resistor in place of 24 \u03a9 would change the load or bleed on the VOUTP/VOUTN rail by three orders of magnitude.",
+          "confidence": 0.45
+        },
+        {
+          "category": "other",
+          "components": [
+            "U6",
+            "Q1"
+          ],
+          "pins": [
+            "U6.1",
+            "U6.6",
+            "Q1.2",
+            "Q1.3"
+          ],
+          "nets": [
+            "USBC_VBUS_IN",
+            "+5V"
+          ],
+          "observed": "The LTC4412 VIN pin (U6.1) and the P-MOSFET drain (Q1.3, D) are both on USBC_VBUS_IN. The SENSE pin (U6.6) and the P-MOSFET source (Q1.2, S) are both on +5V. The PMOS body diode therefore points from the +5V rail toward the USB input, the reverse of the intended ideal-diode direction.",
+          "expected": "For an LTC4412 ideal-diode OR-ing stage, the P-MOSFET source should be on the controller's VIN (the higher-priority input), with the drain on the load/SENSE side, so the body diode conducts only in the intended direction.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"Q1\") (pin \"3\") (pinfunction \"D\") (pintype \"passive\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"Q1\") (pin \"2\") (pinfunction \"S\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "USB diode doesn't work, I guess need ideal diode to handle more power? LTC4412 controller and p-ch mosfet. need reverse current protection mostly"
+            }
+          ],
+          "impact": "Reverse-current protection may not work, since the body diode can conduct from the +5V rail back toward USB. This may be the documented 'USB diode doesn't work' issue, so confidence is low.",
+          "confidence": 0.25
+        }
+      ],
+      "summary": "The netlist contains two clear passive value inconsistencies: C13 is marked 0.1mF in a 0603 footprint with a 100nF part, and R36 is marked 24k while its MPN and description say 24 \u03a9. The LTC4412/Q1 orientation is a lower-confidence concern because the spec already documents this stage as problematic."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 255523,
+    "completion_tokens": 14098,
+    "reasoning_tokens": 12363,
+    "cached_tokens": 0,
+    "total_tokens": 269621,
+    "cost_usd": 0.1630065,
+    "cost_details": {
+      "upstream_inference_cost": 0.1630065,
+      "upstream_inference_prompt_cost": 0.1277615,
+      "upstream_inference_completions_cost": 0.035245
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-09T22:08:56.982344+00:00",
+    "ended_at": "2026-11-09T22:10:01.852045+00:00",
+    "latency_s": 64.869
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-09T22:08:57.045Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 58014,
+    "moderation_latency": null,
+    "generation_time": 64649,
+    "tokens_prompt": 134758,
+    "tokens_completion": 941,
+    "native_tokens_prompt": 255523,
+    "native_tokens_completion": 14098,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 12363,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.1630065,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1794262137-UK31vme6ekKmDYR8AyYd",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794262137-EGLIDmzJURIn8KupbGVn",
+    "upstream_id": "msg_011Cgt7mdp2wbKUJnKPo2JtM",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Cgt7mdp2wbKUJnKPo2JtM",
+        "is_byok": false,
+        "latency": 621,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.1630065,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794262137-EGLIDmzJURIn8KupbGVn",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.5, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"C13\"], \"pins\": [\"C13.1\", \"C13.2\"], \"nets\": [\"GND\", \"SERIAL_CAN_PWR_3.3V\"], \"observed\": \"C13 is valued \\\"0.1mF 50V\\\" (0.1 mF = 100 \u00b5F) but sits in a 0603 footprint and carries the 100nF X7R part CC0603KRX7R9BB104 (LCSC C14663). The SPICE deck also models it as 0.1mF. The other 3.3V decoupling caps on the same net (C14, C25, C26, C30, C31) are 0.1uF.\", \"expected\": \"A 100nF decoupling capacitor on SERIAL_CAN_PWR_3.3V, matching its 0603 footprint and the 100nF part number. A 100 \u00b5F value cannot fit a 0603 package.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C13\\\") (value \\\"0.1mF 50V\\\") (footprint \\\"Capacitor_SMD:C_0603_1608Metric\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(property (name \\\"MPN\\\") (value \\\"CC0603KRX7R9BB104\\\"))\"}, {\"source\": \"spice\", \"quote\": \"C13 0 SERIAL_CAN_PWR_3.3V 0.1mF\"}], \"impact\": \"If the part is populated as specified, the 3.3V CAN/serial supply gets a 100nF cap instead of the intended bulk value, or the value field is simply wrong and the BOM/assembly is ambiguous. Either way the rail's decoupling does not match the design intent.\", \"confidence\": 0.5}, {\"category\": \"wrong_value\", \"components\": [\"R36\"], \"pins\": [\"R36.1\", \"R36.2\"], \"nets\": [\"VOUTN\", \"VOUTP\"], \"observed\": \"R36 is valued \\\"24k\\\", but its MPN FRC0805J240TSD and its description (\\\"24\u03a9 0805 Chip Resistor\\\") both indicate 24 \u03a9. The value field disagrees with the part.\", \"expected\": \"A 24 \u03a9 resistor, consistent with the MPN and description, across VOUTP/VOUTN.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"R36\\\") (value \\\"24k\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(field (name \\\"MPN\\\") \\\"FRC0805J240TSD\\\")\"}, {\"source\": \"netlist\", \"quote\": \"125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor\"}, {\"source\": \"spice\", \"quote\": \"R36 VOUTN VOUTP 24k\"}], \"impact\": \"The value used in simulation and the value on the BOM differ from the physical part. A 24k resistor in place of 24 \u03a9 would change the load or bleed on the VOUTP/VOUTN rail by three orders of magnitude.\", \"confidence\": 0.45}, {\"category\": \"other\", \"components\": [\"U6\", \"Q1\"], \"pins\": [\"U6.1\", \"U6.6\", \"Q1.2\", \"Q1.3\"], \"nets\": [\"USBC_VBUS_IN\", \"+5V\"], \"observed\": \"The LTC4412 VIN pin (U6.1) and the P-MOSFET drain (Q1.3, D) are both on USBC_VBUS_IN. The SENSE pin (U6.6) and the P-MOSFET source (Q1.2, S) are both on +5V. The PMOS body diode therefore points from the +5V rail toward the USB input, the reverse of the intended ideal-diode direction.\", \"expected\": \"For an LTC4412 ideal-diode OR-ing stage, the P-MOSFET source should be on the controller's VIN (the higher-priority input), with the drain on the load/SENSE side, so the body diode conducts only in the intended direction.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"Q1\\\") (pin \\\"3\\\") (pinfunction \\\"D\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"Q1\\\") (pin \\\"2\\\") (pinfunction \\\"S\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spec\", \"quote\": \"USB diode doesn't work, I guess need ideal diode to handle more power? LTC4412 controller and p-ch mosfet. need reverse current protection mostly\"}], \"impact\": \"Reverse-current protection may not work, since the body diode can conduct from the +5V rail back toward USB. This may be the documented 'USB diode doesn't work' issue, so confidence is low.\", \"confidence\": 0.25}], \"summary\": \"The netlist contains two clear passive value inconsistencies: C13 is marked 0.1mF in a 0603 footprint with a 100nF part, and R36 is marked 24k while its MPN and description say 24 \u03a9. The LTC4412/Q1 orientation is a lower-confidence concern because the spec already documents this stage as problematic.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794262137,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 14098,
+      "prompt_tokens": 255523,
+      "total_tokens": 269621,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 12363,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.1630065,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.1630065,
+        "upstream_inference_prompt_cost": 0.1277615,
+        "upstream_inference_completions_cost": 0.035245
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
