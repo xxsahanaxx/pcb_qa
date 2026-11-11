@@ -1,0 +1,280 @@
+{
+  "id": "AcornRobotElectronics/ResistorMagnitudeDownRandom_Value1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": "condensed",
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/ResistorMagnitudeDownRandom_Value1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/ResistorMagnitudeDownRandom_Value1/netlist.condensed.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/AcornRobotElectronics/ResistorMagnitudeDownRandom_Value1/spice.condensed.cir",
+    "chars": 116396,
+    "sha256": "53abb7e015baed7ce6082bec2978179b29e52c69ccab62f6ce1a433d5e814bea"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"R62\"], \"pins\": [\"R62.1\", \"R62.2\"], \"nets\": [\"+3V3\", \"Net-(U15-Y)\"], \"observed\": \"R62 is listed with value \\\"10\\\" (10 ohm) on a TAYLOR_RESISTOR 0603 footprint. Its MPN (0603WAF1002T5E) and LCSC part (C25804) are both the 10k resistor, and the same-role resistors R61, R63 and R64 are 10K with identical part data.\", \"expected\": \"A 10k pull-up from +3V3 to the Net-(U15-Y) node, matching the 10K value and part number of the identical pull-up resistors in the design.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"R62 | 10 | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E\"}, {\"source\": \"netlist\", \"quote\": \"R61 | 10K | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E\"}, {\"source\": \"spice\", \"quote\": \"R62 +3V3 Net-_U15-Y_ 10\"}], \"impact\": \"A 10 ohm pull-up would hold the e-stop buffer output node at roughly 3.3V through a very low impedance. It would load the buffer output and could prevent the intended logic-level behaviour of the e-stop chain.\", \"confidence\": 0.6}, {\"category\": \"wrong_component_type\", \"components\": [\"Q1\", \"U6\"], \"pins\": [\"Q1.2\", \"Q1.3\", \"U6.1\", \"U6.6\", \"U6.5\"], \"nets\": [\"USBC_VBUS_IN\", \"+5V\", \"Net-(Q1-G)\"], \"observed\": \"Q1 (P-MOSFET) has its source (pin 2) on +5V and its drain (pin 3) on USBC_VBUS_IN. The LTC4412 VIN (U6.1) is on USBC_VBUS_IN and SENSE (U6.6) is on +5V. The PFET is therefore oriented with its source at the load side, not the input side.\", \"expected\": \"In an LTC4412 ideal-diode OR-ing stage, the PFET source follows the VIN supply and the drain feeds the load, with SENSE at the load. Here the body diode would conduct from +5V back toward VBUS, which defeats the reverse-current protection the spec describes as the reason for this topology.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"Q1 | Q_PMOS_GSD | Package_TO_SOT_SMD:SOT-23 | Device:Q_PMOS_GSD | P-MOSFET transistor, gate/source/drain | LCSC=C347476, MPN=AO3401A\"}, {\"source\": \"netlist\", \"quote\": \"+5V [High Power] : ... Q1.2(S,passive)\"}, {\"source\": \"netlist\", \"quote\": \"USBC_VBUS_IN [High Power] : J3.A4(VBUS,passive) ... Q1.3(D,passive) R11.1(passive) R64.2(2,passive) U25.5(VBUS,passive) U6.1(VIN,power_in)\"}, {\"source\": \"spec\", \"quote\": \"LTC4412 controller and p-ch mosfet. need reverse current protection mostly\"}], \"impact\": \"Reverse-current or back-feed protection on the USB input path may not work. Power could flow from +5V into the USB-C VBUS line, or the input path may not provide the intended OR-ing behaviour.\", \"confidence\": 0.35}, {\"category\": \"bridged_nets\", \"components\": [\"D30\", \"R60\"], \"pins\": [\"D30.4\", \"D30.2\", \"R60.1\", \"R60.2\"], \"nets\": [\"ESTOP_OUT\", \"Net-(D30-K2)\"], \"observed\": \"The second LED of dual LED D30 has its anode A2 (pin 4) on ESTOP_OUT. Its cathode K2 (pin 2) goes through R60 to the same ESTOP_OUT net, so both terminals of that LED sit on one node and it is shorted.\", \"expected\": \"The LED cathode should return through R60 to a different node, such as ground, as R59 does for the K1 channel. Only then does the LED light when ESTOP_OUT changes state.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"ESTOP_OUT : D30.4(A2,input) J13.6(Pin_6,passive) J2.6(Pin_6,passive) R60.2(passive) U36.4(Y,output)\"}, {\"source\": \"netlist\", \"quote\": \"Net-(D30-K2) : D30.2(K2,input) R60.1(passive)\"}, {\"source\": \"spice\", \"quote\": \"R60 Net-_D30-K2_ ESTOP_OUT 130\"}], \"impact\": \"The E-stop status LED channel tied to ESTOP_OUT cannot illuminate. R60 is also pointless as a current limit, so the indicator for the e-stop output is lost.\", \"confidence\": 0.3}], \"summary\": \"The strongest evidence is that R62 is labelled 10 ohms but carries the 10k part number of the identical pull-up resistors around it. Two lower-confidence concerns are the reversed source/drain orientation of Q1 in the LTC4412 PowerPath stage and an LED on D30 whose anode and cathode both land on ESTOP_OUT.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.6,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "R62"
+          ],
+          "pins": [
+            "R62.1",
+            "R62.2"
+          ],
+          "nets": [
+            "+3V3",
+            "Net-(U15-Y)"
+          ],
+          "observed": "R62 is listed with value \"10\" (10 ohm) on a TAYLOR_RESISTOR 0603 footprint. Its MPN (0603WAF1002T5E) and LCSC part (C25804) are both the 10k resistor, and the same-role resistors R61, R63 and R64 are 10K with identical part data.",
+          "expected": "A 10k pull-up from +3V3 to the Net-(U15-Y) node, matching the 10K value and part number of the identical pull-up resistors in the design.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "R62 | 10 | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E"
+            },
+            {
+              "source": "netlist",
+              "quote": "R61 | 10K | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E"
+            },
+            {
+              "source": "spice",
+              "quote": "R62 +3V3 Net-_U15-Y_ 10"
+            }
+          ],
+          "impact": "A 10 ohm pull-up would hold the e-stop buffer output node at roughly 3.3V through a very low impedance. It would load the buffer output and could prevent the intended logic-level behaviour of the e-stop chain.",
+          "confidence": 0.6
+        },
+        {
+          "category": "wrong_component_type",
+          "components": [
+            "Q1",
+            "U6"
+          ],
+          "pins": [
+            "Q1.2",
+            "Q1.3",
+            "U6.1",
+            "U6.6",
+            "U6.5"
+          ],
+          "nets": [
+            "USBC_VBUS_IN",
+            "+5V",
+            "Net-(Q1-G)"
+          ],
+          "observed": "Q1 (P-MOSFET) has its source (pin 2) on +5V and its drain (pin 3) on USBC_VBUS_IN. The LTC4412 VIN (U6.1) is on USBC_VBUS_IN and SENSE (U6.6) is on +5V. The PFET is therefore oriented with its source at the load side, not the input side.",
+          "expected": "In an LTC4412 ideal-diode OR-ing stage, the PFET source follows the VIN supply and the drain feeds the load, with SENSE at the load. Here the body diode would conduct from +5V back toward VBUS, which defeats the reverse-current protection the spec describes as the reason for this topology.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "Q1 | Q_PMOS_GSD | Package_TO_SOT_SMD:SOT-23 | Device:Q_PMOS_GSD | P-MOSFET transistor, gate/source/drain | LCSC=C347476, MPN=AO3401A"
+            },
+            {
+              "source": "netlist",
+              "quote": "+5V [High Power] : ... Q1.2(S,passive)"
+            },
+            {
+              "source": "netlist",
+              "quote": "USBC_VBUS_IN [High Power] : J3.A4(VBUS,passive) ... Q1.3(D,passive) R11.1(passive) R64.2(2,passive) U25.5(VBUS,passive) U6.1(VIN,power_in)"
+            },
+            {
+              "source": "spec",
+              "quote": "LTC4412 controller and p-ch mosfet. need reverse current protection mostly"
+            }
+          ],
+          "impact": "Reverse-current or back-feed protection on the USB input path may not work. Power could flow from +5V into the USB-C VBUS line, or the input path may not provide the intended OR-ing behaviour.",
+          "confidence": 0.35
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "D30",
+            "R60"
+          ],
+          "pins": [
+            "D30.4",
+            "D30.2",
+            "R60.1",
+            "R60.2"
+          ],
+          "nets": [
+            "ESTOP_OUT",
+            "Net-(D30-K2)"
+          ],
+          "observed": "The second LED of dual LED D30 has its anode A2 (pin 4) on ESTOP_OUT. Its cathode K2 (pin 2) goes through R60 to the same ESTOP_OUT net, so both terminals of that LED sit on one node and it is shorted.",
+          "expected": "The LED cathode should return through R60 to a different node, such as ground, as R59 does for the K1 channel. Only then does the LED light when ESTOP_OUT changes state.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "ESTOP_OUT : D30.4(A2,input) J13.6(Pin_6,passive) J2.6(Pin_6,passive) R60.2(passive) U36.4(Y,output)"
+            },
+            {
+              "source": "netlist",
+              "quote": "Net-(D30-K2) : D30.2(K2,input) R60.1(passive)"
+            },
+            {
+              "source": "spice",
+              "quote": "R60 Net-_D30-K2_ ESTOP_OUT 130"
+            }
+          ],
+          "impact": "The E-stop status LED channel tied to ESTOP_OUT cannot illuminate. R60 is also pointless as a current limit, so the indicator for the e-stop output is lost.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The strongest evidence is that R62 is labelled 10 ohms but carries the 10k part number of the identical pull-up resistors around it. Two lower-confidence concerns are the reversed source/drain orientation of Q1 in the LTC4412 PowerPath stage and an LED on D30 whose anode and cathode both land on ESTOP_OUT."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 69454,
+    "completion_tokens": 9579,
+    "reasoning_tokens": 7661,
+    "cached_tokens": 0,
+    "total_tokens": 79033,
+    "cost_usd": 0.0117349,
+    "cost_details": {
+      "upstream_inference_cost": 0.0117349,
+      "upstream_inference_prompt_cost": 0.0069454,
+      "upstream_inference_completions_cost": 0.0047895
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-10T00:49:46.457833+00:00",
+    "ended_at": "2026-11-10T00:50:29.043967+00:00",
+    "latency_s": 42.585
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-10T00:49:46.532Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 36228,
+    "moderation_latency": null,
+    "generation_time": 42123,
+    "tokens_prompt": 29380,
+    "tokens_completion": 1006,
+    "native_tokens_prompt": 69454,
+    "native_tokens_completion": 9579,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 7661,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0117349,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.14.1",
+    "http_referer": null,
+    "request_id": "req-1794271786-tx33vduAifP426OooEa1",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794271786-jJTaTf5NM4HngvhxoVuX",
+    "upstream_id": "msg_011CgtL2vGYS9LTrzrMQAv2y",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgtL2vGYS9LTrzrMQAv2y",
+        "is_byok": false,
+        "latency": 349,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0117349,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794271786-jJTaTf5NM4HngvhxoVuX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"wrong_value\", \"components\": [\"R62\"], \"pins\": [\"R62.1\", \"R62.2\"], \"nets\": [\"+3V3\", \"Net-(U15-Y)\"], \"observed\": \"R62 is listed with value \\\"10\\\" (10 ohm) on a TAYLOR_RESISTOR 0603 footprint. Its MPN (0603WAF1002T5E) and LCSC part (C25804) are both the 10k resistor, and the same-role resistors R61, R63 and R64 are 10K with identical part data.\", \"expected\": \"A 10k pull-up from +3V3 to the Net-(U15-Y) node, matching the 10K value and part number of the identical pull-up resistors in the design.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"R62 | 10 | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E\"}, {\"source\": \"netlist\", \"quote\": \"R61 | 10K | Resistor_SMD:R_0603_1608Metric | MotorController:TAYLOR_RESISTOR |  | LCSC=C25804, MPN= 0603WAF1002T5E\"}, {\"source\": \"spice\", \"quote\": \"R62 +3V3 Net-_U15-Y_ 10\"}], \"impact\": \"A 10 ohm pull-up would hold the e-stop buffer output node at roughly 3.3V through a very low impedance. It would load the buffer output and could prevent the intended logic-level behaviour of the e-stop chain.\", \"confidence\": 0.6}, {\"category\": \"wrong_component_type\", \"components\": [\"Q1\", \"U6\"], \"pins\": [\"Q1.2\", \"Q1.3\", \"U6.1\", \"U6.6\", \"U6.5\"], \"nets\": [\"USBC_VBUS_IN\", \"+5V\", \"Net-(Q1-G)\"], \"observed\": \"Q1 (P-MOSFET) has its source (pin 2) on +5V and its drain (pin 3) on USBC_VBUS_IN. The LTC4412 VIN (U6.1) is on USBC_VBUS_IN and SENSE (U6.6) is on +5V. The PFET is therefore oriented with its source at the load side, not the input side.\", \"expected\": \"In an LTC4412 ideal-diode OR-ing stage, the PFET source follows the VIN supply and the drain feeds the load, with SENSE at the load. Here the body diode would conduct from +5V back toward VBUS, which defeats the reverse-current protection the spec describes as the reason for this topology.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"Q1 | Q_PMOS_GSD | Package_TO_SOT_SMD:SOT-23 | Device:Q_PMOS_GSD | P-MOSFET transistor, gate/source/drain | LCSC=C347476, MPN=AO3401A\"}, {\"source\": \"netlist\", \"quote\": \"+5V [High Power] : ... Q1.2(S,passive)\"}, {\"source\": \"netlist\", \"quote\": \"USBC_VBUS_IN [High Power] : J3.A4(VBUS,passive) ... Q1.3(D,passive) R11.1(passive) R64.2(2,passive) U25.5(VBUS,passive) U6.1(VIN,power_in)\"}, {\"source\": \"spec\", \"quote\": \"LTC4412 controller and p-ch mosfet. need reverse current protection mostly\"}], \"impact\": \"Reverse-current or back-feed protection on the USB input path may not work. Power could flow from +5V into the USB-C VBUS line, or the input path may not provide the intended OR-ing behaviour.\", \"confidence\": 0.35}, {\"category\": \"bridged_nets\", \"components\": [\"D30\", \"R60\"], \"pins\": [\"D30.4\", \"D30.2\", \"R60.1\", \"R60.2\"], \"nets\": [\"ESTOP_OUT\", \"Net-(D30-K2)\"], \"observed\": \"The second LED of dual LED D30 has its anode A2 (pin 4) on ESTOP_OUT. Its cathode K2 (pin 2) goes through R60 to the same ESTOP_OUT net, so both terminals of that LED sit on one node and it is shorted.\", \"expected\": \"The LED cathode should return through R60 to a different node, such as ground, as R59 does for the K1 channel. Only then does the LED light when ESTOP_OUT changes state.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"ESTOP_OUT : D30.4(A2,input) J13.6(Pin_6,passive) J2.6(Pin_6,passive) R60.2(passive) U36.4(Y,output)\"}, {\"source\": \"netlist\", \"quote\": \"Net-(D30-K2) : D30.2(K2,input) R60.1(passive)\"}, {\"source\": \"spice\", \"quote\": \"R60 Net-_D30-K2_ ESTOP_OUT 130\"}], \"impact\": \"The E-stop status LED channel tied to ESTOP_OUT cannot illuminate. R60 is also pointless as a current limit, so the indicator for the e-stop output is lost.\", \"confidence\": 0.3}], \"summary\": \"The strongest evidence is that R62 is labelled 10 ohms but carries the 10k part number of the identical pull-up resistors around it. Two lower-confidence concerns are the reversed source/drain orientation of Q1 in the LTC4412 PowerPath stage and an LED on D30 whose anode and cathode both land on ESTOP_OUT.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794271786,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 9579,
+      "prompt_tokens": 69454,
+      "total_tokens": 79033,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 7661,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0117349,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0117349,
+        "upstream_inference_prompt_cost": 0.0069454,
+        "upstream_inference_completions_cost": 0.0047895
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
