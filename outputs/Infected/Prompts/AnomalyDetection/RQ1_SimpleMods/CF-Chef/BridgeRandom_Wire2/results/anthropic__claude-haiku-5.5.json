@@ -1,0 +1,210 @@
+{
+  "id": "CF-Chef/BridgeRandom_Wire2",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/spice.cir",
+    "chars": 122541,
+    "sha256": "1696dda84ad252c65614f0b6c83ae597380f8c80321c2a65b2f2645c13560787"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.9,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U5\", \"U8\", \"L1\", \"C5\", \"C13\"],\n      \"pins\": [\"U5.11\", \"U8.5\", \"L1.1\", \"C5.1\", \"C13.1\"],\n      \"nets\": [\"Net-(U5-SS)\"],\n      \"observed\": \"The TPS2121 soft-start pin (U5 pin 11, SS) is on the same net as the AP63203 switch node (U8 pin 5, SW), the buck inductor's input end (L1 pin 1), the bootstrap capacitor (C13 pin 1) and the soft-start capacitor (C5 pin 1). The SW node is therefore shorted to the mux's SS pin, which should only see a capacitor to GND.\",\n      \"expected\": \"The TPS2121 SS pin should have its own 10 nF capacitor to GND (C5) and should not be connected to the buck switch node. The switch node should connect only to L1 pin 1, the bootstrap cap C13 and U8 SW. The spec says 'SS (pin 11) has a 10 nF cap (C5) for soft-start' and that SW drives L1 and C13.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"29\\\") (name \\\"Net-(U5-SS)\\\") (class \\\"Default\\\") (node (ref \\\"C13\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"C5\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"L1\\\") (pin \\\"1\\\") (pinfunction \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U5\\\") (pin \\\"11\\\") (pinfunction \\\"SS\\\") (pintype \\\"passive\\\")) (node (ref \\\"U8\\\") (pin \\\"5\\\") (pinfunction \\\"SW\\\") (pintype \\\"output\\\")))\"},\n        {\"source\": \"spec\", \"quote\": \"`SS` (pin 11) has a 10 nF cap (`C5`) for soft-start.\"},\n        {\"source\": \"spec\", \"quote\": \"`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`\"}\n      ],\n      \"impact\": \"The buck switch node (a large, fast-switching square wave) is tied to the mux soft-start pin, and the mux's soft-start ramp is pinned to the switching node. This can corrupt or disable the power mux's switchover and inrush control, and couples switching noise into the VBUS path. The 3.3 V rail and the MCU/thermocouple supply may be unreliable or fail to start.\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"summary\": \"The netlist shows the TPS2121 SS pin (U5.11) shorted to the AP63203 SW node (U8.5), along with L1.1 and C13.1, which contradicts the spec's description of C5 as a soft-start cap on SS. This is a clear bridged-net fault that would disturb both the power mux and the 3.3 V buck regulator.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.9,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U5",
+            "U8",
+            "L1",
+            "C5",
+            "C13"
+          ],
+          "pins": [
+            "U5.11",
+            "U8.5",
+            "L1.1",
+            "C5.1",
+            "C13.1"
+          ],
+          "nets": [
+            "Net-(U5-SS)"
+          ],
+          "observed": "The TPS2121 soft-start pin (U5 pin 11, SS) is on the same net as the AP63203 switch node (U8 pin 5, SW), the buck inductor's input end (L1 pin 1), the bootstrap capacitor (C13 pin 1) and the soft-start capacitor (C5 pin 1). The SW node is therefore shorted to the mux's SS pin, which should only see a capacitor to GND.",
+          "expected": "The TPS2121 SS pin should have its own 10 nF capacitor to GND (C5) and should not be connected to the buck switch node. The switch node should connect only to L1 pin 1, the bootstrap cap C13 and U8 SW. The spec says 'SS (pin 11) has a 10 nF cap (C5) for soft-start' and that SW drives L1 and C13.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"29\") (name \"Net-(U5-SS)\") (class \"Default\") (node (ref \"C13\") (pin \"1\") (pintype \"passive\")) (node (ref \"C5\") (pin \"1\") (pintype \"passive\")) (node (ref \"L1\") (pin \"1\") (pinfunction \"1\") (pintype \"passive\")) (node (ref \"U5\") (pin \"11\") (pinfunction \"SS\") (pintype \"passive\")) (node (ref \"U8\") (pin \"5\") (pinfunction \"SW\") (pintype \"output\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "`SS` (pin 11) has a 10 nF cap (`C5`) for soft-start."
+            },
+            {
+              "source": "spec",
+              "quote": "`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`"
+            }
+          ],
+          "impact": "The buck switch node (a large, fast-switching square wave) is tied to the mux soft-start pin, and the mux's soft-start ramp is pinned to the switching node. This can corrupt or disable the power mux's switchover and inrush control, and couples switching noise into the VBUS path. The 3.3 V rail and the MCU/thermocouple supply may be unreliable or fail to start.",
+          "confidence": 0.9
+        }
+      ],
+      "summary": "The netlist shows the TPS2121 SS pin (U5.11) shorted to the AP63203 SW node (U8.5), along with L1.1 and C13.1, which contradicts the spec's description of C5 as a soft-start cap on SS. This is a clear bridged-net fault that would disturb both the power mux and the 3.3 V buck regulator."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 55998,
+    "completion_tokens": 3157,
+    "reasoning_tokens": 2102,
+    "cached_tokens": 0,
+    "total_tokens": 59155,
+    "cost_usd": 0.0071783,
+    "cost_details": {
+      "upstream_inference_cost": 0.0071783,
+      "upstream_inference_prompt_cost": 0.0055998,
+      "upstream_inference_completions_cost": 0.0015785
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T02:57:48.797478+00:00",
+    "ended_at": "2026-11-13T02:58:04.688271+00:00",
+    "latency_s": 15.89
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T02:57:49.028Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 11491,
+    "moderation_latency": null,
+    "generation_time": 15354,
+    "tokens_prompt": 31173,
+    "tokens_completion": 582,
+    "native_tokens_prompt": 55998,
+    "native_tokens_completion": 3157,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 2102,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0071783,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794538669-7Cr3aTl7xv2z6t8i0PFg",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794538669-FI6U1bTx9m1EKr1w7oVh",
+    "upstream_id": "msg_011CgzBDzudrpFuqdQVamTX7",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzBDzudrpFuqdQVamTX7",
+        "is_byok": false,
+        "latency": 452,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0071783,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794538669-FI6U1bTx9m1EKr1w7oVh",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.9,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U5\", \"U8\", \"L1\", \"C5\", \"C13\"],\n      \"pins\": [\"U5.11\", \"U8.5\", \"L1.1\", \"C5.1\", \"C13.1\"],\n      \"nets\": [\"Net-(U5-SS)\"],\n      \"observed\": \"The TPS2121 soft-start pin (U5 pin 11, SS) is on the same net as the AP63203 switch node (U8 pin 5, SW), the buck inductor's input end (L1 pin 1), the bootstrap capacitor (C13 pin 1) and the soft-start capacitor (C5 pin 1). The SW node is therefore shorted to the mux's SS pin, which should only see a capacitor to GND.\",\n      \"expected\": \"The TPS2121 SS pin should have its own 10 nF capacitor to GND (C5) and should not be connected to the buck switch node. The switch node should connect only to L1 pin 1, the bootstrap cap C13 and U8 SW. The spec says 'SS (pin 11) has a 10 nF cap (C5) for soft-start' and that SW drives L1 and C13.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"29\\\") (name \\\"Net-(U5-SS)\\\") (class \\\"Default\\\") (node (ref \\\"C13\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"C5\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"L1\\\") (pin \\\"1\\\") (pinfunction \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U5\\\") (pin \\\"11\\\") (pinfunction \\\"SS\\\") (pintype \\\"passive\\\")) (node (ref \\\"U8\\\") (pin \\\"5\\\") (pinfunction \\\"SW\\\") (pintype \\\"output\\\")))\"},\n        {\"source\": \"spec\", \"quote\": \"`SS` (pin 11) has a 10 nF cap (`C5`) for soft-start.\"},\n        {\"source\": \"spec\", \"quote\": \"`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`\"}\n      ],\n      \"impact\": \"The buck switch node (a large, fast-switching square wave) is tied to the mux soft-start pin, and the mux's soft-start ramp is pinned to the switching node. This can corrupt or disable the power mux's switchover and inrush control, and couples switching noise into the VBUS path. The 3.3 V rail and the MCU/thermocouple supply may be unreliable or fail to start.\",\n      \"confidence\": 0.9\n    }\n  ],\n  \"summary\": \"The netlist shows the TPS2121 SS pin (U5.11) shorted to the AP63203 SW node (U8.5), along with L1.1 and C13.1, which contradicts the spec's description of C5 as a soft-start cap on SS. This is a clear bridged-net fault that would disturb both the power mux and the 3.3 V buck regulator.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794538669,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3157,
+      "prompt_tokens": 55998,
+      "total_tokens": 59155,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2102,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0071783,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0071783,
+        "upstream_inference_prompt_cost": 0.0055998,
+        "upstream_inference_completions_cost": 0.0015785
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

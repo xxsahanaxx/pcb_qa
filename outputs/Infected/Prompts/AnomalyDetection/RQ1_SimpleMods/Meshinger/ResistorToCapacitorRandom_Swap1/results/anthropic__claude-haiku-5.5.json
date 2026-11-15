@@ -1,0 +1,271 @@
+{
+  "id": "Meshinger/ResistorToCapacitorRandom_Swap1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToCapacitorRandom_Swap1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToCapacitorRandom_Swap1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToCapacitorRandom_Swap1/spice.cir",
+    "chars": 100187,
+    "sha256": "91aa57eff126130cfe82718ba972e4500833663e8394e10de6c85d2420563dd4"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"missing_component\", \"components\": [\"R1\", \"Q1\", \"C14\", \"J1\"], \"pins\": [\"Q1.2\", \"C14.1\", \"J1.3\", \"C14.2\"], \"nets\": [\"Net-(Q1-S)\", \"GND\"], \"observed\": \"No R1 appears in the netlist or SPICE deck. The Q1 source net Net-(Q1-S) joins only Q1.2, C14.1 and J1.3 (RESE), and C14.2 returns directly to GND. The boost MOSFET source therefore reaches GND with no current-sense resistor.\", \"expected\": \"The spec lists R1 as a 0.47 \u03a9 current-sense resistor and states that Q1's source 'returns through R1 (0.47 \u03a9) to GND' while also feeding J1.3 (RESE). The boost current-limit sense path should include R1 between Q1 source and GND.\", \"evidence\": [{\"source\": \"spec\", \"quote\": \"| R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense |\"}, {\"source\": \"spec\", \"quote\": \"Q1's source (`Net-(Q1-S)`) returns through `R1` (0.47 \u03a9) to GND and also feeds back to `J1.3` (`RESE`\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"39\\\") (name \\\"Net-(Q1-S)\\\") (class \\\"Default\\\") (node (ref \\\"C14\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"J1\\\") (pin \\\"3\\\") (pinfunction \\\"3\\\") (pintype \\\"passive\\\")) (node (ref \\\"Q1\\\") (pin \\\"2\\\") (pinfunction \\\"S\\\") (pintype \\\"passive\\\")))\"}, {\"source\": \"spice\", \"quote\": \"C14 Net-_Q1-S_ 0 10u\"}], \"impact\": \"Without the 0.47 \u03a9 sense resistor the EPD boost converter has no peak-current sensing or limiting through the panel's RESE input, so the booster can run without current limit, risking overcurrent in Q1, L1 and the panel driver, and the display may fail to power up correctly.\", \"confidence\": 0.6}, {\"category\": \"wrong_value\", \"components\": [\"C1\", \"C2\"], \"pins\": [\"C1.1\", \"C1.2\", \"C2.1\", \"C2.2\"], \"nets\": [\"Display_Power_Switch\", \"GND\"], \"observed\": \"C1 is 0.1uF/16V, while the spec lists C1 as a 1 \u00b5F/25 V part in the default group. C1 and C2 both sit on the Display_Power_Switch boost output node, which is rated for the boosted panel voltage, and C1's 16 V rating is low for that role.\", \"expected\": \"The spec's table lists C1/C5/C7/C8/C9/C10 as 1 \u00b5F/25 V, so C1 should be 1 \u00b5F/25 V, with an adequate voltage rating on the boosted display rail.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C1\\\") (value \\\"0.1uF/16V\\\")\"}, {\"source\": \"spec\", \"quote\": \"| C2 default: 1 \u00b5F/25V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25V | Matches default |\"}], \"impact\": \"The output filtering on the boosted display supply is reduced to 0.1 \u00b5F in parallel with the 1 \u00b5F, increasing ripple and noise on the panel's VDD/VDDIO rail, and the 16 V rating may be marginal.\", \"confidence\": 0.25}, {\"category\": \"footprint_mismatch\", \"components\": [\"C11\"], \"pins\": [\"C11.1\", \"C11.2\"], \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"], \"observed\": \"C11 is a capacitor (Device:C, value 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Pin 1 is unconnected and pin 2 is on GND.\", \"expected\": \"A 0.1 \u00b5F capacitor should use a capacitor footprint (C_0805...), and a decoupling capacitor should have both pins connected.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"59\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}], \"impact\": \"The part is a floating capacitor and does nothing electrically. A capacitor placed in an inductor footprint is a fabrication or BOM mismatch, and the intended decoupling is absent.\", \"confidence\": 0.2}]}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.6,
+      "anomalies": [
+        {
+          "category": "missing_component",
+          "components": [
+            "R1",
+            "Q1",
+            "C14",
+            "J1"
+          ],
+          "pins": [
+            "Q1.2",
+            "C14.1",
+            "J1.3",
+            "C14.2"
+          ],
+          "nets": [
+            "Net-(Q1-S)",
+            "GND"
+          ],
+          "observed": "No R1 appears in the netlist or SPICE deck. The Q1 source net Net-(Q1-S) joins only Q1.2, C14.1 and J1.3 (RESE), and C14.2 returns directly to GND. The boost MOSFET source therefore reaches GND with no current-sense resistor.",
+          "expected": "The spec lists R1 as a 0.47 \u03a9 current-sense resistor and states that Q1's source 'returns through R1 (0.47 \u03a9) to GND' while also feeding J1.3 (RESE). The boost current-limit sense path should include R1 between Q1 source and GND.",
+          "evidence": [
+            {
+              "source": "spec",
+              "quote": "| R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense |"
+            },
+            {
+              "source": "spec",
+              "quote": "Q1's source (`Net-(Q1-S)`) returns through `R1` (0.47 \u03a9) to GND and also feeds back to `J1.3` (`RESE`"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"39\") (name \"Net-(Q1-S)\") (class \"Default\") (node (ref \"C14\") (pin \"1\") (pintype \"passive\")) (node (ref \"J1\") (pin \"3\") (pinfunction \"3\") (pintype \"passive\")) (node (ref \"Q1\") (pin \"2\") (pinfunction \"S\") (pintype \"passive\")))"
+            },
+            {
+              "source": "spice",
+              "quote": "C14 Net-_Q1-S_ 0 10u"
+            }
+          ],
+          "impact": "Without the 0.47 \u03a9 sense resistor the EPD boost converter has no peak-current sensing or limiting through the panel's RESE input, so the booster can run without current limit, risking overcurrent in Q1, L1 and the panel driver, and the display may fail to power up correctly.",
+          "confidence": 0.6
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "C1",
+            "C2"
+          ],
+          "pins": [
+            "C1.1",
+            "C1.2",
+            "C2.1",
+            "C2.2"
+          ],
+          "nets": [
+            "Display_Power_Switch",
+            "GND"
+          ],
+          "observed": "C1 is 0.1uF/16V, while the spec lists C1 as a 1 \u00b5F/25 V part in the default group. C1 and C2 both sit on the Display_Power_Switch boost output node, which is rated for the boosted panel voltage, and C1's 16 V rating is low for that role.",
+          "expected": "The spec's table lists C1/C5/C7/C8/C9/C10 as 1 \u00b5F/25 V, so C1 should be 1 \u00b5F/25 V, with an adequate voltage rating on the boosted display rail.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C1\") (value \"0.1uF/16V\")"
+            },
+            {
+              "source": "spec",
+              "quote": "| C2 default: 1 \u00b5F/25V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25V | Matches default |"
+            }
+          ],
+          "impact": "The output filtering on the boosted display supply is reduced to 0.1 \u00b5F in parallel with the 1 \u00b5F, increasing ripple and noise on the panel's VDD/VDDIO rail, and the 16 V rating may be marginal.",
+          "confidence": 0.25
+        },
+        {
+          "category": "footprint_mismatch",
+          "components": [
+            "C11"
+          ],
+          "pins": [
+            "C11.1",
+            "C11.2"
+          ],
+          "nets": [
+            "unconnected-(C11-Pad1)",
+            "GND"
+          ],
+          "observed": "C11 is a capacitor (Device:C, value 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Pin 1 is unconnected and pin 2 is on GND.",
+          "expected": "A 0.1 \u00b5F capacitor should use a capacitor footprint (C_0805...), and a decoupling capacitor should have both pins connected.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C11\") (value \"0.1uF\") (footprint \"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"59\") (name \"unconnected-(C11-Pad1)\") (class \"Default\") (node (ref \"C11\") (pin \"1\") (pintype \"passive\")))"
+            }
+          ],
+          "impact": "The part is a floating capacitor and does nothing electrically. A capacitor placed in an inductor footprint is a fabrication or BOM mismatch, and the intended decoupling is absent.",
+          "confidence": 0.2
+        }
+      ]
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 46917,
+    "completion_tokens": 5841,
+    "reasoning_tokens": 4148,
+    "cached_tokens": 0,
+    "total_tokens": 52758,
+    "cost_usd": 0.0076122,
+    "cost_details": {
+      "upstream_inference_cost": 0.0076122,
+      "upstream_inference_prompt_cost": 0.0046917,
+      "upstream_inference_completions_cost": 0.0029205
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:34:40.350800+00:00",
+    "ended_at": "2026-11-13T03:35:05.644416+00:00",
+    "latency_s": 25.294
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:34:40.527Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 21647,
+    "moderation_latency": null,
+    "generation_time": 25167,
+    "tokens_prompt": 25503,
+    "tokens_completion": 898,
+    "native_tokens_prompt": 46917,
+    "native_tokens_completion": 5841,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 4148,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0076122,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794540880-rdnFrjaPFlHmUP0Klvw9",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794540880-PhqD4xx97f2T8SngUTwj",
+    "upstream_id": "msg_011CgzE315bbycsRuDmx1Fvp",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzE315bbycsRuDmx1Fvp",
+        "is_byok": false,
+        "latency": 447,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0076122,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794540880-PhqD4xx97f2T8SngUTwj",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"missing_component\", \"components\": [\"R1\", \"Q1\", \"C14\", \"J1\"], \"pins\": [\"Q1.2\", \"C14.1\", \"J1.3\", \"C14.2\"], \"nets\": [\"Net-(Q1-S)\", \"GND\"], \"observed\": \"No R1 appears in the netlist or SPICE deck. The Q1 source net Net-(Q1-S) joins only Q1.2, C14.1 and J1.3 (RESE), and C14.2 returns directly to GND. The boost MOSFET source therefore reaches GND with no current-sense resistor.\", \"expected\": \"The spec lists R1 as a 0.47 \u03a9 current-sense resistor and states that Q1's source 'returns through R1 (0.47 \u03a9) to GND' while also feeding J1.3 (RESE). The boost current-limit sense path should include R1 between Q1 source and GND.\", \"evidence\": [{\"source\": \"spec\", \"quote\": \"| R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense |\"}, {\"source\": \"spec\", \"quote\": \"Q1's source (`Net-(Q1-S)`) returns through `R1` (0.47 \u03a9) to GND and also feeds back to `J1.3` (`RESE`\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"39\\\") (name \\\"Net-(Q1-S)\\\") (class \\\"Default\\\") (node (ref \\\"C14\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")) (node (ref \\\"J1\\\") (pin \\\"3\\\") (pinfunction \\\"3\\\") (pintype \\\"passive\\\")) (node (ref \\\"Q1\\\") (pin \\\"2\\\") (pinfunction \\\"S\\\") (pintype \\\"passive\\\")))\"}, {\"source\": \"spice\", \"quote\": \"C14 Net-_Q1-S_ 0 10u\"}], \"impact\": \"Without the 0.47 \u03a9 sense resistor the EPD boost converter has no peak-current sensing or limiting through the panel's RESE input, so the booster can run without current limit, risking overcurrent in Q1, L1 and the panel driver, and the display may fail to power up correctly.\", \"confidence\": 0.6}, {\"category\": \"wrong_value\", \"components\": [\"C1\", \"C2\"], \"pins\": [\"C1.1\", \"C1.2\", \"C2.1\", \"C2.2\"], \"nets\": [\"Display_Power_Switch\", \"GND\"], \"observed\": \"C1 is 0.1uF/16V, while the spec lists C1 as a 1 \u00b5F/25 V part in the default group. C1 and C2 both sit on the Display_Power_Switch boost output node, which is rated for the boosted panel voltage, and C1's 16 V rating is low for that role.\", \"expected\": \"The spec's table lists C1/C5/C7/C8/C9/C10 as 1 \u00b5F/25 V, so C1 should be 1 \u00b5F/25 V, with an adequate voltage rating on the boosted display rail.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C1\\\") (value \\\"0.1uF/16V\\\")\"}, {\"source\": \"spec\", \"quote\": \"| C2 default: 1 \u00b5F/25V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25V | Matches default |\"}], \"impact\": \"The output filtering on the boosted display supply is reduced to 0.1 \u00b5F in parallel with the 1 \u00b5F, increasing ripple and noise on the panel's VDD/VDDIO rail, and the 16 V rating may be marginal.\", \"confidence\": 0.25}, {\"category\": \"footprint_mismatch\", \"components\": [\"C11\"], \"pins\": [\"C11.1\", \"C11.2\"], \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"], \"observed\": \"C11 is a capacitor (Device:C, value 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Pin 1 is unconnected and pin 2 is on GND.\", \"expected\": \"A 0.1 \u00b5F capacitor should use a capacitor footprint (C_0805...), and a decoupling capacitor should have both pins connected.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"59\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}], \"impact\": \"The part is a floating capacitor and does nothing electrically. A capacitor placed in an inductor footprint is a fabrication or BOM mismatch, and the intended decoupling is absent.\", \"confidence\": 0.2}]}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794540880,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5841,
+      "prompt_tokens": 46917,
+      "total_tokens": 52758,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 4148,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0076122,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0076122,
+        "upstream_inference_prompt_cost": 0.0046917,
+        "upstream_inference_completions_cost": 0.0029205
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

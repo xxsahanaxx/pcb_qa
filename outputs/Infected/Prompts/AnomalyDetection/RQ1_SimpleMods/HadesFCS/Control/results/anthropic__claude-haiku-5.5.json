@@ -1,0 +1,270 @@
+{
+  "id": "HadesFCS/Control",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/Control/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/Control/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/Control/spice.cir",
+    "chars": 317560,
+    "sha256": "fe26ee0512fd69c1aff405c615a74d10dbceda454a35ccabcfe0056a56cc8c68"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"U2\"], \"pins\": [\"U2.1\"], \"nets\": [\"+3.3V\"], \"observed\": \"PCA9685PW pin 1 (A0) is on the +3.3V net together with VDD (pin 28). All other address pins (A1 pin 2, A2 pin 3, A3 pin 4, A4 pin 5, A5 pin 24) are on GND, so the address strap for A0 is high.\", \"expected\": \"The specification gives the PCA9685 I2C address as 0x40, which requires A0 to be tied to GND like the other address pins. With A0 high the address becomes 0x41, so the PWM driver will not respond to the firmware's expected address.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"28\\\") (pinfunction \\\"VDD\\\") (pintype \\\"power_in\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"A1\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}], \"impact\": \"The servo/PWM driver sits at address 0x41 instead of 0x40, so the flight controller cannot command the servo outputs unless the firmware is changed to match.\", \"confidence\": 0.6}, {\"category\": \"open_connection\", \"components\": [\"NAVC1\"], \"pins\": [\"NAVC1.18\", \"NAVC1.63\", \"NAVC1.12\"], \"nets\": [\"Net-(NAVC1-VSS-Pad18)\", \"unconnected-(NAVC1-VSSA-Pad12)\"], \"observed\": \"NAVC1 VSS pins 18 and 63 share a local net named after pin 18 that contains no other pin and is not GND. VSSA (pin 12) is also on its own unconnected net. The FCC1 VSS pins, by contrast, all sit on GND.\", \"expected\": \"All ground pins of the STM32F405 (VSS pins and VSSA) should return to the GND net, as they do on FCC1.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"92\\\") (name \\\"Net-(NAVC1-VSS-Pad18)\\\") (class \\\"Default\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"280\\\") (name \\\"unconnected-(NAVC1-VSSA-Pad12)\\\") (class \\\"Default\\\")\"}], \"impact\": \"The navigation MCU may have floating or incomplete ground returns, which would cause erratic operation or failure to run, and would break the common ground that the sensors depend on.\", \"confidence\": 0.35}, {\"category\": \"open_connection\", \"components\": [\"FCC1\", \"NAVC1\", \"REG2\"], \"pins\": [\"FCC1.1\", \"NAVC1.19\", \"REG2.1\"], \"nets\": [\"+3.3V\", \"+3V3\"], \"observed\": \"The LDO output (REG2 OUT) is on net +3.3V, while the MCU and I2C-pullup supply is on a separate net named +3V3. The MCU VDD pins (FCC1 pins 11, 27, 50, 75, 100 and NAVC1 pins 19, 32, 48, 64) are all on unconnected nets. Nothing in the netlist ties +3V3 to the regulator output.\", \"expected\": \"The 3.3 V regulator output should feed the MCUs (VDD) and the I2C sensors and pull-ups as one rail, per the specification.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"REG2\\\") (pin \\\"1\\\") (pinfunction \\\"OUT\\\") (pintype \\\"unspecified\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"277\\\") (name \\\"unconnected-(NAVC1-VDD-Pad32)\\\") (class \\\"Default\\\")\"}, {\"source\": \"spec\", \"quote\": \"3V3 feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"}], \"impact\": \"If the netlist reflects the real board, the MCUs have no supply and the regulator's 3.3 V output does not reach the flight computer's logic rails.\", \"confidence\": 0.2}], \"summary\": \"The most likely deviation is the PCA9685 A0 address pin strapped to the 3.3 V rail, which shifts the PWM driver from the specified 0x40 to 0x41. Lower-confidence concerns are the NAVC1 ground pins being isolated from GND and the MCU supply nets being disconnected from the regulator output.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.6,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U2"
+          ],
+          "pins": [
+            "U2.1"
+          ],
+          "nets": [
+            "+3.3V"
+          ],
+          "observed": "PCA9685PW pin 1 (A0) is on the +3.3V net together with VDD (pin 28). All other address pins (A1 pin 2, A2 pin 3, A3 pin 4, A4 pin 5, A5 pin 24) are on GND, so the address strap for A0 is high.",
+          "expected": "The specification gives the PCA9685 I2C address as 0x40, which requires A0 to be tied to GND like the other address pins. With A0 high the address becomes 0x41, so the PWM driver will not respond to the firmware's expected address.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"1\") (pinfunction \"A0\") (pintype \"input\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"28\") (pinfunction \"VDD\") (pintype \"power_in\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"2\") (pinfunction \"A1\") (pintype \"input\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40"
+            }
+          ],
+          "impact": "The servo/PWM driver sits at address 0x41 instead of 0x40, so the flight controller cannot command the servo outputs unless the firmware is changed to match.",
+          "confidence": 0.6
+        },
+        {
+          "category": "open_connection",
+          "components": [
+            "NAVC1"
+          ],
+          "pins": [
+            "NAVC1.18",
+            "NAVC1.63",
+            "NAVC1.12"
+          ],
+          "nets": [
+            "Net-(NAVC1-VSS-Pad18)",
+            "unconnected-(NAVC1-VSSA-Pad12)"
+          ],
+          "observed": "NAVC1 VSS pins 18 and 63 share a local net named after pin 18 that contains no other pin and is not GND. VSSA (pin 12) is also on its own unconnected net. The FCC1 VSS pins, by contrast, all sit on GND.",
+          "expected": "All ground pins of the STM32F405 (VSS pins and VSSA) should return to the GND net, as they do on FCC1.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"92\") (name \"Net-(NAVC1-VSS-Pad18)\") (class \"Default\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"280\") (name \"unconnected-(NAVC1-VSSA-Pad12)\") (class \"Default\")"
+            }
+          ],
+          "impact": "The navigation MCU may have floating or incomplete ground returns, which would cause erratic operation or failure to run, and would break the common ground that the sensors depend on.",
+          "confidence": 0.35
+        },
+        {
+          "category": "open_connection",
+          "components": [
+            "FCC1",
+            "NAVC1",
+            "REG2"
+          ],
+          "pins": [
+            "FCC1.1",
+            "NAVC1.19",
+            "REG2.1"
+          ],
+          "nets": [
+            "+3.3V",
+            "+3V3"
+          ],
+          "observed": "The LDO output (REG2 OUT) is on net +3.3V, while the MCU and I2C-pullup supply is on a separate net named +3V3. The MCU VDD pins (FCC1 pins 11, 27, 50, 75, 100 and NAVC1 pins 19, 32, 48, 64) are all on unconnected nets. Nothing in the netlist ties +3V3 to the regulator output.",
+          "expected": "The 3.3 V regulator output should feed the MCUs (VDD) and the I2C sensors and pull-ups as one rail, per the specification.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"REG2\") (pin \"1\") (pinfunction \"OUT\") (pintype \"unspecified\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"277\") (name \"unconnected-(NAVC1-VDD-Pad32)\") (class \"Default\")"
+            },
+            {
+              "source": "spec",
+              "quote": "3V3 feeds both MCUs (FCC, NAVC) and all I2C sensor ICs"
+            }
+          ],
+          "impact": "If the netlist reflects the real board, the MCUs have no supply and the regulator's 3.3 V output does not reach the flight computer's logic rails.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "The most likely deviation is the PCA9685 A0 address pin strapped to the 3.3 V rail, which shifts the PWM driver from the specified 0x40 to 0x41. Lower-confidence concerns are the NAVC1 ground pins being isolated from GND and the MCU supply nets being disconnected from the regulator output."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 148838,
+    "completion_tokens": 13981,
+    "reasoning_tokens": 12331,
+    "cached_tokens": 0,
+    "total_tokens": 162819,
+    "cost_usd": 0.1093715,
+    "cost_details": {
+      "upstream_inference_cost": 0.1093715,
+      "upstream_inference_prompt_cost": 0.074419,
+      "upstream_inference_completions_cost": 0.0349525
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:47:47.757498+00:00",
+    "ended_at": "2026-11-13T03:48:51.368403+00:00",
+    "latency_s": 63.612
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:47:47.957Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 57413,
+    "moderation_latency": null,
+    "generation_time": 63479,
+    "tokens_prompt": 80798,
+    "tokens_completion": 893,
+    "native_tokens_prompt": 148838,
+    "native_tokens_completion": 13981,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 12331,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.1093715,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794541667-6ijsLmrOc0o7sRDFX7Or",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794541667-pGqsRa01gerLjrLTBZkV",
+    "upstream_id": "msg_011CgzF33Tb1rEdr4JCpUHqt",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzF33Tb1rEdr4JCpUHqt",
+        "is_byok": false,
+        "latency": 385,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.1093715,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794541667-pGqsRa01gerLjrLTBZkV",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.6, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"U2\"], \"pins\": [\"U2.1\"], \"nets\": [\"+3.3V\"], \"observed\": \"PCA9685PW pin 1 (A0) is on the +3.3V net together with VDD (pin 28). All other address pins (A1 pin 2, A2 pin 3, A3 pin 4, A4 pin 5, A5 pin 24) are on GND, so the address strap for A0 is high.\", \"expected\": \"The specification gives the PCA9685 I2C address as 0x40, which requires A0 to be tied to GND like the other address pins. With A0 high the address becomes 0x41, so the PWM driver will not respond to the firmware's expected address.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"28\\\") (pinfunction \\\"VDD\\\") (pintype \\\"power_in\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"A1\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}], \"impact\": \"The servo/PWM driver sits at address 0x41 instead of 0x40, so the flight controller cannot command the servo outputs unless the firmware is changed to match.\", \"confidence\": 0.6}, {\"category\": \"open_connection\", \"components\": [\"NAVC1\"], \"pins\": [\"NAVC1.18\", \"NAVC1.63\", \"NAVC1.12\"], \"nets\": [\"Net-(NAVC1-VSS-Pad18)\", \"unconnected-(NAVC1-VSSA-Pad12)\"], \"observed\": \"NAVC1 VSS pins 18 and 63 share a local net named after pin 18 that contains no other pin and is not GND. VSSA (pin 12) is also on its own unconnected net. The FCC1 VSS pins, by contrast, all sit on GND.\", \"expected\": \"All ground pins of the STM32F405 (VSS pins and VSSA) should return to the GND net, as they do on FCC1.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"92\\\") (name \\\"Net-(NAVC1-VSS-Pad18)\\\") (class \\\"Default\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"280\\\") (name \\\"unconnected-(NAVC1-VSSA-Pad12)\\\") (class \\\"Default\\\")\"}], \"impact\": \"The navigation MCU may have floating or incomplete ground returns, which would cause erratic operation or failure to run, and would break the common ground that the sensors depend on.\", \"confidence\": 0.35}, {\"category\": \"open_connection\", \"components\": [\"FCC1\", \"NAVC1\", \"REG2\"], \"pins\": [\"FCC1.1\", \"NAVC1.19\", \"REG2.1\"], \"nets\": [\"+3.3V\", \"+3V3\"], \"observed\": \"The LDO output (REG2 OUT) is on net +3.3V, while the MCU and I2C-pullup supply is on a separate net named +3V3. The MCU VDD pins (FCC1 pins 11, 27, 50, 75, 100 and NAVC1 pins 19, 32, 48, 64) are all on unconnected nets. Nothing in the netlist ties +3V3 to the regulator output.\", \"expected\": \"The 3.3 V regulator output should feed the MCUs (VDD) and the I2C sensors and pull-ups as one rail, per the specification.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"REG2\\\") (pin \\\"1\\\") (pinfunction \\\"OUT\\\") (pintype \\\"unspecified\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"277\\\") (name \\\"unconnected-(NAVC1-VDD-Pad32)\\\") (class \\\"Default\\\")\"}, {\"source\": \"spec\", \"quote\": \"3V3 feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"}], \"impact\": \"If the netlist reflects the real board, the MCUs have no supply and the regulator's 3.3 V output does not reach the flight computer's logic rails.\", \"confidence\": 0.2}], \"summary\": \"The most likely deviation is the PCA9685 A0 address pin strapped to the 3.3 V rail, which shifts the PWM driver from the specified 0x40 to 0x41. Lower-confidence concerns are the NAVC1 ground pins being isolated from GND and the MCU supply nets being disconnected from the regulator output.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794541667,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 13981,
+      "prompt_tokens": 148838,
+      "total_tokens": 162819,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 12331,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.1093715,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.1093715,
+        "upstream_inference_prompt_cost": 0.074419,
+        "upstream_inference_completions_cost": 0.0349525
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

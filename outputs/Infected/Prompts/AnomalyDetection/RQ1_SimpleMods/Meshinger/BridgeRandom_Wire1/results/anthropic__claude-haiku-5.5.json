@@ -1,0 +1,260 @@
+{
+  "id": "Meshinger/BridgeRandom_Wire1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/BridgeRandom_Wire1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/BridgeRandom_Wire1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/BridgeRandom_Wire1/spice.cir",
+    "chars": 100115,
+    "sha256": "79227a19b32c14019987780ec247d536e1f542b820dcb2cf565b6e8313850c5d"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.6,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C1\"],\n      \"pins\": [\"C1.1\", \"C1.2\"],\n      \"nets\": [\"Display_Power_Switch\", \"GND\"],\n      \"observed\": \"C1 on the EPD boost output node (Display_Power_Switch to GND) is 0.1uF/16V. The companion C2 on the same node is 1uF/6.3V. In the PDI G1 group, C1 is specified as 1 \u00b5F/6.3 V.\",\n      \"expected\": \"C1 should be 1 \u00b5F/6.3 V to match the G1-group reference value stated in the specification, consistent with C2 on the same node.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C1\\\")\\n      (value \\\"0.1uF/16V\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C2\\\")\\n      (value \\\"1uF/6.3V\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"| C1 (G1 group only): 1\u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value |\"},\n        {\"source\": \"spice\", \"quote\": \"C1 0 Display_Power_Switch 0.1uF\"}\n      ],\n      \"impact\": \"The output decoupling on the EPD boost rail is about 10x smaller than the reference, which can increase ripple and noise on the panel supply and destabilise the boost loop. The 16 V rating also differs from the 6.3 V reference.\",\n      \"confidence\": 0.55\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U4\", \"U5\"],\n      \"pins\": [\"U4.26\", \"U5.46\"],\n      \"nets\": [\"GPIO\"],\n      \"observed\": \"Keyboard LED anode pin U4.26 (LEDA_1_2) sits on the net named GPIO together with the SKW92A I2C_SD pin U5.46. The other keyboard LED pins (U4.23, U4.24, U4.25) each have their own LED nets.\",\n      \"expected\": \"A keyboard LED anode should connect only to its own LED drive net (such as LED0\u2013LED3). It should not share a net with the module's I2C data line.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"15\\\") (name \\\"GPIO\\\") (class \\\"Default\\\")\\n      (node (ref \\\"U4\\\") (pin \\\"26\\\") (pinfunction \\\"LEDA_1_2\\\") (pintype \\\"power_in\\\"))\\n      (node (ref \\\"U5\\\") (pin \\\"46\\\") (pinfunction \\\"I2C_SD\\\")\"}\n      ],\n      \"impact\": \"The I2C data line and the keyboard LED supply are electrically merged, which can corrupt I2C traffic and fail to light the LED. It may also create an unintended path between signals.\",\n      \"confidence\": 0.3\n    },\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor whose footprint is an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Pin 1 is isolated on its own unconnected net, and only pin 2 reaches GND.\",\n      \"expected\": \"A capacitor should use a capacitor footprint. A decoupling or filter capacitor should connect to a supply net rather than float on a single pin.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C11\\\")\\n      (value \\\"0.1uF\\\")\\n      (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\")\\n      (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}\n      ],\n      \"impact\": \"The part is electrically inert, so the function is unaffected. However, the footprint is wrong for a capacitor and the component may be a leftover or a placement error.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"C1 in the EPD boost output node is 0.1uF/16V where the specification's G1-group reference requires 1 \u00b5F/6.3 V, which is the strongest deviation. There is also a possible bridging of the keyboard LED anode onto the I2C_SD net and a capacitor carrying an inductor footprint, both of lower confidence.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.6,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "C1"
+          ],
+          "pins": [
+            "C1.1",
+            "C1.2"
+          ],
+          "nets": [
+            "Display_Power_Switch",
+            "GND"
+          ],
+          "observed": "C1 on the EPD boost output node (Display_Power_Switch to GND) is 0.1uF/16V. The companion C2 on the same node is 1uF/6.3V. In the PDI G1 group, C1 is specified as 1 \u00b5F/6.3 V.",
+          "expected": "C1 should be 1 \u00b5F/6.3 V to match the G1-group reference value stated in the specification, consistent with C2 on the same node.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(ref \"C1\")\n      (value \"0.1uF/16V\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(ref \"C2\")\n      (value \"1uF/6.3V\")"
+            },
+            {
+              "source": "spec",
+              "quote": "| C1 (G1 group only): 1\u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value |"
+            },
+            {
+              "source": "spice",
+              "quote": "C1 0 Display_Power_Switch 0.1uF"
+            }
+          ],
+          "impact": "The output decoupling on the EPD boost rail is about 10x smaller than the reference, which can increase ripple and noise on the panel supply and destabilise the boost loop. The 16 V rating also differs from the 6.3 V reference.",
+          "confidence": 0.55
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U4",
+            "U5"
+          ],
+          "pins": [
+            "U4.26",
+            "U5.46"
+          ],
+          "nets": [
+            "GPIO"
+          ],
+          "observed": "Keyboard LED anode pin U4.26 (LEDA_1_2) sits on the net named GPIO together with the SKW92A I2C_SD pin U5.46. The other keyboard LED pins (U4.23, U4.24, U4.25) each have their own LED nets.",
+          "expected": "A keyboard LED anode should connect only to its own LED drive net (such as LED0\u2013LED3). It should not share a net with the module's I2C data line.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"15\") (name \"GPIO\") (class \"Default\")\n      (node (ref \"U4\") (pin \"26\") (pinfunction \"LEDA_1_2\") (pintype \"power_in\"))\n      (node (ref \"U5\") (pin \"46\") (pinfunction \"I2C_SD\")"
+            }
+          ],
+          "impact": "The I2C data line and the keyboard LED supply are electrically merged, which can corrupt I2C traffic and fail to light the LED. It may also create an unintended path between signals.",
+          "confidence": 0.3
+        },
+        {
+          "category": "footprint_mismatch",
+          "components": [
+            "C11"
+          ],
+          "pins": [
+            "C11.1",
+            "C11.2"
+          ],
+          "nets": [
+            "unconnected-(C11-Pad1)",
+            "GND"
+          ],
+          "observed": "C11 is a 0.1uF capacitor whose footprint is an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Pin 1 is isolated on its own unconnected net, and only pin 2 reaches GND.",
+          "expected": "A capacitor should use a capacitor footprint. A decoupling or filter capacitor should connect to a supply net rather than float on a single pin.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(ref \"C11\")\n      (value \"0.1uF\")\n      (footprint \"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"58\") (name \"unconnected-(C11-Pad1)\") (class \"Default\")\n      (node (ref \"C11\") (pin \"1\") (pintype \"passive\")))"
+            }
+          ],
+          "impact": "The part is electrically inert, so the function is unaffected. However, the footprint is wrong for a capacitor and the component may be a leftover or a placement error.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "C1 in the EPD boost output node is 0.1uF/16V where the specification's G1-group reference requires 1 \u00b5F/6.3 V, which is the strongest deviation. There is also a possible bridging of the keyboard LED anode onto the I2C_SD net and a capacitor carrying an inductor footprint, both of lower confidence."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 46885,
+    "completion_tokens": 4411,
+    "reasoning_tokens": 2785,
+    "cached_tokens": 0,
+    "total_tokens": 51296,
+    "cost_usd": 0.006894,
+    "cost_details": {
+      "upstream_inference_cost": 0.006894,
+      "upstream_inference_prompt_cost": 0.0046885,
+      "upstream_inference_completions_cost": 0.0022055
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T02:58:44.013764+00:00",
+    "ended_at": "2026-11-13T02:59:03.060562+00:00",
+    "latency_s": 19.046
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T02:58:44.075Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 12925,
+    "moderation_latency": null,
+    "generation_time": 18943,
+    "tokens_prompt": 25484,
+    "tokens_completion": 941,
+    "native_tokens_prompt": 46885,
+    "native_tokens_completion": 4411,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 2785,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.006894,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794538724-ztsPB2I7ltYnixp5wzlK",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794538724-woh2T95lSA0HVSYX3PVQ",
+    "upstream_id": "msg_011CgzBJ36hcGbnHVRn4a1YB",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzBJ36hcGbnHVRn4a1YB",
+        "is_byok": false,
+        "latency": 386,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.006894,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794538724-woh2T95lSA0HVSYX3PVQ",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.6,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C1\"],\n      \"pins\": [\"C1.1\", \"C1.2\"],\n      \"nets\": [\"Display_Power_Switch\", \"GND\"],\n      \"observed\": \"C1 on the EPD boost output node (Display_Power_Switch to GND) is 0.1uF/16V. The companion C2 on the same node is 1uF/6.3V. In the PDI G1 group, C1 is specified as 1 \u00b5F/6.3 V.\",\n      \"expected\": \"C1 should be 1 \u00b5F/6.3 V to match the G1-group reference value stated in the specification, consistent with C2 on the same node.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C1\\\")\\n      (value \\\"0.1uF/16V\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C2\\\")\\n      (value \\\"1uF/6.3V\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"| C1 (G1 group only): 1\u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value |\"},\n        {\"source\": \"spice\", \"quote\": \"C1 0 Display_Power_Switch 0.1uF\"}\n      ],\n      \"impact\": \"The output decoupling on the EPD boost rail is about 10x smaller than the reference, which can increase ripple and noise on the panel supply and destabilise the boost loop. The 16 V rating also differs from the 6.3 V reference.\",\n      \"confidence\": 0.55\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U4\", \"U5\"],\n      \"pins\": [\"U4.26\", \"U5.46\"],\n      \"nets\": [\"GPIO\"],\n      \"observed\": \"Keyboard LED anode pin U4.26 (LEDA_1_2) sits on the net named GPIO together with the SKW92A I2C_SD pin U5.46. The other keyboard LED pins (U4.23, U4.24, U4.25) each have their own LED nets.\",\n      \"expected\": \"A keyboard LED anode should connect only to its own LED drive net (such as LED0\u2013LED3). It should not share a net with the module's I2C data line.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"15\\\") (name \\\"GPIO\\\") (class \\\"Default\\\")\\n      (node (ref \\\"U4\\\") (pin \\\"26\\\") (pinfunction \\\"LEDA_1_2\\\") (pintype \\\"power_in\\\"))\\n      (node (ref \\\"U5\\\") (pin \\\"46\\\") (pinfunction \\\"I2C_SD\\\")\"}\n      ],\n      \"impact\": \"The I2C data line and the keyboard LED supply are electrically merged, which can corrupt I2C traffic and fail to light the LED. It may also create an unintended path between signals.\",\n      \"confidence\": 0.3\n    },\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor whose footprint is an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Pin 1 is isolated on its own unconnected net, and only pin 2 reaches GND.\",\n      \"expected\": \"A capacitor should use a capacitor footprint. A decoupling or filter capacitor should connect to a supply net rather than float on a single pin.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C11\\\")\\n      (value \\\"0.1uF\\\")\\n      (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\")\\n      (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}\n      ],\n      \"impact\": \"The part is electrically inert, so the function is unaffected. However, the footprint is wrong for a capacitor and the component may be a leftover or a placement error.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"C1 in the EPD boost output node is 0.1uF/16V where the specification's G1-group reference requires 1 \u00b5F/6.3 V, which is the strongest deviation. There is also a possible bridging of the keyboard LED anode onto the I2C_SD net and a capacitor carrying an inductor footprint, both of lower confidence.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794538724,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 4411,
+      "prompt_tokens": 46885,
+      "total_tokens": 51296,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2785,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.006894,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.006894,
+        "upstream_inference_prompt_cost": 0.0046885,
+        "upstream_inference_completions_cost": 0.0022055
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

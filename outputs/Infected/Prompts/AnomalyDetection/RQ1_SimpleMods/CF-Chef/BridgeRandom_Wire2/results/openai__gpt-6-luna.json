@@ -1,0 +1,230 @@
+{
+  "id": "CF-Chef/BridgeRandom_Wire2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire2/spice.cir",
+    "chars": 122541,
+    "sha256": "1696dda84ad252c65614f0b6c83ae597380f8c80321c2a65b2f2645c13560787"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U5\", \"U8\", \"L1\", \"C5\", \"C13\"],\n      \"pins\": [\"U5.11\", \"U8.5\", \"L1.1\", \"C5.1\", \"C13.1\"],\n      \"nets\": [\"Net-(U5-SS)\"],\n      \"observed\": \"U5 SS pin 11 and U8 SW pin 5 are on the same net, along with L1 pin 1, C5 pin 1, and C13 pin 1. This joins the power-mux soft-start node to the buck converter switching node.\",\n      \"expected\": \"U5 SS should connect to its soft-start capacitor C5, while U8 SW should connect to the buck inductor and bootstrap capacitor. These are separate functional nodes and should not be bridged.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"29\\\") (name \\\"Net-(U5-SS)\\\") ... (node (ref \\\"C5\\\") (pin \\\"1\\\")) ... (node (ref \\\"L1\\\") (pin \\\"1\\\")) ... (node (ref \\\"U5\\\") (pin \\\"11\\\") (pinfunction \\\"SS\\\")) ... (node (ref \\\"U8\\\") (pin \\\"5\\\") (pinfunction \\\"SW\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"\\\"SS\\\" (pin 11) has a 10 nF cap (`C5`) for soft-start.\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`.\"\n        }\n      ],\n      \"impact\": \"The buck switching waveform is coupled directly into the mux soft-start pin and its capacitor. This can disrupt power-mux startup or operation and may cause the buck converter or mux to behave unreliably.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"An anomaly is present: the netlist shorts the TPS2121 soft-start node to the AP63203 buck switching node. The specification describes these as separate functions, and the connection could disrupt power startup or regulation.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U5",
+            "U8",
+            "L1",
+            "C5",
+            "C13"
+          ],
+          "pins": [
+            "U5.11",
+            "U8.5",
+            "L1.1",
+            "C5.1",
+            "C13.1"
+          ],
+          "nets": [
+            "Net-(U5-SS)"
+          ],
+          "observed": "U5 SS pin 11 and U8 SW pin 5 are on the same net, along with L1 pin 1, C5 pin 1, and C13 pin 1. This joins the power-mux soft-start node to the buck converter switching node.",
+          "expected": "U5 SS should connect to its soft-start capacitor C5, while U8 SW should connect to the buck inductor and bootstrap capacitor. These are separate functional nodes and should not be bridged.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"29\") (name \"Net-(U5-SS)\") ... (node (ref \"C5\") (pin \"1\")) ... (node (ref \"L1\") (pin \"1\")) ... (node (ref \"U5\") (pin \"11\") (pinfunction \"SS\")) ... (node (ref \"U8\") (pin \"5\") (pinfunction \"SW\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "\"SS\" (pin 11) has a 10 nF cap (`C5`) for soft-start."
+            },
+            {
+              "source": "spec",
+              "quote": "`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`."
+            }
+          ],
+          "impact": "The buck switching waveform is coupled directly into the mux soft-start pin and its capacitor. This can disrupt power-mux startup or operation and may cause the buck converter or mux to behave unreliably.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "An anomaly is present: the netlist shorts the TPS2121 soft-start node to the AP63203 buck switching node. The specification describes these as separate functions, and the connection could disrupt power startup or regulation."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Identifying circuit anomalies**\n\nI'm looking for anomalies in the netlist, specifically around the power circuit issues with U8 AP63203 buck switch and L1 connectivity. It seems suspicious that net 29 connects components like C13, C5, and U8 SW. The spec suggests that U8 SW controls the inductor, but L1's pin connections and the bootstrap cap indicate a potential unintended bridge. It looks like the connections for U5 SS tied into the buck SW might not be correct, especially since C13\u2019s pin connections overlap. I need to clarify why the net is linked this way.**Analyzing circuit connections**\n\nI see potential issues with the bridged nets affecting both the buck and mux connections. The net named (U5-SS) is common to the SW, but the spec indicates that C5 should not be shared with U8 SW, which raises concerns about circuit deviations. It\u2019s crucial to evaluate whether U5 SS tied to the switching node could cause severe issues. I'm also checking D7's orientation for a reverse polarity, and other components like TPS1H200 and mux PR1/OV pins seem grounded as expected. I\u2019ll ensure everything aligns with the documented specs.**Reviewing netlist anomalies**\n\nI need to check the SPICE L1 matching netlist to confirm the unusual net situation. It looks like there's a single anomaly with the bridge between U5 SS and U8 SW. I\u2019ll gather evidence from the netlist, so I should quote the net code 29 exactly as well as the specifications that explicitly state they should be separate nets. I want to categorize these findings under bridged_nets for clarity in my report."
+  },
+  "usage": {
+    "prompt_tokens": 39855,
+    "completion_tokens": 1325,
+    "reasoning_tokens": 794,
+    "cached_tokens": 0,
+    "total_tokens": 41180,
+    "cost_usd": 0.0056443,
+    "cost_details": {
+      "upstream_inference_cost": 0.0056443,
+      "upstream_inference_prompt_cost": 0.0049818,
+      "upstream_inference_completions_cost": 0.0006625
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T14:52:30.579965+00:00",
+    "ended_at": "2026-11-13T14:52:47.417525+00:00",
+    "latency_s": 16.837
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T14:52:30.698Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 5930,
+    "moderation_latency": null,
+    "generation_time": 16578,
+    "tokens_prompt": 31173,
+    "tokens_completion": 964,
+    "native_tokens_prompt": 39855,
+    "native_tokens_completion": 1325,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 794,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.0056443,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794581550-n9wKHjjTIJeEMnwy8U7U",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794581550-5m9KvqOxA5mBy5ayx9eX",
+    "upstream_id": "resp_0f937270be4749a1016af7242f170887d1b4154f24ed1381b0",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0f937270be4749a1016af7242f170887d1b4154f24ed1381b0",
+        "is_byok": false,
+        "latency": 591,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0056443,
+    "cache_discount": -0.0009963,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794581550-5m9KvqOxA5mBy5ayx9eX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U5\", \"U8\", \"L1\", \"C5\", \"C13\"],\n      \"pins\": [\"U5.11\", \"U8.5\", \"L1.1\", \"C5.1\", \"C13.1\"],\n      \"nets\": [\"Net-(U5-SS)\"],\n      \"observed\": \"U5 SS pin 11 and U8 SW pin 5 are on the same net, along with L1 pin 1, C5 pin 1, and C13 pin 1. This joins the power-mux soft-start node to the buck converter switching node.\",\n      \"expected\": \"U5 SS should connect to its soft-start capacitor C5, while U8 SW should connect to the buck inductor and bootstrap capacitor. These are separate functional nodes and should not be bridged.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"29\\\") (name \\\"Net-(U5-SS)\\\") ... (node (ref \\\"C5\\\") (pin \\\"1\\\")) ... (node (ref \\\"L1\\\") (pin \\\"1\\\")) ... (node (ref \\\"U5\\\") (pin \\\"11\\\") (pinfunction \\\"SS\\\")) ... (node (ref \\\"U8\\\") (pin \\\"5\\\") (pinfunction \\\"SW\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"\\\"SS\\\" (pin 11) has a 10 nF cap (`C5`) for soft-start.\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`U8` `SW`(5) drives the buck inductor `L1` (3.9 \u00b5H) and bootstrap cap `C13`.\"\n        }\n      ],\n      \"impact\": \"The buck switching waveform is coupled directly into the mux soft-start pin and its capacitor. This can disrupt power-mux startup or operation and may cause the buck converter or mux to behave unreliably.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"An anomaly is present: the netlist shorts the TPS2121 soft-start node to the AP63203 buck switching node. The specification describes these as separate functions, and the connection could disrupt power startup or regulation.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Identifying circuit anomalies**\n\nI'm looking for anomalies in the netlist, specifically around the power circuit issues with U8 AP63203 buck switch and L1 connectivity. It seems suspicious that net 29 connects components like C13, C5, and U8 SW. The spec suggests that U8 SW controls the inductor, but L1's pin connections and the bootstrap cap indicate a potential unintended bridge. It looks like the connections for U5 SS tied into the buck SW might not be correct, especially since C13\u2019s pin connections overlap. I need to clarify why the net is linked this way.**Analyzing circuit connections**\n\nI see potential issues with the bridged nets affecting both the buck and mux connections. The net named (U5-SS) is common to the SW, but the spec indicates that C5 should not be shared with U8 SW, which raises concerns about circuit deviations. It\u2019s crucial to evaluate whether U5 SS tied to the switching node could cause severe issues. I'm also checking D7's orientation for a reverse polarity, and other components like TPS1H200 and mux PR1/OV pins seem grounded as expected. I\u2019ll ensure everything aligns with the documented specs.**Reviewing netlist anomalies**\n\nI need to check the SPICE L1 matching netlist to confirm the unusual net situation. It looks like there's a single anomaly with the bridge between U5 SS and U8 SW. I\u2019ll gather evidence from the netlist, so I should quote the net code 29 exactly as well as the specifications that explicitly state they should be separate nets. I want to categorize these findings under bridged_nets for clarity in my report.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Identifying circuit anomalies**\n\nI'm looking for anomalies in the netlist, specifically around the power circuit issues with U8 AP63203 buck switch and L1 connectivity. It seems suspicious that net 29 connects components like C13, C5, and U8 SW. The spec suggests that U8 SW controls the inductor, but L1's pin connections and the bootstrap cap indicate a potential unintended bridge. It looks like the connections for U5 SS tied into the buck SW might not be correct, especially since C13\u2019s pin connections overlap. I need to clarify why the net is linked this way.**Analyzing circuit connections**\n\nI see potential issues with the bridged nets affecting both the buck and mux connections. The net named (U5-SS) is common to the SW, but the spec indicates that C5 should not be shared with U8 SW, which raises concerns about circuit deviations. It\u2019s crucial to evaluate whether U5 SS tied to the switching node could cause severe issues. I'm also checking D7's orientation for a reverse polarity, and other components like TPS1H200 and mux PR1/OV pins seem grounded as expected. I\u2019ll ensure everything aligns with the documented specs.**Reviewing netlist anomalies**\n\nI need to check the SPICE L1 matching netlist to confirm the unusual net situation. It looks like there's a single anomaly with the bridge between U5 SS and U8 SW. I\u2019ll gather evidence from the netlist, so I should quote the net code 29 exactly as well as the specifications that explicitly state they should be separate nets. I want to categorize these findings under bridged_nets for clarity in my report.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yQ79iQlx7NLLSgpFvPm-FOyZlqkGBXHD2txk3VgxF7dnfWmA_EeaFwgZhG0IE8ZdjxO7pdIPiflG4iFqf1cY355zrO5ju27g8KaxrQq2NExiZ_pFfc0qeWHFO-MkGnTlhIqFF-td6jVBdhePX3UR9oNnagxTYb6_5cCjWXFjRBVzgvLGRSZ-ZhJcCVFCczou0BIqlUyJtbEnJAgPvWg916hozusEZ1uGy7MkRTeJJAUPXpl7jV00f3CqM0jrS1cAGmJHzfcVzLre_tuw13XqYeAVxC-osxTGuo5a6tnwjtxYc_OKL-WDBOniJb79qDq7L2t06y9q0RY2a7yg7AcsR-QwIzpBuENCjCztukLBU5KMp_rwytkqSuUF9xO7ItYSdCKS6rwYiWP_gqywlgcreW9qAbPAjVN81K8YLpey_tbqtnz_dzfZn64_Whs89wp7eoCSQTsCxC3IoCP0O5nAoskt4UaDvydIiLmk0vIGNWiCrD6kz_KCkWSV_rh4bFPzPNX95tcAV22VqWyicj-gzRY2fXIj17iZF0CH5ZBber5atkeOKaO14EXA7vZOW6Rbw_fg410YuacK6sDzBlvi7NDxfq5bh7kQQax7aiF2sjXg-3kKdDKR0otKxxrISyQf4VLGJnpxlfZebOtpmkaXNh8FxKBOYSPoZ_ph_ugJn3wDhchqUU1MY5d56BfYyUxut0UN320a5d7ih23Hvl94rVxPwns---Wx2xiDo24gr-dVJ5Gba8zIDWay6BtxMuicfcly-QjZjgLeym-6Fzno4aljb8zoiOiZMAI_OBzyCvjieoCN1j2VE43Z52RDVCQfYHIqcS89qTYDbWDTnRg5Xuf3mUdVuARtz3Og5bb7aqJVIegXcPeVROb1fpUVFhWXDI7Xwlk0_UUFOsCdJ0nFzgW0RuL4jYn6TDVl8-goLNop3nNTaxSXujDc-MBvgDiEF0BrplS3ZZGxkNHKnYHS0DujrvN6yThJW2G3zdHVlqEtgpub_ldt82yTqMC2I7RkeT2wRWkGSpJqly9XQsAP4jQHXVqp4Iym7QCdbXJsEpEt-zO5FeVdBmp8c0ocXZTXh9P90O2kgd4pkjCRX23ZDEiAAbji85HccR11RfzXyr7GYaXjMWMXZVHW1ckrdhTzpLPldsHmvh-bo6TMKt7f3Hg4TsVYwPRmb_UEd6J3oiggKgv3k6rfhkVOVF3S3FTZnU9f0tganOC0KStMoC-ygd5lwzxQZ-HBL8IvJV_w2Fk7ZwLSmr1Pr0dYc5hY3ZLjUIyAM2Epmwq6w-_okJyn93SVLy0x0x11fPH2JFM0Eh5aGRwqxeLtNEPW1dRhlxT5rwouory_awbQr-mTjz38C4meNwnpvk6icS5lBHf5akn1TVbgEd13cTR-mJHn-x0Mo3ujXJ3zii9bGhrRfa92D14Ky5txXGFyX66I1-4jpJxyv8MF7L1J8bSP4XeXLi0dHsLsp6FVUn-h9XcpcMeeK9J1F_RqELPliyxcmoeu-Q0B6TgFmZpwwCsuyq17TUkY6KL3WYAl34Wfji2mKifpydXgH-iuImI-zt_ZDrAM-UCaLTJUieFZSL2cipGLdGmmY4DSGrEpQgmb0CLX2hkp4WTqHV9DSC_JMf0O9GMxn8XNdmF6z_Pr-M795W8ggMMDoNlJODkwRQdeGFz3qt35WPmWPpdJ4-foBExDwUlLKbMwa5ozAjJPq1RUwa4rJ5jkpEyFvruO1ZrMzai302appQnl9NdLL3YqhGH1nIABkC-zrTQEDixzpMcyi3UUWBRJNJoeo2NwylC_5ZEUaW2a511TO33huMjpFVspLSefWxro8DPsN_uaPxs2-nurlLT7G7aHFzjUnF82EpTPZ6AD9jPszhVMhHIh32geMWuK4Wdt1-R2_GoIA6UIfkPpr2Z0p5c9dQH_XLVJBVhVmXPsO7Cn7UGcRhamCM3fQxi1CggqC9iM-d9QBoe7SSw-JfnrACnID3T_jmYlMFiiNfvYgc1E7gT9JPYTty9mykMvMY87mWKA9XgpSVAfzxj-p0dpRvUpv-ErlL6CbSirFOhBRBgvAwcUUCk2Hxxixpr-qExT6BKPYyHUT7j3WxVo2U5LL2en8_1X0yBguTQcBSx8XntvGzAWuYnULFUfvGqjUzKMAMbSpO3eD0RvTAKlUD6pDTX5mfmAvaLngykVHp1Wk6Dwc7LNgzJty9eccJIWthG8L9qP41DKi5D_yDt_itrRkekn-YgF2B6NjJtFvBJ8j8nfPG8IxK51YFMWlFMu8fU_5hYVK-eF7dIQnXxHjY2GkHlM6CiBzU2-cynCEW-6czcA_QkfG4fIG-jM7VabVEZoVWSZIT0fGX1tRUv0HNQlDRd9uMKGu2RKkgOWyeS3zp4rHfLgDhdPtA_zWolQ2gCmddrrXcyaOMAqkqkxyMD02Ix9qkXBSgb88yOktU9ijv-xHxnSt7dtaUQ9pKHa-xFj8iXM20djCOu9DKtgYOzztdq1N30ixWRx2_DBrPeLnQerf7PZP2W1kPJtV3GYvo6OUkfC7E8YmRqoRxYu8LurkXnsfzArYbewaI_OMADs7lsiUcx0-NT4G0YKJi_LyYdHlZcwQ_g_KGeHqV2FfLW2ZM6OICYOkGXKm3wm3fYyAVtCkhawODZXPJjNRKeaYn8gvR78g15hwrnuIMh5nIwZqsAMKC9BIa9btujKwGqcl6FMCmXv64DbUy7-LbkAXfR7oSC4z7b2EtC9Jin2efd2lEM_dBWgAt0B0Zl5TruO7hJtVBYILuXsrIV-3j_Uma4WFuQwvlOniP8xeRPysCbN342SQJKhZl0YP7LwAZuqK0fYjCi6DtiiZ2hzuS70GxnIDbKhGiQ1NelNmjNjdV113vuDSCSwXiYUhphdCDaTEFFURSB5Yu_HhxpnuFABmCjbUd9gy7OshtTViMgVjczOlZIJW2XyzmtX791Gr06nkmQln5p3kDP9yznIlpjACWiiNhUroql2gM3fWKzu-D6B7aAIMr5AghrmLcqk0GnTvSEzFzXkL6yg5pzzLeBpd8QFdRQEBXgnJAe7-yPElcSbdLpMjwlBu5Xzomwpg1TCk0ZkcVonSvT_eDPloPWmPnexOSkabHtKfwzTNtIm41cCPko3ZYTHLBDuvdy21NiDQACUaI0xSs8ySOU1PLIfaRaDDuD1gjPUoAicCm_2SpQMj3lUDGdJXtp8eV6NaP8mm6gwiMrXV7nPv3zauhzpUJkugVL_sfm9bpR0tvZIEHuJUliVwN2jCxhmVqloMTRttyF6pYb2WlYfpT1sEmJ4Wkv-_Ib38tPWciKCrvEhvoWpG_F6g-Fi8gSliKSTehd3m11jd4n0ROddiL1rN60PkWYv8o2PkVely_yCoK8hL9gYXBo_SfhKI5txHnwSok7BgAst0pEP5Ulm5Gncvw7RY4oFm7sFxBgAYN_EzDDtk_Oa8m-YBaOInGOiVbst3bawEb_RpLsTm6nXdu9ZoJUZsWMWJXLvjqYLCleizYoTtvBm1kGE58OU1LvSmajZV147fyCnAavm3GGeM8Pa7PN1cAEv69iUsl2ApeWYLDTcoBT0M0Ge_cLiBWGPSDUAPRO4J7eElch0RRDFwMqcsxU7nVW3_WazaQuHgb3FGgiT_bxOAJpPDAuGsmYB0AF2kpolFy_SkHLW_Kmj5w5tmZEaQLumlUIBTHr89NmWIpyjC-PuiVora80cpC240BPuX68S3_FBq_HYPtJCY_7yb9ymr3gS5owAQpaqbu9ZuTlo5g8r7zTz8sH2y7yhYtTGcOoohTZ_FSvD1RrhjPdNXD068PCbxjDMKhjUUoPN8UspR-10_AaOEaNBR4lAOUr6pOXsWirA9AE6lJBmbpDqTVvOqTrZ9s0yqOKrF-HYsFNSKjrd0kDapB0JGemji64BJwhmjNUi3A6InqfVvPSqnPDVYK3tYbDjxmkpwpYINkZcMBl7OX6ILaZwcTJ8pawk0goV_NEi35UjgejJPVY9pdy4TvnCJ_ycaI6O454aMTgB5yA6V2jekzyjxjI28fiGP48xnBYUiUqhSrKpcx4wVX3zBOEvmzvazTdGOe3ttbrqv0hPBfMx1HHU1hQnRCJ1sQ1Tf1ONiCI48_sCEDstXkKnp3wb8K0a_C8VIrnP-9q7qLbQ7nSsFHmMbuMTn6K0IUl3_xLLUxXIvLbEoRUjd_BuKuHnO_fqMbQrrApBG4tbzfF9FXD2CribnSQSJwWPi02vcZabJMOEJodT3y0MWfmPwiU87br9WaxMl0doUyTV_-7Ya-MmBriCXE0QiePJhx7-T3o-VJK3TyMIvR8dEjc4_5hqoemg_pdMpShY5x4MHw0bXuCU8Hk6My_VGqS7mlhq40SnsipHOmrVOaILquNj_FsbEmS10Di3MfJAh0B0ZqIw_tK5RiqP11oqWdEdy5qrcCgL-M8PylVNIf0-tChespp6LElE2Y3iy7U9MokLzRBg2CNnmt2VrQ7cjq3syDP1SYiz2D2aANbwwpxlMKyNSyHiKFDUM5DnCMggALxum1JzU9verHVyL70JyRt9BkCalvBIxJ6UvjQUutm-5sHWh_aMN0lh9_6PRjQMUmv1UyjoEWP0ZRhFX5fycISobi0SFIyZbkEdK8egnqBlFva5-TR8-A-ITUSmQ5vW_RRWu-mCJRmI95qJv6nXR4wECWH_wT4C8QmEz1rz7BPWcURxm8YJ2dD0cFzLwN2rXrzQtjlWH4zsrO4D6IQVdp1SGVMGhCaJqxn9RG3IcIQxdYuosOFi33zMaxqel-35gl6M0ebsMlKabwnkxp4BDmeBPH3ejVW7Lw_msn6iKkIv3GJYuYVO9_7t_Tqwb0p76OU8nl7jT1OLcRu7sonzn9ldnsjo8hWnxnmzrhe6QTIeSd5HplsRuwm7YlVAVJ46nFwYca42HRbsOp9Irx9y9KZQd5lKidEtT0TclDLNX2XPVWX4tn2BhomHovww3qedqNBcC5QdfkHdzB3Zu-X3saasA1vRtjeWCwbgeqHsBmYhjEJZS5tYFaH4wX9eN2KdgLlKGIeG9A8tVdzQLTkZFY8EnJLYdea-fkpTqGljSHrrCkGBP6q_DkNUKBiT6-jTbk84WKgp1UzJTlIq_qjbOlzgLemCoCQeq1Gpbd8jexdb9urPzsr1i8OLC6AmEaog9p_QjQUKnFZn9aTEIUJLDHOVlcwXJpo72DRs4GF5777-NSipNqMlMMqxJeJJBER0GjF70B_89iB8dBVFglezygROVUey21UJAfeWnBXkEBFTclYlYlp0_DJH5UONq4WTLM-rjtVSVmB0BR3hl-gk14zt9iLbJYgWJRSAbb4kHFW0_7a6eyA7-b1ZxqRD8MjjOJlPPddizlVkxAezeEf_nBQnT6I0zaO1q6XcjAsxTgaqicTX930Nv8j8eRrWOP9tB14DqY0eZTkDHnFwJHny0uO69UqPsK0RHCOY2h0MsnwXczBlPYqcuDzy8MYT4l7NVIaCOjBfxC4yQhMw8gZFmmXwz4ykH-iekCQTrLP9El9bNp9WayreEgJsh_Fanhc0BQmOMR7eVnvVBqDGW6OcldZsccrJmN7oQRBHR1WsclkIXH19LVCN-GeAwe4Nm4B0JOB_HDzLSAcCQKd9fuRUWPcerQKAgi-yhH8SyVH3JLhSOyz-znB7D-xqfZrOxB4LJTYsXph_EPzaaQFGrZ_Z-duEBIl4R4qAjOKnD3cVIwDi0HdepJ9jUaD1xTZbrvrqRlR9TZ6B_tlwVEfzjgZs-h6amMzjkaOK6MKAYUwri1KDp7zoaRpKE9UUtFGUFsfNv_M-5i2siyyhoXUeT--0dkpzTnZsMaVvc8hTDKj8fkGvgZv-vuWBTQlCJpQYnlHiJ701M9t4dPkxNM726UnayF80NEdjxqgrx1KLPq6_LgOlS1TBDOUNDTZDFpy8x4E0d3EnV7Fn520LmnRXTskhwny-bMTBc61N7FqazvI-xEGwCV0PRgBf7NmzDZ6dgaVW1wMGLJu7Fwd_UEWuF_TTJmR04BpySaH19usKyoX1lBowvYWiL5itNWQHq4ZTUB2HkGgKRMAIdE3rVNuTnEcCe68X6jIgLDvLsQG4vQbS3zObnCvM0to6ldBf44EezGuU4TAKVYIv5r7UByLlLBBAA0dnuYDGEmi6LR9ws5YQOP1H1kbN-6IaBZncf2f4PAt48RKByRjFMnSxTQPdWexEVm0TfJUZubCf9JmKBQmJgS4AHcIjSSsVesOmzOmkvT-N9uXrmmcLiH2YpxznK8C056Sk-tnhJ07n8K-IPw7QBTXG85tmOKD9rYr2LpuozmbuuYcGwe6_IFuSdn7egzuEfXxTzrwxi_loG_8lz2qz9gfI1oKn-58NokVU50qhZZfDsuQMNt1_HLIVUSiMSL9p-AUVyF8hzCXtHpjqVY5OUnXHAsVHzrXlvcPEN9YdwxAT4J6O7HKXPFa3eq6h9F9VpidGRoIBR24ujkuctYuwszcQwafdNPcv8a2EAOMG00gJMFHavIywxkX7SamhmvfW8TfsQui_iOGa9nacYiv9mLA_LJY4yQa5xOgL06yKjNEGcNkwEQKYoMgWeuSVN-EaRfe-0vQ3_BdtYAmX74YY62e1a1TzzUXf7OyJDfy3_do3lXqpcL--WwmvRdEOXwtYkzP2Wydt7RgmgojcPQzSnfKk0csAmTgrHn6zJfKeAye7Q0RHpnlEKLa5N1sz3zsFv2fC650nZoLToj4xarjc-4v0-1BjndmQRECrWO3i_37MWPR-bWhBeyaHc2mVyBxopT8dJyqKXD8tdeBFdS_vagNk6vQqNhTSgafWTaCPjyAY2AOusSP6lN5Dz4yFADOvivqc98Hbf8KH1s7n8ftDqZ22lIaInIVJB5KbaQRA6NOebj9D1wamP59kGTz8_gD3Rfih7aO0CVqqXtEOkqPrCBZC-gefETdPgt8f-rXpoBuBDym76t-1e__jEtGJBL6iGegEw3RUM5bZt8ZURXPY3W3pXn6rqXGA1klodwrfGwMJIk6OiKKRm4ADAOMrlU2hPxdXAWZYVfCZpArCadZtWCxTknWJbbWO59VH1kf9mAYTGQd4it3wySLmYV0GY_ilfyHebPT48SrW2hIm8kaSWhOzJ9trv882s-nMxv6GHOcvVIljDDT_1D1C0WPPWCdUf0IFgm-GCD7PHW2M0P5hfUwbQU2WOsd7-Qa9IiQlH4cRt6Cmpjc9bfgL3qPr11-lGGlX2nlhyWVcNMTPjwW8sSX_LcQ8xWlmsq6yHk97fLnqW3uEKnDHLBfQmeLp_RXf12E8Mm1cJzJA-WBMmvkVUq-mmTHObDXtFXMhH_xgvZEsNdQcPvuCrcppALq56Wb1UwFQ3lPhsBPul2hJdsu__feBF8KeyBqO3EytJEWCY4WewLGxh0cH7kQfo_iezD82ubxKj2suK2kwZ1ZWKwjwS6uBwv2thTTgRIHwKKD1QiKFAAVQNTy_ULZYWic4fi6ih6A83Co9H9s28XNEVbpLQ6BiXxp826KWXY=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0f937270be4749a1016af724306b4087d1a4b4d8049c6718c0",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Interpreting circuit specs**\n\nI see that the net mentions \"SS pin11 has a 10nF cap C5 for soft-start\" and \"U8 SW drives buck inductor L1 and bootstrap cap C13.\" This gives me strong confidence in the information, noting a certainty level of about 99%. It sounds like I'm dealing with circuit specifications, possibly related to power management. The details are intriguing! I wonder how they all connect and function together. It's a nice mix of components!",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yQ9ONZaxw53Zw6pG-gn4sVIPKozh287VatYFSj9AHlGFznuwMA_BstlRJIEMX8uW6SNFUlUCW-fRZqB9YOVlubAOFN0AMTUOjKFK9KuafyEZF65EJcjcsJYLgPaOvFnjC5AShYc_4Ius9zBfQa9iJiI0_v2xX5ZIZ55bf9t265fSk8K5CMpLPSnKAeydiYtX0a9xJ7grn2WckH-xQPVXgxVDWG9A5DcXh3MCUeMJ38MvOcc1n8AzJ4tv9n10SuH0iz7bUQp8r36-UCUM4xthICeckmQvPVlCkPLhHEoxPY8Qi5KbmeJwUaZVZvQXJpfscGnlpBz-nsYa6JIbOorihtBPZu597u08xbm38uNTKOHrymoDS2krIoPVcpv3sIQuTF0p-d5fm6ShIW9FMuJMuBv1oHGqm4G3FiqOzVGrY-6hEDt_PhLYvoe69tUBn-NlTb8GBq3RdQorrzUgsaivyEhvGcNtqo-2OHb6i75m-RcNW-wH7jT07vqomhduC241KLW9e_gL7Et6qzhqHle4R1KCpOGROht1cjI8_wuAeyFlmwGWev9hQNeP0TLPnC84j16Bbbq12JnKFjZ5dqFm39mNwZW3VIYfA2W-A1wMR0qrZXbhrxwq_pG7_8eBNTJ_kWEHg0x0689uYrRVZlmGtzWhWHP8JAl3oWR5wM_iJOLZMhF4aaZNqc-lmgLrAHyCxGzo6Hg-wtSD28REDjX6UbLdR6v979RiKMyg046Z1Byevi5BWeF9nYe1PifqTfVIZLFE2dYB1OikVTQiJ_6ckBK2SC25q3zvaMJ5QPm2eI9c3iQteafWZyriF7EfnXyqiKRH3HmsTwVYyIlMtTibNlHOqpiKV6p2j7zf3fsKHy3QEYQQZBnE7TOlYVBaeEaDdeKruTXvMph7rTw6mf-rdhlics5DfnVQ5PoN1V9MUkGsAr9EuFjeyR0n6EzVW0z3DynuF5Mp8r_60OzEj5s8Yl6IFEYSTfB32HyX98jalUM_KftSdX2oVtGyLaeL7MjHwtQBEmG0_xMHbqzzUsFXOa3WOwghAAV_JU6ljyb2hifHTtdthxlCLiP8Eey7raokSDew1WSVyidvz3yK1nQA-Dm0jZz0I0UwMPsPWz4qGtFN91xNS4sJeB80qMKtnPUUvTfQALzmx9Ovpsro-IjB2j7sbHc2bXdq5XEgf_QFqfKBtzMhcE8p3Rzk0A75070Q_ELjpRNqfJZnkYVzCp-hSLfTgbvf3-mRhEvaZ9jLiizaLCZVgQrDvzvw3OuGnkQx5UjJDGc4OjrX3gYEeGBs_udtW0KlnUVPMAXr6HXUS8wjkx5U5AXXNJRMwL5pOrxUHMmvT5c5PCgIhPpXRsOdgRph9OjBhrBk9wMoOEVaJzhZyi9s3VCRtEIx7YbI7AAIkEtdLhgePtEWymgJycOhPENuASYH-bHgWkp1PSJarym7GY_a3uhFsocpirT1C1_JZbcBFXf-MmPl10bI6ruRwJbByXIwKCyLcqKkdZOX1gjQyi4zQ5r09gn2S_4JYo5T38AqBfq4_nfmll0_eY8iG_edbujx3rQFiFvJlb35pGSYHH_K5DaJ9TvaDdD_HkptBMZ2j8aaFBbydjlDWYqQCL6_yAerXxeOMAJ_Dq6dRgKbnW0RyjEoKxJmS7kTN8Dcmi2xXQO6vL_gULfUyKkVpvrfDQjT-HggppjxvPrmjZyxGkXJ2W82A_h1OZ5RAtRtHNIX-rw6DwZHiIbjA-hLERt8VCAS5BRleHfqMIuQX_revrT5T7AOd6arvwSD8eB-VZyfx8Xu8hVvxewQMppgCQBPgSS-FVr5lFeoMaDTK2Ake6dA0ZmLqB2PyWPl0Kv9d0EjAoRC1he2UQHdaTe79kyGKA-cyJ3bwif0Qi6OryNk-lXFhm7uqBzXJemmtCP1n2ni_AjAdxT2yOYZTAGsY3RO8fxXvR73SMp2vA6oQRMQ_jsrW6OZzysX04-s2ThBMKOsZ9rYicMqdGnEzCS3ELFYyfQaqenEKyzTziT4s5QQRI70FeU18j3H8UsUctrU1VTRLuL3sf6HVHwwjmXCXDIjtLXSXcDalsOtVyROkbfR3NE95h0r-U6NtaL8RdDZegIHriQe7nEM77mO0i-m0oFpEh83bg8xvG0vL4u5vaJuL5USUkbXIL4qyIW-B4mKmbiLYTjhAToIiZCMLuFqSPnQKGplVxcm0vUEyVNXKFId-PIiqP4vkLIGtYo5OCv5bHtj-i1sb4mfEIWgNMdE0i1wKgh1a2cR5_TEgsrwTP84hzt_NrMff4sqpvQaLX_jwQgiA9yN9Y-5gmwZJ2NmPiJoatY-Mld6r6qVVpgP64zIq2a6um6clodiCo2rqeDb7gh76DpG6DtR7jWw0HHPdoYIO7YJZFwPrYef4kxxfIYRz9YE4LITZ2dDzzmYYTxKi7LEqBGzYyCaPcQdjUuI7nk8TpE7siXArarZtT_pdLIzQXiPEq6T2N7Qe9pESjFHgoog-L_Es-sGMbhhWNfYg94bH4L-zPlY_zBUvoVTJY6kYv3kZmUYkGfI5um-Eg3YS1GkavLOX234qdkc6tMlfovz3NpefkLnlRluJY7EBmQdsugx2y-qaAP27pj7EEFGcqB0oEtKduXDHjDxeA8roFKm1FqdgxV5Poc0ifQvj9g278863TAziRMbun9oAK8SaSw0uvPubAJvuKXtWO1xPSgD7KQNX7eMaxve7l5ajQ-gHq2x7jAAFR4HNVxKVmVX9pqE57OFAyVhL9yV8iyJuVNuWAC5RkCestj9M1LgID__ys_1hfuwmY1n28FmgYXcM31UWF8YalZf9hc2cketU1VHOBS92oYwOSjR96Dmm4kerQCZKMtk0QnXr53gstu_aLbcp0e-bSRsRIxUdKMl8NCmXvkRkeZc17DH6BFAzB1qSWwS7ymma7okd2wQcqww0wSwGPOsJbV8Xnij431mPVoU4Lxf5YEwOok-VKvQdfiw8womg79-VVzDrb2MXUmlAvbwC5W_GxDXd2Rd7XWDi6aBSuuH4j_UMQjdnaDKssG4iI41Hqiu-Ce8BFltKDekuC0CDvtImoEuX-qo5R1gig5INwH0bAzkp6hSL8o76c76sR6GMEPUlPF6fnOfOLvsihVdpDu2_UQhRF-AqAX5ZfeQlirRp1bTyPkl3NJhLNBMEYDMEPVgddFVjJp-aYNwM45pC0Qwx0n1uRV_ypTemjRpk2E0Sx_29hA1E0Z60jQjc1GFpz0ZtcPegiQopS_EyHtgbLVGnXACtdvwvmk3-zItkIPaSwUou8atLYf9Q0mJhEaQhHVXBwA19JGZxsLsAj_JgkJLzQTbBJkKvHVaEp541C9pi1mqdazasrIm7ILS9VEPL--SqP6TXCh7mv__QR3Pz_vxuRyTQP-UbZ64UpWVNJ3XF8ugLtUZjzHqMjDWjRdu7aicQ1pad9csCVkBt8OC7Rn6K248oFnvmycDjy1expxO_OjNMULQ7YD5ubAfvpTXRJ2m6qmkXQLOD0asBoHu6OG8uu_VmNBLUQwqw2G04fx8TxARIhir52Kz-G0EXVCM4FZKr0628afWUafSqpDVKVwV9gz9C1Jc9cBcb4m7176L4f88rVnQ12mIhynDdhjMGz4Q_JLpRG19uCxuPsLGGVF5Bk_5FbK5UE9IzjR6KiZKf_QiMgOIbaeVOKxjPilZI1f5jxv4SGv3mqHPFbiWvq5h9qC6Qr43ytrUQlZvQrN8DUiXoBt5bLNdQpdogW2hRSOsJCgCFP2y9aNCISk_-gLYHF2xSUdjxNzoGLXrcvjhqb1Dlkzg4dj4bwsgHPfb6oEkaucXpJTUaQrXj1JRfo6xPwxlCVJA300kl6zWZQJE1hwG5Ve8subNdrVirqPmie5Ud-Oi-1B0PAoFpncy-Rz004zcoA0esNX6e3svy1IFdWtAioGz28lxbnCqvCbahb3ZCLBU95h-LhndWcF_wUT_Tqt---PCZpI2KCdbmcyEC-PhzeaHEnOxnZ5kBrWQbEVz5KLYg4fMC1qaP1NP7kAwhQWce-5bjWp_oP154OV1xlNHYN5ieu43TNjFuKvGblRdHshkXgBJK0AMsxXz45CmoVgJTH2148cY9xSGLBgDS4dI3Qv7N_gJgLiQLx9g9GfXsxXOjpldDiDZi0IPgcyL6y4lzKtt7nZpxS77lQ_FkeVffj0q6KWdMbA--rS12acndfxE4VwzK7Rck7urudjZa9G_JLwT0ijP4-25G6baLbL8kA4K-Ef9cSAtmYvAUr0_IJpYCZfQ9TyUYkkpHsYF_yM2eBiLiTBHFBNPk64Z2q92a0aLx85MpwtaBr0hxgJJywF4iXO8Tk2AYC69wO24ifrgs3GztbsfaGDuD8WO5g7zdPZFguaciqPyiPJUi7zg4-R2rBwY_SZJd4T-cw4bqUCfpEE0gXarbkKD82RR5zFKX2cEjQZub0BhBELQV-7lo2RRv0HRixQdxpEh1IcEgRbyWj8N58RVlevZ3m16Ig1bOwOUoh3gPNS00209-Jdhx0fYpyc0P2J4l-1aS879CbaCxnPFzEZn6_kkNSzMEO_Te3alahW6sI0CFWgtF5hxTKspCl9QIN1eReErfCYtdYpAf5JK7U764NSA8PZ1nOigB_6oJKbqeFChII-Gcrx_HsJKiFfYTQP9h_IS9_wEvp2e57B4XJWZNgsNL25zGnyN4SUHSs3GvYBALM7ucqRHh9Rbzwh7kIrO1GMy64WBUWJepQdFL0T60Muh0-dyoXLGYbeYOKxwc2K8WWr9hAdF4QCJKF1lIqJH3HUtIK1ECEIZgnPaY-yU3AQtzHfvkygXkKTm4gHLqaefCEyZNdA-QxQ9oGZT_sLnh91OtzPqOtMWJyE1bLgag11LCwHMZ7IvXhXPbuP_9oRYK0=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0f937270be4749a1016af7243bd71487d18f26b8767bf658ad",
+              "index": 3
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794581550,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 1325,
+      "prompt_tokens": 39855,
+      "total_tokens": 41180,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 794,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 39852,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0056443,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0056443,
+        "upstream_inference_prompt_cost": 0.0049818,
+        "upstream_inference_completions_cost": 0.0006625
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

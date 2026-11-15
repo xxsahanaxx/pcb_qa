@@ -1,0 +1,248 @@
+{
+  "id": "CF-Chef/ResistorToleranceDownRandom_Tolerance2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorToleranceDownRandom_Tolerance2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorToleranceDownRandom_Tolerance2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorToleranceDownRandom_Tolerance2/spice.cir",
+    "chars": 122695,
+    "sha256": "b00b34d50deb10d0c6e85593065d5779c73c072bd0614c7148da314258f1fff0"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.97,\n  \"anomalies\": [\n    {\n      \"category\": \"other\",\n      \"components\": [\"U1\", \"U2\", \"U3\", \"U4\"],\n      \"pins\": [\"U1.19\", \"U2.5\", \"U3.5\", \"U4.5\"],\n      \"nets\": [\"SCK\"],\n      \"observed\": \"The specification says firmware configures SPI2 at 60 MHz, and the netlist connects that SCK signal from U1 GPIO5 to all three MAX31855 interfaces.\",\n      \"expected\": \"Keep the MAX31855 serial clock at or below its 5 MHz maximum; configure the SPI bus accordingly.\",\n      \"evidence\": [\n        {\n          \"source\": \"spec\",\n          \"quote\": \"SPI2 configured at 60 MHz, mode 0, with sck on GPIO5 and miso on GPIO10\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Three identical channels, each built around a MAX31855KASA\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"33\\\") (name \\\"SCK\\\") ... (node (ref \\\"U1\\\") (pin \\\"19\\\") (pinfunction \\\"GPIO5/ADC2_CH0\\\") ... (node (ref \\\"U2\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\") ... (node (ref \\\"U3\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\") ... (node (ref \\\"U4\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\")\"\n        }\n      ],\n      \"impact\": \"Clocking the MAX31855s above their supported serial-clock rate can cause invalid or unreliable temperature readings and fault reporting, potentially affecting heater control.\",\n      \"confidence\": 0.97\n    }\n  ],\n  \"summary\": \"The shared thermocouple SPI bus is described as running at 60 MHz, above the MAX31855's 5 MHz maximum serial-clock rate. This risks unreliable temperature acquisition across all three channels.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.97,
+      "anomalies": [
+        {
+          "category": "other",
+          "components": [
+            "U1",
+            "U2",
+            "U3",
+            "U4"
+          ],
+          "pins": [
+            "U1.19",
+            "U2.5",
+            "U3.5",
+            "U4.5"
+          ],
+          "nets": [
+            "SCK"
+          ],
+          "observed": "The specification says firmware configures SPI2 at 60 MHz, and the netlist connects that SCK signal from U1 GPIO5 to all three MAX31855 interfaces.",
+          "expected": "Keep the MAX31855 serial clock at or below its 5 MHz maximum; configure the SPI bus accordingly.",
+          "evidence": [
+            {
+              "source": "spec",
+              "quote": "SPI2 configured at 60 MHz, mode 0, with sck on GPIO5 and miso on GPIO10"
+            },
+            {
+              "source": "spec",
+              "quote": "Three identical channels, each built around a MAX31855KASA"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"33\") (name \"SCK\") ... (node (ref \"U1\") (pin \"19\") (pinfunction \"GPIO5/ADC2_CH0\") ... (node (ref \"U2\") (pin \"5\") (pinfunction \"SCK\") ... (node (ref \"U3\") (pin \"5\") (pinfunction \"SCK\") ... (node (ref \"U4\") (pin \"5\") (pinfunction \"SCK\")"
+            }
+          ],
+          "impact": "Clocking the MAX31855s above their supported serial-clock rate can cause invalid or unreliable temperature readings and fault reporting, potentially affecting heater control.",
+          "confidence": 0.97
+        }
+      ],
+      "summary": "The shared thermocouple SPI bus is described as running at 60 MHz, above the MAX31855's 5 MHz maximum serial-clock rate. This risks unreliable temperature acquisition across all three channels."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Inspecting wiring issues**\n\nI need to look into the wiring for AP63203, specifically whether pin FB is tied to +3V3. Is the output fixed at 3.3V? It's essential to clarify if AP63200 is adjustable. If we ground CL for the TPS1H200, that might help with current limits. It seems there's a potential defect in the netlist for the fan tach, especially with the diode connections. I need to ensure the orientation aligns correctly to prevent issues with the open collector output on the fan tach.**Analyzing circuit details**\n\nI need to confirm the TVS is bidirectional to ground. Is PR1 tied to ground, making it the priority input? If OV pins are grounded, they might disable the over-voltage function, which seems likely. U5 is powered at 12V and 5V, with a max of 22V. I should also check U6\u2019s DIAG_EN and its connection. The D7 diode looks like it could be a TVS, possibly the SS14. There might be inconsistencies in the spec documents regarding the diode specs. Finding the heater connector pin is also crucial for clarity.**Clarifying connector details**\n\nIt looks like J5 might be an unused connector, but I see pin 2 is labeled as HEATER and pin 1 as GND. J6 also has a pin 2 going to U6 output and pin 1 grounded. That gives me two terminals related to the heater, but the spec states clearly that the output goes to J6. I'm trying to figure out what J5 is all about, as it seems a bit confusing to have two heater-related terminals."
+  },
+  "usage": {
+    "prompt_tokens": 39908,
+    "completion_tokens": 2078,
+    "reasoning_tokens": 1622,
+    "cached_tokens": 0,
+    "total_tokens": 41986,
+    "cost_usd": 0.006027425,
+    "cost_details": {
+      "upstream_inference_cost": 0.006027425,
+      "upstream_inference_prompt_cost": 0.004988425,
+      "upstream_inference_completions_cost": 0.001039
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:37:37.941740+00:00",
+    "ended_at": "2026-11-13T15:38:00.360877+00:00",
+    "latency_s": 22.42
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:37:38.122Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4709,
+    "moderation_latency": null,
+    "generation_time": 22329,
+    "tokens_prompt": 31213,
+    "tokens_completion": 1286,
+    "native_tokens_prompt": 39908,
+    "native_tokens_completion": 2078,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1622,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.006027425,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794584258-OJQhdsbUxf0wOqWQwhGC",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794584258-XGStAVnlQkUMfCL0awZo",
+    "upstream_id": "resp_0782fd83ab831b27016af72ec256d087d1bcd5338fea358c16",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0782fd83ab831b27016af72ec256d087d1bcd5338fea358c16",
+        "is_byok": false,
+        "latency": 586,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.006027425,
+    "cache_discount": -0.000997625,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794584258-XGStAVnlQkUMfCL0awZo",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.97,\n  \"anomalies\": [\n    {\n      \"category\": \"other\",\n      \"components\": [\"U1\", \"U2\", \"U3\", \"U4\"],\n      \"pins\": [\"U1.19\", \"U2.5\", \"U3.5\", \"U4.5\"],\n      \"nets\": [\"SCK\"],\n      \"observed\": \"The specification says firmware configures SPI2 at 60 MHz, and the netlist connects that SCK signal from U1 GPIO5 to all three MAX31855 interfaces.\",\n      \"expected\": \"Keep the MAX31855 serial clock at or below its 5 MHz maximum; configure the SPI bus accordingly.\",\n      \"evidence\": [\n        {\n          \"source\": \"spec\",\n          \"quote\": \"SPI2 configured at 60 MHz, mode 0, with sck on GPIO5 and miso on GPIO10\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Three identical channels, each built around a MAX31855KASA\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"33\\\") (name \\\"SCK\\\") ... (node (ref \\\"U1\\\") (pin \\\"19\\\") (pinfunction \\\"GPIO5/ADC2_CH0\\\") ... (node (ref \\\"U2\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\") ... (node (ref \\\"U3\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\") ... (node (ref \\\"U4\\\") (pin \\\"5\\\") (pinfunction \\\"SCK\\\")\"\n        }\n      ],\n      \"impact\": \"Clocking the MAX31855s above their supported serial-clock rate can cause invalid or unreliable temperature readings and fault reporting, potentially affecting heater control.\",\n      \"confidence\": 0.97\n    }\n  ],\n  \"summary\": \"The shared thermocouple SPI bus is described as running at 60 MHz, above the MAX31855's 5 MHz maximum serial-clock rate. This risks unreliable temperature acquisition across all three channels.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Inspecting wiring issues**\n\nI need to look into the wiring for AP63203, specifically whether pin FB is tied to +3V3. Is the output fixed at 3.3V? It's essential to clarify if AP63200 is adjustable. If we ground CL for the TPS1H200, that might help with current limits. It seems there's a potential defect in the netlist for the fan tach, especially with the diode connections. I need to ensure the orientation aligns correctly to prevent issues with the open collector output on the fan tach.**Analyzing circuit details**\n\nI need to confirm the TVS is bidirectional to ground. Is PR1 tied to ground, making it the priority input? If OV pins are grounded, they might disable the over-voltage function, which seems likely. U5 is powered at 12V and 5V, with a max of 22V. I should also check U6\u2019s DIAG_EN and its connection. The D7 diode looks like it could be a TVS, possibly the SS14. There might be inconsistencies in the spec documents regarding the diode specs. Finding the heater connector pin is also crucial for clarity.**Clarifying connector details**\n\nIt looks like J5 might be an unused connector, but I see pin 2 is labeled as HEATER and pin 1 as GND. J6 also has a pin 2 going to U6 output and pin 1 grounded. That gives me two terminals related to the heater, but the spec states clearly that the output goes to J6. I'm trying to figure out what J5 is all about, as it seems a bit confusing to have two heater-related terminals.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Inspecting wiring issues**\n\nI need to look into the wiring for AP63203, specifically whether pin FB is tied to +3V3. Is the output fixed at 3.3V? It's essential to clarify if AP63200 is adjustable. If we ground CL for the TPS1H200, that might help with current limits. It seems there's a potential defect in the netlist for the fan tach, especially with the diode connections. I need to ensure the orientation aligns correctly to prevent issues with the open collector output on the fan tach.**Analyzing circuit details**\n\nI need to confirm the TVS is bidirectional to ground. Is PR1 tied to ground, making it the priority input? If OV pins are grounded, they might disable the over-voltage function, which seems likely. U5 is powered at 12V and 5V, with a max of 22V. I should also check U6\u2019s DIAG_EN and its connection. The D7 diode looks like it could be a TVS, possibly the SS14. There might be inconsistencies in the spec documents regarding the diode specs. Finding the heater connector pin is also crucial for clarity.**Clarifying connector details**\n\nIt looks like J5 might be an unused connector, but I see pin 2 is labeled as HEATER and pin 1 as GND. J6 also has a pin 2 going to U6 output and pin 1 grounded. That gives me two terminals related to the heater, but the spec states clearly that the output goes to J6. I'm trying to figure out what J5 is all about, as it seems a bit confusing to have two heater-related terminals.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y7LghEe-5QLRdwHMtWQ3lPSLl6cd799FoLqp9Qw956ddzhIatYbMi31WrkhoXatdR8xPTCRBB9JrcZlQ1aBFzCB_nP4dXVQaRcuf-Rze2Z7-yqVi6Tf97Hx93tpTfWD6uIlYettaCjXuPk5GINkaVQpmWVaKCShTRoIkIDWCr9Npm-gneurYRwZmTLDF6moDD3cxDmbdqmihaqQ-4slh8CW9eMnTY8VO4yjBgc_UIdqAxgppmLR31rXoehEUqfQPwPq_zCY5g6P_qqQBWs9hf2FICGAQwyHW9YbyD7_BpGpLp6zqSwFDMT0Dgc6vdlCMJZ9mY_kOVvMvpwBdpZcLAXexcL-FPRatik7y5mE0DFAZCOWXZT4Y55PelrEPueexpdit6mYcmQ6FTUr6UCmgtE1xvpAQ_6W_CWTNyujMNdsO4IOzRRygihyR94RCgKG3cO-WIlY08mxh8s6sI9Q07kBrFUrjiB_KYmIk4rbUEucN9zoe5bpMyVDH9CQGzpbppKCUUtRQ7YkwuOgB_1VQ5dLLFttxZmr3mqwoM38sCYKCk-sJ4KM7wIFxQhKoKLi-dC_HgPYIp-iFS6NvuvI8_xkJSTvgaJsFwzqyt_55ovq7FfkGRmDp71x94wqXkz3CGK4thnTtA2HnkyLQqMDOd7La_IdezICnqysuXCV-PC4Hd6gCU5fK1iNWU7sWs6rPcz7T3jFBh78evkYZ5zmMJhSMfXe3qbe3phczXViBdUVVyLbNuT-i_oxlINtl2c6DKMFbTfYOI1I3eKqMLjYHKz6NMiJ83R4EKyMW4JaX9yppMW2-utedxH4FdHB406UDmIEZQNJijY5EqoDLxuDm8HE1fdfKE9gcDA9E1E-8-vobNiCX9m67bQDKINh8cTcAi5HGvXqVzhm1-t8QzceSWuN3in7AKcMyogzhf1s-4dUrgtbFH5ksxhAtY2WU_L00gE323VNAjQouPiY9WHnHKWSkyCdB1cZmWoCPsNvwTxcqjifA3z8CMeX2WGWVEPGGTTTXDrDcECtystcbr7AFbEiFKovkxtJC50-quq8i1FaqhpbqW-UKPqtWa1Dd07ip1LyqIejAPrU-JHb9s1fYSM3MaRmIHlAWFE_UQhY6ybD2Qrqhv0zdD1w-PefXCEPfk_aTEFTHOn4Rq-HMfrWxLkVVIE3DN3ye_LArDZljCOoTURRkpxsVEZvohUppPsQijg_uZn64AJERxdPtE8NBTJY9kWyaIztb0Ss2U6M6_QFSDSggdba3Gt39HIfEJesCrDbzdahfB0U2w1VHhtmbXRosv3-Es7T16Rtz8CIoZh4XRyTsh41TiqHvlZba-6Q7RLqRoBiHiB8DZkC7j3UDPlAMuRmQeZYIK9H3hftm5O_RvTCaKaqUPyJ08vKqjwLumfs0xWrFl7jqX_UnbvbPXF2tVVNGp6Zh44b3PeADoAsbYdQunDtdDq4zoQxQxEcTkklQaE5A-yH251y1WiYfKPmrFRHHoZYgTFXqVZ_dHhgtmWvs4fnejKl0v30Jv8rckiytbuMLwr4t5IUXwR2B-TSF1o0K-DMI4Ckq9r9Xp_DhftQVHJbijYwt0gD8kfwazlQqCXf6VNZR7iUIkQJGqjIypQNXctAs8uWskBfYYyFovyhJozRbVSQDWS-ActVR686hRi8qSU5Fob6hEMMFZ5nY9F0UsI3-4pdh1ms99ScV9H4UGV35KjzwEm9sU3oZ78Z7Tm1EE_nUt3xxbGBA74GngvNNiMEFBS6oQme_rbYFGFE5ER4B4FrVwkgW2r4AK1heA6HDaHF-JP0OckbTEadY22W_oAc4Rpli7nOhr2e5ZsvJCCF7wNXZQ-yTc0SplvkIhxEO-L2EA7VJuzZNwi_TaNWv7y8kPWeoiVFn9psWDDfO20HQYBUCTG6B1Idbb7pOT2L-80rdP-z7fCUf_sUKdqpa77tLlTs61mHmfcYEIjABsi7J-ZuV0p2kU0DTLEmEFSkM2ONYPn_FYxdJ7B-D80YnTExVQdGdSIVz1lAXrgFMDbML-CEA9AFsjRCt72TlC0FV58jQTnfiNftahsLH6DPIwkKUjddIpWXxxdsOoVV3pjMQNWmWvvsdHrZR0WOAsYwg7haIAhDGXJEjZwRjw9zb3jJUdnW-wkS_DK3j8yU8eqwrnp3Dj7wE5aXKZpCcczUaP2W0zH6tpNOoFLWZgO4PX8VZYbJubG4Qxw5pr-yHzCclKVI6o57lf-yAXR_U_IwH2DjjbBSJoeTDqR2BXnx9xkwYcL8Xwtn8ZIabYyGEbLtV0PWZusvDxIF0EuyLbAMB4DR9rEvVC82fJdrbCVFxfARjySyewj5VChQycJRv85JkoxqQaFMc-8zaIkZ00IVlOgmqbgSWlKD7WQ9OOlKkddpyMsosyLYqtb1l_liGdgFpBsyaXEG4n5cbr_79c6b7xw7hEoAp__B8UGbExVaFWpU3XBj6f5MMyJKcHTKD-rZf4yHJPv9DFE3Cjg8KXQY8Pms7z54TuIBLlcGnaPx150Mo_n0p51alJzi_yz_j0LqLgAsgPTjcbE4cl_SVj_TBI09HDG_fj6-_r9v3NwsENu5mPkyPb-tFJ7cnxV6K86xKPrBbzXNS7HwwTU1fkVbPikwmH-nNPXDVa-HYIZb15Sqdp_OFJvZe5ogJwQr7AGM1HS_v8yEjLGFA3RZN28DXZbFNScaDWc89cymE3gIfE5dwcR9JNwT_G49AZ4xV1FswCgWnmau0QF79AhcLsKHWMt03S3MgYbVstkrYgj4LOiLlVEhcuetHxxfsk72DwA5mZoHR9FS5WwSfsDEOb8xLGq_IOhQT8PNSCpcmkPRsk26mTgtzJRc7qXUzDTFidhhrAg37MKJ5AJDHhX9iv7279UDdRCZ_athW280fH11YyDw3avObO5CKu9PUL6ae9wVf8LiOY5R_af_MlRTw-by_XT-M7mbn36aYHg-9Rrvf1RFdVk8VF7BEVb5Dyx49ntYc1jJJZsSr0ZUZP7PpDy6CRXNVi3vvOQptGgC0mL5Hz2ov7B7mv7tdM0oBeMRpnefGGn8BZyTMhySCiw7s7xJitke_Y0D1F6yZULyyuhPinZOrvOPyNeJQjhKBCyMEfLaeww14Bzr8CUQIbr37bn92CMgV5L8x4jxylJkDAyBLy04m6vpq81r_6lYL45_GbwM2HwKhPTWcqHihVMIUkklpHbOkCe4oI_KDhhDflxx9-dk1X09nvIDRB5RmxPI3Nx6c5cjnIlUnYSM_8Gt8-LZlUJOLq_NSz_hi_uv_HgpqiRyLmxeY5pgTXPQpfgZDTt8DQxkAizh-NWlirPnXuUDodQbsGlQj-5VgQlWUq4JmapLXDjK2b_H0QEQ_Ry5rDc5ByOpCx5KhZJpHggI8qaSN8nI5Hyz1QABVcK-R0hKxoqXLoXLzPxF7IPjKJm5SPzEoDfIEqCeYf9JHgmABJIuW8NnFgudWlsI-CH3iCmuVnrH6qaHb-8Gy5vXanCQqYQFnKGGuk-yMzr8s5_LKTPWjfPXEZn-VTORICtbfCAr6n56_ZGjsIzgtrDot2EJiOGAsm-OyObMRrZrKS_kf6NulzLbQUlOEgtRuaY0XylruOa5qi4kGx9HP78GZFkPTsmv_tJktvLrl05lliT9uQ1_XK8Q4hFhr4qDAOMJCpfS11Vli3L5EXoyaTxd5ektZLBwDbI6iwYVNjbhb2oVamYowAZbXxwSscVpd27mbqnRcJ5tAJ-7uKj9FILxDyFf22pgR1HGdWubaa0vF1lTKIKlXlsyJ12DjjA2kBhKZi29rf5jC4zIzRZrwqFCzTw8iUN6j4euecgjHTMHnqnQAxuoz2MNL9dL-E09yM7lBCsfwBaAfjma7nlj0H5fj4aH10tC6QznyIwzgCCrYoaSc_VNe4rG60A0r-kgjmD03qqvOPlPbn-LAzxVdKWzfiqkEjNHx-zGMbal-OAMszZiUCWy5XKSpSmpZ7jc0lrHLKFndoZMZIaa_yNk9MB7kEjYNyJOViJ_9HX5Ud5VE3oOzVdCfXRZzkxltyGn2OJTqbMk5l6flAJb3e5Z9Ezw5MsmtwNZCKQvpP8wI5NU6DIELQgwJ1GRTUsVpQfngfHOY6h18l7syJfaZfvtAxnNu9G8W1ymQtJiw-TcImw0sCvUON_X4dbOQ_YDWf3jmZeHmONb2EsdALbqX8tXuo8UWS7CqfGiMXvjWnJUATvSMl7uoRUM_yhDPDASAZDRdfJ6HKujOrBIQEtYvrKV8E2nTJNXjXkS4I7cuGu-1XTYwzXbkKbnDC17b9Vw6mfEzeWzmgrtrzW7Z0bfxTQygkWVUXyPD9FjI28GCau8FNct7UyjtlnoXfZjWPBR_tBjEHLcy6kuOqDPtReKnxKn6Hw7da7FJ7BlcpaoQpFi6OhI7DzvkfCxJFzhkpB2qaAsqhDYgCneMQO1NkCYK96Ze6qx4n1ytsSjyCvQY-OjtAcGHF_cMru8VAKwMfcq9ZL7HRjQ1XIuxChQ6VHWsQc-LtS9WynJUAjGj6yw36KitNUReq8q5PufEohAHNbWygl3RB4OKRpLrqxFXliVscMzgTzMBFBlXJiBl1oNyKRE1IBXOxsf9M_H-FYCKbsMi4AwrLvgvUFNqc6wvxw2Nev3ZwO4nXgcOe_MVsqBkz7kvAIBSzyOgPERWCvB4Y8afS8P6VxNa7tpMeWkXT0vpfoUKqSAP4m1CrWOuNSXHePRop0TiWktyWfbuUwi9dF3Ih2rYqus_tN0gJPjnX0BrtRGsOiwh-Ublm6V7OCpi3ce40CH0VedBVAV5jXVpBE4AP33x7DLbxpIKpBfr33NC8o7FlU5Ql8q7ROn967mnljmdTJHCxGdwDh1PM70k2p-bUb5DIOTzptVSRA4PORtQ91NXHjdKECOsYRp2i86mQwiRm_iFa-XjVrnE1DiU3DL7-0ce7gNv_F2TYdeNruBge0y6CY2quB1wHCq1hEzJ7v7se-uAlvtsUroFOTktArIwDfuVZjpie6ocrr2PAj3m8F4iB9ZzRivRxLZgpSqUURxhbbU5_uhB4er3EyRiLPl4mB6zveDOMYHqCIJ-G5r8rNUddCojG7_ZFHi5TYH2T_CPh8hAs0GuFZebYoHrxgPQGSg7DfPQlzpRRrgOwz0bhexMx7KTvMeZ9vVxhwCwAjTTExBMQc2_0Vl_isnh1wgOgRf7zdrrbdNEhfFwqEE4rsjDtdQshEyRD0xGeVuKb2fLqmx6CO7izQ_bsfUysOv7V3HWj9YFGE337dJDKwfGITKzKHOYnbItb5cXGxvyIMH4F5PefQUySvVMgYkAXnihO2ZBW-qTDt1yPeHM3IfJAgHL0musA8flXpuhXryJ06uDC21M6QfJwXF13yDFNUd-6V5zML8ZKi9GNFq5omnLvgeIsSPN-Q5eDmj4Q7R3TqT2AD2OzRTqMpUKMvy8vr966H5IPBVZU3Ae5AgjfG7gpDP7A47_YvNrZb_xRMmD1t9BsGeIP0OL2Ge1qJz8jzWpMNHIVwNh922yeA-p1310ozmE8iPzMmjlGt9UBDJracEDTYJXDuHbl9iYL2NOFJsO3ondcSwhCg261bmmA0oEJI5MFwIUZThRcsxKGyU-wTFuXW1hYlgpodPytHYLnVEdg3WFk4zUO8J_kP8IANxV7Gkg_drKZw0l6G__VIararJG9NWBGZofmWZa6xjqrclbEpn6KFYl56e5PAa2VCn4hliQcoQ7zIQPvGZSXJqQ7K0qGOZoaeiiLW3eWal8cNpQuoJbnww-SlJrDQ7uKWc9KVSHWN_8iST28bV8Sq2-FOGJKrJuN_EEILGPlsGBgWudwETYHOcGm00asjqjZdxzSPtw0yx_QPqMf2xrbIm__SM_woFaiY5q4fIJfC8-EZ0zvvaTGGEbmf5ZN2FL9rfgywSPKhu4wEuIV3wSVRpR7D8rnhUYGJOytm6C5xU3fo87SNe8SnDjZfhBMCEwCPHykBtlB6iTfYzFD5zayPA9RDZj8mt6tR6uLDH_0LuVbaGQnjm4fQS7BfayCyglNV5tSfDDFA91SsXgmgIoMA6AN63XIHu5a1krsRL4rHfsPTtDDev3flRgep-tVsJdR2YUAWxED-kiUwTpXCG8MbpNDH3E1U3soiBxbuPHTD7yZ0KaJ-pEwXRy5bEd-EtuDrDETWFjjXZyeUgcRSJxDYHPVSryjR1yD-UEtf3kPSsX3HxlMwqNhTfcL7nW1eKDKEtytSzYiMoabTiFi0l1dWkd-MdzOS3RULbGJVWHoovu1uCI5O6uDFJW0D0l8xji-7X7BU31K15UFqE2T9S8MFNKXfxy6COwy0gOzre3UyFb0uUrw1NLFBKgxzitppCyxFNRHDLaE5O5S5IHtRdJkGlsFpOvwIjFxDT7Xvo2EZPgyYwnRFgeQmPMPLk6PM1A2igEK3ohq-1768EjkkrUXdpyDNV2Twdj8QPYJNY4SywipH9ZICr1IMXo9upHyhJUZsIqjD5JRIkJdbh6-OI0iYUvFk2TRh2s_8LHQq-IizAZ3IGBrMvb3f-WORhlG0An844Qg_uvTgl54LSJy8Y5hkmxW33_qGKjJn1BVjEosUzD8pJSqr8h_yuCJNvmy7xZOOlHETSqyRgeRnqGIPlRYw34TF4iI6JFteeS_7LW1ZPqW0pgPQTqBKgTIeVNkn3vFIyYAUF8qRJjtXSiqC-vF8N3AghHnpeuY67VhQQ-XZ4oej1XElgQ-hI_Dn_c2Zn9PiLFcukvz4hc2wZb9OvBblU3lhr0pWYUNuKt570WGc9quyFXwykpta4wgxAdoV-2aCFY-DmSd1tYezHOE6t3bHrcbdHYK60dmN-rzJvIymy5aJi4KzowrmLVGkfbL2RhWF_qjqbYQjw4SCI38vZb1PLVgAtYLbq72eVhFxLg_fB8D0vHlM6FnFUPvEETzG7h5y1Z118q9xEtBA3z9_qMBdlMwHWEUaqOjvX9ioce-HTAmEPYxAHmSYGtgCwJ9SYKFE9TrHb4isnnU9nnkw61_XUdCb8f9BZJb8xTEV5hZHfcoz7ZshWoIyun8XJcHsREkctDiYMsvYoL1Qva5bWg7G_bkJU_Iho1qdnyxMC64wtWv5xyxJck347HBhHiMyPEIxeiiV6cIz5zD4b0WVMfWcDF_rMUEGcMli8wxyD-IB6BnFufZZsM-qEj8TEpR3bIBYLTD_0MxINtIipYgbDaG1tuj14vxj3Yk-r-l_uiTDt0nhirWa0iZl-5hfc7NKPaNPsJahJn4M8EW2Q3iMDjqNPcw9Uw8QC5KD4r_i5SVQx11wbl56o_hHbEKlaT5Z5PpBRLRJz7w1wso1eivNOc3STP1EnNR5HWUARyIYJl8gWJCdfWSXGiixiEVGaVfHTLjMD9_-2SUgd-4Sa96Tw0eMA3kgBzB_Pfu1mif7Ol5zY3eV3TrDIxI0ypSvz4_uFh4oCviUp9agWnmKtGDVxG2fC0s1aVkM2VGms884wxFjqn4gYD2xZDe-IJexZRm2pD36_3b1xYgfqEeBF0jBpT796oZ-SBPrHJ-L-7L7DRqntmv8eF3KNLas2sibChPpp6MEs3MXAmOAHCec5ZVF303L1vV8joWRppnpux8a9X0X6ckTYYDydVbX5TqWxLueL9CTy9wbUjyKqpWAa53FIgOiklNum2rjpbrDWvseKPH8JM2nPdV8YNI53XmnUXXL-sMiYy9VOI5H0VmMLgvYkuG4LE4czqBp6qEsJhoZ4TDrvlxBHA6Shu2ZFPF4Kh71p8xq0aklLleeatwTOB86OrISkpoexFOwHJ7A0BkgNdRwKeDSbLyN5XDfktA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0782fd83ab831b27016af72ec30dc087d184690ed44583e19f",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y7PRxaxj9PpF2wW8e8Zq-fbDUX5cXJYZ4RTeKFi9akNZ9Pid6sug24o2k3bGxFVr8fm3RVmwv96xHM4s3TmYMxFfaCP5Al13w-NlH8r-O1rEY616lecWlTRU3KS_Ng0f0N4R-2n7IgL5Gtts6cEDv4hL8SP6L-_fmUwmzRFGO49ZA5-1hlT8H50K1oH8JJELFHaV-adf6iLUL4nSOHDoKd_y6cHccqzVHNNR6hY6arIdUqKlgp8x7SYPKjGc5GFGspdTQXzhv0_sMGO5B2KG27Wo2tcE628RAjJw_yu6yQdhZJHRHmyj_rpS_Tl-u1JOhnTMx-nGHVVo-9JXs8KMRrtiYSeETmWeNwV_cT7Q0_9SHxKBYNfgdWXgH1IZ0TyBZDElN4Ia-ZbaN9Z8ecDeBCcqd78s6_zMZmIHL_o791rj_UQYbO_vA24A5DN_ksn3FtJt2exl4_48Ym_oaaZKk1N6dqhWR_yPHxXdHiRz1Vkc5actNlaMYi4uW0SBKs1IBrpC8U6M0FPtiVHSuSDqdtRrl8r0TJaFDSsLR_oliKsjiI1aUWagTWbXMQ2x6CwN5Ak739f8lS7zOhUlP-uOtAC-dM0VtliWzWewQZKFarqIjS7SlVpk66EbebGc2UdL_TFOhb6IwHqRRVZfUjt6b7KF84fh2cy9G8d1LliAuqRNbmiDHo8DSLRY4w9e88d8QjBjRXrhwaP2oj7IsIz8VkCEDGlEljS6E_qDojOV92Mv20SkQzxiuqR9n4d0FjzggyYU0_CCLf4cKhp6KihPkEcLlqCyDHLOK9wcJ76PUTXYxaXHuiFxA1WfOCqjySNiacmoDrTqqUqrQT1L0h72XRrWAlBoVdh2S5rvktrwlQfLyT6AwrLeG4zyFXjyaWYLQfGVKDiyTbMoUHjqrOzulH7728u91o9wtCcX_WFbPT3gxITiHrmAtZHANiyuYpUW6QDHgNxKROg_344L5_4U0VFwWrBnvKNoNhz3BUWRjP27siC-H4QOJjO8iVPUMUUccBGOQYKW_NdmYV01rdjd_-RN488i1eeQyGm-bniSDWsseTKRua2UK_rhKM9-s8j4AkuombGHvXTDLBh4TD3CWd1cYKM7N0eMJ4HnSkkfjFZBSosFaNcIv1d-4FhZhKfB9Sn3BDpgZKTzS_gqCcBBZA7oidP5iMku3cfHbX9Q8vHEHmIzZc0KDsVaBmRCVZz2_ohr7VBzvuiALtSPCYCocZCf34wfVtSIWire4xGhR0rOzAX1vjzSBYFeOLYHkupUmByHVSS4ITr27UVumvDT0hL0BsGBRkM9JtSaox8onP4j8cZTJIA1datxT2_cZFLJXMW5KgpEeADdMODSBmK-GeKvr8LRrLfi6IkQXEsWXNGZAb-yOEhv8rQE452kGUU4HEQG3z5s2nQP22xGuxQ3xykt3IIeflZhNhCIAAUbWQR2i_32nbZudMcidozbWef6FMEtWJR2SNzDCyrghKqsd4KvzHs2QylbgN9SFAlthMaKXP7rf0b5-Y8bfCmuioH2zjJnb4QdDKlaZDRE8rIlHti4SnrCYwQkFoX9frIJcSIiFtfmglzwIZkUU7vukhdYBXntp4fWQp6JtJBqCEDdMOgN1h99pT0uEv8dlZqP69Wp7iuV5qvq6N9mKO2HhJgsyy9PkK2v_7BtA_PK7Ek6geCSzvhbA2v5ZLWC6nTjueZl2eYr0is4Kt7WGjyhmSDS0cTVA_ZwlnrmaD2gNO26-IF9iSnxES1fmZwv89qiSmN34cdVqXSWWSYYp01t4Bukacls-2bGy3Q-sM4Hfxquyr8SvCh5MU1J4ukKZvwXazRYynsf7CqdkGBw4bi-4nwURayzBhDBlsk6PUSMpxDEmj3i4I7NP6AP6_qyAQfupOhq_lwQoeRIck8WVHJmB2hWEt7v-GT9TKjP8Waebzl0eAuamRieGAbbdhsq6ZwYYr-qcqtROBU2BS89shaP05c_cTHLAyad8Jn0W38ZG_qdoAXpsTfDUQ_0tvlj8XpO2XlmPSqIBT6Oycj-bfMz6R4QMTGarp2xk7MaxwFzPux_IGOAA42P240MyjcuzVCy9o3PD2CEIMP5I78bLgQlp0V_tNKTRLyOYlGgtBe2st6eW-xrgA2D95Kc86v2aHuCaGuEse3Z0DlU-aGQbRMr6HSP4Z_a7KNJSFuXnqBq9mmWByqj5JqG2yHzP25GxA6TjLf8-o15hmpUZwhOr3i3LPyqFYRsDa9L7nrZeWCKQrl67f2O4IE2oOgc189BId7NHm0nMk1xUu8YZQetLvt-4tJqkvto-ckBEwR35tO3D8oiQQiPmOrsqe9yRxbTBBmWUMprg9ydV-m7O0Q5uVCFdknvrm_yUG9kNrtqQcH5nvtD1XCoj17TCyqRVqKwAQjxvN1p3a6vmffvOawvg7BkpTcFZ0WKD_MFxmhnwsxZHmCs35sq0FlmdCDnyVzfhhqQPPtAKazdoSRleZzsjfQ3zI2jGvne7gOEAuNtgvvjhC4LgCr0FlBkcvyamPBzOxntnwlOYYvarBCAOrd1at4Ye3b3TEggSCC4OlD6yB4jKSf9NhQfdU_pkzx44MA8cv_sE0AKuR0IwSihp2HKiYFywt-F8KLVg9Rz6Rm3XkEuPU8JOYIYxo5OEInZ3fs-VjoFKdHIIxWJ8dhKJq5576LnLfvwMJOAhsmfZ2h1rLhI6CYazXwGt_UQMwRbu7d3TvssNsjFKnfUIR3p0RM3zt6d0e9vj0CHejlr9o-owd6T7wWl8ARL_zLyXEfznCOWYzb4BifvGmkDAwRhb-PI7b50Jo0k1nC9y190VfsRVZnuMUxlASpUCr2X-l-ktDImqH03kbFucrWogOXt9FTHIqIRFwCUH6_Ctg4FlVrr31PAakO10raCfz-9ij442XR5u1aeW4slgrzC6Z7cuyct5OF9bCjid9QdoVn5yCQXMWdSIY8wsxXRjp2F1gKb2liic8V8-klVoKX-KSpahguGO1-2JfSvHb-pMKmuG0XA6naMwOF7f9Z0q90_DsatR6VaPtlYnU52j1t3be_8NODcfeqWO3kvUlPxZHNQmql251x0E1j4EQ9oL5r13vOwhO1K5mYeQg_TWXJlBrcsVf5HumVhxG9MHh6gvX23Yh_zoAZdn1EgQEQV9zPXSLh1uUwIGdfES_SHUChd7Ku8qZcUcHU6YMeoDJn5hO7Nhr6OTljalBLw3iFf-vXvgpmBUJYhRElLdF50OZNay29wO4_2wR_A_uyfCgbUdnHQ31ASoQFMNs8aCP6O_HgPhcVsW3ZcKhUQGFJdb4kZ1bvXfAcwDYPrM5P8ElKFhfCJV-oRsiSP4LTygq7D6rzdzUFewlQwQ_WNp2zXwZaB47cym3lZvo1OkksK9Erlgj2Y0nLEZmX3wUNe3IAadkBoqJJRl5cJBvXRdKQtB1zkwri4TBrQG_TRcF27KdJm-fZpsxyvoQv_CerGBa8EXq4G3V-v7utAKD8alqg53aUqBomt6ZdxcOmYYt1sRoN_wTdirkIyQUyXZN5QOZM2IfCVIIpTB48CKZVTki5D5agkJGO-L1nBE_K064GO-IpBOeNhjx-lrrNgtwj8oPQXzJup6j1hvrtrVq91HzJLxvp9ZFNSC3ROEYnI5z034qR0VYLjL7oIXMerxjp8ZaPt3K-Va2mgW2lRd4FlJfarapr9i4awdkLluLsGWUnj7svByEesnWyxw2niGWtKu7D330UXffgVahUXUOp4WkIygs2YvqtziiSP0kSrJUIbqAVD-lzPKcZ13wUBhXQ3BUZ_z0a4DTHyKLMbrhaZBaODYnbBczbjZ1YCFWDhksFVPHAnuz_k3RRh6Kj0NxcV_rcem_t5TogeT5zQ5v4mMfRHQkbz-zSPBtIgWv4sb-gQKQ88g-iS5t6KboYcHEqYDHS7dR2AkepZz1AQOtDRrOUlyidKl3RF2VK0UBlnSkM5UzSFls7d1ISXq9nCPucTYc1vogxlNM383bRfoFBBiJ54NZEwOWSyqgBLE7f7NrswvjELgyDerEHTWFlihUqooQmqBgnUGb0NlbbJNJWsDvsSUjRuVb-3zRlqTfvCnTePTxsNmfs_xTeVGY99OI4Fgq3C13k4GPzOPa9AgleK79UAhqsNCUlXhQEWDcrekhz9sCEvT7vxuQ6cS9yg-6FrqeWunw6UiPGwGjJjvOLUJdMLpnzJIFigw1kGsX34QlTS9YNCRhRWgFIpTph140aDxE3_AQwRu5gt6LL-yNdY-w0tynAN82AWUj9OKkOgztRPWV8OfaRY2tCOrQt3gitlcLFQRjC3lBGF2SOC4p0487y1dmBPNtvCaWSkzLkKhN99gvFWTjR19P1euKugQwn2eECP_IjJf5ixWbDryykBgOfKKs7TWzmLF_TUEfFb8quZMZxhKXtPWDH-PeCNlXrNzfTHygl5KeC1mOL2DorbcoNmoXAeUmZqF5lb87K_PSVwREc6j6I1VQ3O4YrQh6N1KJ0qyYMCa-a51f9a7J4biKyPVdZuZwle0tfBRtq5x3e7gnMDTkSvSiORAcDjna7mIPbkt5BVPCZM9NkDCZK1fkhq7y8WopM_wsJulvUDp1YmKJBMk1F-Zxz3J0Z-wGvr1KpoiWfbv2fAxhQfPt0Oh7M74vWJn1jkQIpOhFB09tgvuK6IGLLPEbBWi-i5n5nMhZl0BK78d8lzi6lq0iC0s_hynW3ykRHDq0D_S3ohG7rpn--57KuT-0Ny1AyCYvb-ga6qcFni83lucfEOCMxQgTltrrVYUzCoTW3eMA4Vz1A7v08HC79v14TzGEFBSuLMN3RzbEIQcThxvdb97qufrEWtCIA4PMpjJmWh0JpIkN8IpCxRUngnWJungGYEtRgtYHFDAUvM1YGJLkiHg3DP66HyfkOwID738r-KUvpdQ_EFS5-c2yjgFflzt-ev8mgWVqLcy3cBdiRfq1ET_CaDn_Ty_NFNcBO_paTTsRBMTlCgbEsu_nCO5W_KhoczdBclT179mZ6Y3N0OR_85NifPrd8CdArsA_cNdLWDkYD-aJ6YiuXi_0QH1-KfLULYMDZaKTLXx_NUUgOCDcWZuWnAScq83EGpl9pdczL-u5aDmbytZLUM5K2bQ534soUSilLm4EhCRjs7pSMTUF4fAUVrErQeN6z4911AIBzHAQdq64cIVzd259MXivJXQxSwCpymSy-wlql2SwvW_-lmvdME9Uy8CcA2fhy_6JYL6qmROPX1yTO4iOJFIAsaAts-zZXSIwqeuWpWTL-jvLIfP50rCc2Py0f2mCP7OXxOVRw40uUBzTuAy_LpG6JZgMsOlT5d2mBQV-Oj4TQuuqo7GtfcuVrvggQv-8bDU1Vd-8_sF7nfmmzoHF-oF2Jh66-g2wFiIKl9Q20QzZU4PVZbM2Ea8-3xExsVUOmp5Ye6huE10rDJfrfUwQU5BjT3iHQtUIJhu6qpiTKNPLxQLTcYJTS1iyt6dOUGicCGXNKYbC9y9e7fICw76Y2PV52pLW4Sxr6sLVike2n7-jkrZ5TbxlDmBxaF1eXg8VwuSLGz5_D9J10HTmIZ7DdWuClthKPruHHi1Oitk6N3QsJvcKhz28ilX1K1ENlmcLWmCPgudaXy78FuMn2Zchq8qbrjGr5_BiJV4s5XwL1T_w9ZLuUkrVxZf1AticfFe3ZmvSfshhUXhNhbABtHMQGqq4I1k2g5imqJFoQGAOeQbw5PpslEGuZoTW2ucnLQRicUGAId_B_jM1HFK2GRGOho1Vboav6nGbK4s3ql6debxBxeG5T5n10ad3KShDLiqMrX2ZpxEg0O-hktWe6WLGK3ANKsLtRw12RAsakpnl5aM_i_sRRsRKFqrqi3F31WcwQk0pvGcFJIhkdejtEpA5Rbmw3FtNbdBtCGIzAmRTZ7_G2YIGPY2k04GHJ9RI96uNh6KUzZ3eXYnfan7_RbrXVdVfRIqzOK_OP3Xn1o304tCFFu9_vNtpNe8ASM68tMiL1lHf770rbjytikWdD1vlfEzcEJxh-rwCJjOIXlzg9zYb0cWc3VcI9Uo6ZdBBX18CR_8ghn2IWmoJC90zuYgmnIA6onq3-fKik29LbOUxkvFZO7WM0hvNsJYqyhyeYUvPRh0taIX4Qr4IC8d3EdBPr5Ww5buZw7q5jO2m0jGPDGnqymVUcmdkmouUn_M3BTkC4KZQoPvEGl4q0B3jDqj_kgu-MElcJ-sk-q8w-90EG-O5xWVbdbkc9jrS68fQd3LK0MoHeN5Jz5braJavktQy7saaAPW0MdVh4krHdgHVrrM8A-yjqC_zN4zQ01YKVlmWOLobidPdxBb3yECskxAS0RmvjSICMYyJ8_7QV32pxd9VOPi4W_1khJwPN-Fe4UvpiJHs9FUg5a_mk4AzosdxWPR9VS9is1o-5J4yVMbSWAdQ_4fFLi_22t3-voDiMWnB9QXRmxSyktPBaGguD4PIuvlhmyOuYxxLcuR9_kvd0EmtrwS_dQ0rht-HSBwopyeU_4lrjV0mfhl6jxAjcor1sVSqgfntAQAzsGDMPYKJhTBvH7bIFXszrAO6xHUkoya8Igo1MM2iHLum4T9DUl3zp116aBqYklC_OMEpdrwXTL9lwPUF1muqPTTqHXURGS079wOD7XHOIiVb1voJgw5zmntCMsEX66sC-aimSwmbhniorGRXDjbGuXlXIpkyUrH8bBuIaPM3ur1jT0k5oT5HKaOnUJ4tHJYWIfMsFD-eo9BWKFxiWFU_MLL6tkZPhHe3gFT3iR6vbYMUqWua2FJ7q5cDxHT6Dq3NhSBfrddTm1gmmAGdRLIlDFz3QQwxwR62p_3OHlWcD_QGFV_ZwWkcBo-BneBRLgrXCqLFY6KtOTmnuBA1bQov526O_RQ8gGx8NTUeCVNhUL0H9A82D01qzX8TdjHr_I8KTPE4dQS2EJ7_IfeC75Ndn_RbJC0k8C1iRu_6z0nhu-OKU7ha1hYADZIWvSnl6agGDicn563JMIgeT_o6aTIcq6CXa17TYEQcLOEnNWFNoRThFIkdnNdLnQlYVPRgqNWsmJCW2xCerbdhVJMKqSIyd_J0QnyWI4o3YcLpYam_F_3meluoj8rIODml9Pq8FKdKpyn6Toit1CVQ0L1kojVUJxXvo9nsryNSn_RkdiQ0I-KMfX-Z7pNbuAnh2T6Zg7iwvMDrY90gQqS1eeDPNEDZLtIPn_MPRDVNzNZdWZLmjHDT8iqi6tCFA-fy9TJnNNwH69Dvv6WfkvHPiIbHROsZHHyOoixPFXuQ-viPMXAijOEka7jHfQDSlfQHqU6rKcHIO4Eim3kz7D5QzTVF1AqTwJjm-WXELgqX1iEBWhqIEy7GuXxip4Elmm_607O3Xv39uKMpkVNVIa5f_oHYx4-90MVEfqd6FCJjP47oK_GbRgMSS0oLs9S2LPD-kt1SJeF84y1woQcvSBxNpsaOkQ9S0ebe67twWTPIdNy-Zj5SyCpCdRfbsvfeO5FKKGffg-wgSaUe9lomrq7qNFaax_c8FQa0c_35T8p6knjrLjWGfquicc_g0qWkAyC74lTa3Z8hzWdQhImK9SoBlKmFal7noHCHgj7M3WTpSebeeh76dDA9Cv71TkMHHyZ2jX6rAc_u8yzKwZY5zSPML6yI_7GuKenz1WiPpB8irZ-FDSpplQA0TIE73V7WsAXWT_3oE5B7a1BgfNUycVZ7tXzSeSORCh31GET1nn_YTGg-SAmI74gZPVrP5THM8C_OfiNbVyAyfRHg56J20VcJ72nPHFn3HWESO7h8Zh1yNw-cRvMCC6kixXnehK_3Mp92CGWEf-NZoGho13eIKDZfwcFFxbhq-HDXw8vts-ish-qPIyj1cpfr5MoDqGgDXNSQcxE1Nuw4DQsya61rOwRLJ0HJsba2bh4o_yY8PGh4OCsWlTWkxGIB8U1R62DfnRmc-xoUCUp5DHqarhH01zTez0JrmjPaRojjpFn4rHesiAGRNhLFcLziL_mVT.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0782fd83ab831b27016af72ecbfb9487d1882b6b307fe86ac5",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing design anomalies**\n\nI\u2019m looking closely at the design files, which only include the netlist and SPICE information. The spec states 60 MHz, but the device can only handle 5 MHz. I need to check if other anomalies are present, like the SPI bus clock exceeding the max frequency. The MAX31855 operates at 5 MHz, but the firmware's SPI2 may be set incorrectly, potentially causing issues. It's crucial to confirm the netlist connections and understand the impact on thermocouple readings and safety. I need to be careful with these specifications!**Reviewing design evidence**\n\nThe question focuses on the design files, specifically the netlist and SPICE, but I need to include firmware details as specified. I suspect the electrical netlist may have anomalies, especially since there is a clear indication of clock overruns. It's important to note that the MAX31855's maximum SCLK is 5 MHz, per its datasheet. Although the spec mentions SPI2 is configured at 60 MHz, I can only use netlist or specifications as evidence. I should report on this accurately!**Clarifying specifications**\n\nThe spec explicitly states that \"SPI2 configured at 60 MHz,\" which I need to consider. However, to stay accurate, I should reference the actual maximum frequency of the device. The user expects evidence from the quoted files and the datasheet metadata. According to the datasheet, the MAX31855's SCK should operate at or below 5 MHz, not the requested 60 MHz. I\u2019ll keep this in mind while I clarify everything concerning the SCK lines and relevant components. My confidence level is quite high at 98%.",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y7VnmqkvLowS0RLQnzqVXxdStVmLy1Y0j7R7fhVfnaghsG_hScIirZI9PV-sO8YF3RkVqSIvN3oeD04d855KGh-3i9_UTUQmJ31hKUqO_wYAP158QBNMsTevQFPy-FR6Wtpic1EIlPchB-34JHG8q0e9d6Pa55h6-P-N1V1vHaNf5lg2eKr7DKZaXJNZsIlQ9nRXdWaDGJ4X2mBWZ7P5O9QMgSDgnNNEpmWQ9nJEdmktV5dfYkVtLC1rszUw8kQwPqgXw7-oRZz9E_Bwp_Vd1mJoBEBj5nxIVtAIGQp0s5Wl4LVUKGxbjKOAam99FEM246fQpAYD-rH_QuS35Cx7ad4uy6sLINcpXeXI04NMzaHWEw1QiB6e6UdGV0rQH-B86CNSFrrRkAkVjXzQagM9moK1qvCygBnEV0aJtZZexExqrZKzN4h5ARcm5p7Z68GGO499X20Ki42i0V6oUlivg1qYbR_1h6ZLGaRhLCBxfi0XWXwraXDXQ4oki8H2RmhNnp4lZR1jrBUmjJcCIi9qwp5sBIUfjv25F7gitIVcIPYfnudwWLhkt6iiiUemlZa53E-3nAw1_YILnWG9eCRZx0HNn4XOmJ7ulqf9Ec01vzBGUo51t2Tm3G3TRKt8jbNt9wrhMDnYc2CG4HIZyAM6KopfpsTqfJ-He8XjuOveHEZ5WqHd6PYiIGTEslp-zbY1NLuAquQ2VHhjexidaZCObjpSAevI4-m54ZGd2tK7xk-osu2x5vCawVgl0_UYPK6tV-qfjh_Wzu46KX7oAla98mZHLbII5UCFyc1mqtTMgHXHVr4HBq1QOySMdSD4Ex9iDG7EqEVn-r7lbk4Nfa67fHzXsgCBLQypdInrmcas4_XjLbJ1rDmC-mOCwib2CAo28ABnP-JFPoKRMnwCjwXqLKMru27f5pxGuQRAdWdBvMmV6hFjmHxwMgtNILEEXEUZ9gvXINz1Q9g7yZzU-0LqCVEPymoc5M8zt6SvJLXaSQDE1ZjCWU4D3zeubW_fqqT6czYX1R3yTjWeazPZpSPWuNYMZ16trpl5P0UtsSylx1HMvLm3hDvnSRuipvkdfzooZgrY0_z23yH2vbfQMdkEYXUOao29XLaLU4DZZlRvaWx95TnNj6bZ3sqfCCpqc2x_6hta97nEnF_vKjxiruSyMu8FDjOopNzs0pUMo8AYxNXm57xBjrjENuIrgfVuX5vwE_EC5tb7F9-abIiECMR30Fl1PP7iQ5lDUgzxni074UCqMGneEmYFbFE8THAO4XHDsXN7ThYkuFvCbxGuAQm2-UBDkT2MLe2pppcthtVNk2kgcp2-FeVfMq_blw0dghMu78AIXuItcXjK60RZOXcLx6pnBVc1t53g6xvfldNNS3YH1Odqe3CRe96pJOybmx98dt87OdkCZREaY64zRUleZUGUOwdZ-lEieqsRa8sKfWNN5egglOQZam-qd6SvcCkjajcoZ6VwUqXvSbgcTdp3tchKFY9TT0coGfBHYw0h1Jle7-Fy0IwsnEECJb3LAe45tOkIpRpGjKRs_1iARvYGjQta-GDzuWTNpd93sUi6n2PoCdpwpROqo8iiSzgxSE2zpM3LwIBM4dyZwg1a3hSvok5WoeS6N7C8ZBiWfB80YEQ_c8VhFp56TZ_qxWIL-fDwo7g3ZK0MNB4RQtp8qCxY_cm_I5vCh26JjFoMC4vidHnDL59tWSyOlnAONvkwaqmrFW4FvxuRUdwc_wr6ALwaxdUeJvE8Co719KuCLaZI7iVhKTekIpyCfpY3rDFoAB9lbk7mu1glTi-31H_uy2UoSyqVY33t6k38ogoCYPgYfKj8D_ZffR-GxOkWet2SeLPZftx192av2Z_qJm9rzwAp84YQxJMD_0OV_K4c_snJYqWrwjUMqHoLUtzaQqYdx_jo6G2PoOmMcyyvKZ6qyb_uiwSkWT2DjXDjuzZlWetqZlBmDW8iPVE0CTVmTOmYzVurqNt9TmWSycUiusC5p-5EkMgrpTKOltQV4oX9b1HA21bwpyy0SVYIcrtDs6nTzYVjMtXKcBAwxil8eFsTk4AuFBs65a_YhS-ztUymOwTn9OU59wwBn5_t4dJoSOvP-Ex3eCg1QyugxzmL5B3oYDDkjpwL916-8tx6UDeuPasnS0mGdc23mO6VaEb3DQmc1rkoHMGq0tiO_wGhgs7dC3088N6vINIeWXL3h5IJ8AiXAK4VJMAv7Pyes387kDp8x8F-dIPvJI6f8xARKUKHK8-EsoScWNF0pxWina5t_-l-P7K5NaL0sWS74jHKYvIJzRK1mlxMfV68GL2cLwIA4epIAA758xUaM_-Y12LkcmJaZSvXVWRKWEArLpyAS7npjrHZVOgMP_ytkc7tLS2rU7kbFmhYOjfbav9yJsrRGHExIyV5uubwNgYFK5ZuCVfw5woSNgLBViKqkdVNqGG3XPMKoLHTjfV70O95EEUrtqXOd5f2CKulAsSiiOmHrUi8dg6AyFjW2rV17BiExrle4VUpoMhBa83zAGNa_p_1paiNtarKp3Z2q2TTqxpjGE0_ZBdiTPq3Tr43QexLVlSmsuq5HltvY8lwMhPwBC-7-o7pgH9ESWhnabaVaWfij0UhvzZpr6XnIYe59gw3lTCrh0t062awjYo5Bxn6kD3vAfmCiLx82X0ewldHP1YjPK-DTmUmU4BZPC_nVnjL2gQFRBwDE8Mjtdcyw9brUaiwrL82WnLsSOfhLj-uSppIw7SILuYkjv7B3_j9x3S1xvDhpbwgmZrToYP_uwhDwMiLm5mPUl1fp9vhBRoySfYxIVDtW-iuK7YLXO4CmhXj3JyM_uJ43SoKkNOPFe20dmIzlEdJZahyS2m5L8f0m0MiwVfJ_ey-wcT7qLXVIZYla0Kaez3EgmFi07-CxK1BG_lrW3J2-voCAbWOnbZiyL4bkkdqZjPExkQ6fJttmoS36gAQ4sJW9XQU_RvNdivL5ALm5iq1Hq20RHoj2Rac5ggrbXpbYf3DQntaS9j5m3tPQ9vdlxLZUuI04GLdejd-xtrJDWqfvYO5VKNy_xdNsMmDQBJuH5wGVcvOmd7KoHh1VMf15obbRidjSBB18JYmVS-JgZ-Oc0qH2DpwjPJXhQ3kZ4oMxVyMkkGRSD8xgljChyWRU4XgJf-OjzW3W4N0XM45GsjgSdrZ2V3EbTZtrhlP_zCDBtL1wzXznq5Haqj2cHeiZPLB_2o3bvkrRvLGYkbEdNttYraGIMqxhiS0JCVIUuzv8Ksblvpsu0gQdB7_5kzmzR0zb-NkGYiXMMCpM7Q9jaUTFIgmIwZE7D_ac5a1NCyrjonbhGF61XC2mgvH5GiaRDLWhyEJJgzCzuw2WO6K6fiQ5wtCvmXWxcKl-2SwE1v40GxHiq75l0tY2GOVW6fHrFdSxdNS9KASnw_97IyC5tfyyAvP6IFJXug4e1UMS9e2F3SYofQsTYlI-1BiR87xTUWbwrYm4go05bv41LsFCmZXrGPTZEc86weRUveq-2u-HQrRI4OVESsMVdhq5nFXE4_ye-aLDv9FW7S5TEki3h1qYxjqfTvXZxjuJ18oWIpMuWzO8NBQkj_Gz7xMEO4MYESv1jOriJgXobLtFdePexWf8Fgs84K779aKfs4O4uyorJ84N-G0EiMwrqGH5B4ItdXzqHWJ1A6GyDXu51Gw0920F5wHRYp6illeTMRH3_ZcW9OqTp5N9bZoKAqzT5jgAoGWOTvwrX57nPnmBK3Kxwz5BrHuXf7HZEsrvKbooblnPqEfmHX20JDQtmbgjfI58bv-60QYwYJwxhDHN6kuhiarA8tWT_V6tfH0Ke42dWb_je72hlV5ygbUZqp8F1nl1ZpLHTz9zq-zJ0w-t1Ak333zsBYr9U4-5ZgqcgZKwkIzUnPngNTi_05Icf6Q9JfSAcsJEVtXdBrl7jjxY1_UeDB0jVSimFObX3-CUVCM4ZaM_sYnnYiUaPNeARNPYQCs6__k-1EMLojkeXatOzPDssEu9qaddPxOyu05hykYp3vs60qKtME45cykiA79JXh4wupILkWh9DqTCnklVg2ZPHokkyAVFcRPA7rdE6Yi8Wk7J_aAWO2CdeH4389CrVHH9V4K5Vt2LI1n35r1uwIbpaXQ-vMMPT12C2Zo3YAJIUnt-Xk5Wd4HWKQxMnCUzLvFI5mkdFJUZ1nAnDIcO8nBzMFEblYaA4XR40JOuk5_dcLXSVeGY9jDqYrccTxGCM_1IdbgYqBFAZwXEEQ5MdtVlNi2AX9OlqZLjQOL2QJ2sNiqG4q1wM-LKrHM_N8IvheWrubrcSQjAcqWyuGE4U6vshKb8sNS6Okwinn8wVgmYAjutZXYNUUEd8EeeodYP_Cz4y3Fy43GhB4yEzt8GLuCpCv_KAT26y412BJZolnpkti_SbnHvNsS0guBP2lvHFwI0ZwZzuEYQsu3oUT7mQk8ATWs7fNqF4FaLObxcdLFQPYScPvriseBhPQhZ0d94Cr6klPCzUYr-OJIuPIsJHUsLlgt1KaoHnio12usuGq9mAXgk7xc_dYDn2_zTocneu-AhAn6X3rqXjV3tp2vwdYB8sKPa4DvfURKkDjbWTV2_CpTjGXogVqwXkerziME_4zsg2FqWCI8hmHBHJpetj8O28gmQ6efPTmlzXDFl8ao-t2ZQn_QKZvWI3LMiN0q6RNGWTGxHskkB8mhmU29AGI_xjw5xwEhOvIpKEIQqyhzt1yC2-AGFKA-qGxcjJpBjBylt0DF5AICyRbLBwRd_yJH5w9vLoIkDEa0b_fKqmhOmBKaDT-NN-hBsEpr8AVaEBp-MLtC9VEvs-ELPHzwEF-AXulGV73MFDIIlTWvnYkpz3tJXmIsK7aNhygUqrYvoxV_AJn7LZJCs7OcWQb7aHVHQxddziA2IZh4n-lkjovSEemTfrvjcUOWrKEMpoMabEguDuEkQMUcBWXWa7UxI4acp12klGHKSwU8b4jcgdBei7T_ZL5F4h58EOYHyliH-YbVzseKZhRrdFY3w0D2gMtfIdPoOMY0zMEo1dlL0gDJnNMFE3mazPYXkfdHHglm0AtT_wq-ea_O0FeuNntiO8vVHPbV_ACJnXRGIGgw4Gizil440JiV8YEuwKq_MwOPY391BHP2LEsFAKA8zW_GCGFqsI6ocqxkI0HAL9AlTS1SYY1TNY06rUkwQc4egBiOAoUwx9D3Av8SJ12FlEokPuzjJAwSUqIy3Xme72qhyzQ5LWw4jLhTbddC12pX6HtnnNlSAQIybWvyWT3SFPr0dE3IaeiYqMXFzyk_pd1wdpTf6lcTiR43K5wIjSVhCZpcxEXTc1jLABlF7P83IueNrQrSW6SkImf3P20qnjOsrfU6cl8mter3-noNrzVOVvNfcK45wnohxoWZ6kNzxu55pZ2c9Jz9dM6QpWysGp0U3WckTi6BV2SbiCOyrvtL96VA7k1UlBJ1sC9mKAE1G-ghhIn66m-KCNt-qFjueE0CbHcBq-bAxvVcnOMHQzc6tjOXzXOXidc13sKPwJFnauyy4T1etfKJppOV5pqXhvny3L5uISom2vd2B4YG2nRL_vA3dqUJCTwqLk0efORP40X6s05arVljtUpKKZHkqtxXn84F2Wq0-D--eD5Z3qRJsshSiLKAiqKKsef7WsjN_DPmTChZhvNqItMTHTL7COoybY_KRJss904fy1B-ORZXF2RZaR9RHljzGcQt4qCJqbW8eioJ3pUPCLh_uX2X5KTm248vR1HTy26qxzD8qqgAYKrnEZWE03_pj760X7bx1HxTgBBKZt16uPrsmLBmNYVtJRvZGY5KAmPXyQACJwD0PiKVD-a364Uv-27vnEsxl2mSa__H5cMTZ8vPS2N0ZR3IlDIUfKRjTFDPKUY_1KprB4caNdF7fCY_BxUGNrqAbuGiINSE8qNop71wT_0uIN4RWNRpER7VhDa0FrsufPnpx0QtmeXmTHT0BBWBzrDeA2RaXH41bXsO_8Ji6CZy95hiqXcjikqfyvhrGggzizTXpEsPKA18nbQ6H7orUCSS1bX2T0V7BuSIe4KS51SBk6kyKaMGY46XeIG2C9_8nxCkAOn-3KzcmW_71NUihVSfSNkSJeSTPQZcr1dhZlj0WW9IQiEzKozVUHAptXC3tud4z9MnlNG098jOhAxRfEMoEWQbQHUxbWMxJ2PxQtaM3L2fLnCWt9ZOwegnrM25SQ1MF_8vkEcEsT0G7egd1BU_p3l-M_DI-Xgi6bDsVCRFelpPGn4YUpWL91uDGHwiopTS87VNJaeu7-CeGVcbdQ3jDzkTm_sSKeqt8qubc_qqiz1jGzrmXfysLiRfttOe3GVU7Smacx1FX0aVcu4EaBm_b02PzgLq1nbQCamUuhuB6gJoEaYQZ9-8vpayCvOEYui0BfGpvdciE4NzJbSYzRdUZGi1iRIXssqIMKI_16jQ0dewYBliPo9u3J2ORuplpGmat_FmX9kAZcoa7N1ZvUhrB5q_XsFWuC-AIeZVyuWnSpJiucfOHXxoNM8WTTxVkVQkOuvpTDKdGf0CAOklQfPftPfa6UfxZeyiQcmWB1yjBGEXJspxY6XZ0w7ohWR8PoY7DuFl5qMFBUW4bUVHU2TOxLWEmzWl_ObwzL7IkQHvJI-c46L5ZhOlCHgIr2oIcYQNEkJQV2wsXcD-jsN7C4ytFd9GwQoc2zmmTfv2NfJR4Yn9nOkoRiQ0uW_M5SZadweBvwvJKNK6E-K07oZxDNpPguUiE-pMU6n4nCiRG6XEW_ZbR_83PRW3j9NmoPdmXv0SPL9xkBzecl5Ph8hsjSm1yms9eu9pAqFoFKS3uNl9MhlQyaFGEhnRhaPtU8UTGev67JXFrP57xu7BUgtNK5608QXh9NVtC9msVfFjdxxR9HBFMgvWk-8FZA0IRfqSNwfvrsNxfyFXCCPIcI59DylExWWHt633MdVPo4NFlJJf5rCEuF6y4SKsDHj_mTtPZ3rxSB_CzkGBzwMkxgzBjeRN13tI_SOsguGH0nsR6yPFFIomo0TvWlPeKDgA9e7D9Z584HFOdr0QciJkJTZW46qhEMOc-o3xiWyKloM6s93etgtOKlTsqiUR60a6pGB4kKlJ7jP_P0qm0NemwEvYZV13VcflIiGhvkCnnOIXdReMWFaQRzTwRVmFr4Zd8BE-dBA2lyjlv8aNeQdlawgj5MJxwVFL_4BMMn68R0CZIUXUjyRD4NGosLJX9cDGR-c8UG3W354sDNuRwv9g7EKqwFw4-laLKeBQILMezSt7V95ZE_VhIF7tdJG7U7WKyVEeI7DDZQqec4w5AwOyg5Tc4Axm4hgL7Qqu03EaLTiM-0-zFD8tr0Iqmzm1VLpms5MLNjeqIxR91qBpyhj0nQjeckVCj8n0Wk_rI2hMw-h5oDSUQUTT5Sb40b81rVLDLhhxQcW7TFm6yaqWnsWHN5-_9mWcgbRAfHula5L_LjSdtV7vLPkfREvOJaAcxxhTz2qCrtVupr0dmO8kD0ENHCyEcbZNBu_CQkTjGuuZXgfnR-xy2hDsaRQXbIDOIfXB6ou0TcG-TcCKQ3LY-DTrT_9Y8mbmrYgQyROD92ktzMYbxvD5saNgzQrZeaBsSHfmxJTVEYaKyp1XPQYcBh_Wbin0vSI97RMXnKjyrcK_nRWzYS9p3mbCBWDfXDor_atsOGCri9p0pWi2koTwbpzWx2sWssX1G4cIpHk0MILmRwHU7lPrZQwrjS3PMwmmUylhDASX_pPwRmqQn87VEsoXhFuvbOyf4vvrMj3uNBuGb7JyBgekG3nyZIRPs_04XOjFYYHxx8TvEO3pRS8bENesv1GnU8OKsDz_6lyvA8Hk-QdbfH9YX6OQSLGwg4N_HIuGPfx-QmoEEnundZPFwTcYo7xNs94RNxsEsA_Ejnh4wW8reDl3nCovh13vVn8Pd_JKJj-zvDTi37epMpQckfUj2CCUDNT0YWnjfjYzsR-9l7yksawlGKmjWExN_21fngHHs3Zzrw7yl6Pq4zwBHtUwresLSmHaiG06L7iBP1t6YHfZcRqIuHXOG6zFcajg-x0iGVcnwDerWkJxzIaSziTBQCT699ZIIXmTABd7ampzg6F7UzPFL8lAP6NSo0qKnyRoEouTJr497Npaa88fSjaqGgoqWbFSRNkQwoE2P09zUJowtKt3N9A8Hn2VeBnMxT5cQJBu6NRvfFdwo7bzokgtg_d3LwKak1Cc51zrAa8CqNpgpxYgXRCSxZxE9hGCdzIrPlhH8ex5XfqRD_poIuaOuzLmCKxTJOcCe2DOvG38DBh2wjhhNXiqghASJVH8Yhae6IpldIn7r6d1jGsL4uDW6MGg2ia3xlqx5OVWeA6ElAxY2g=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0782fd83ab831b27016af72ecf9f4087d1bdea84eb546ed2ad",
+              "index": 4
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating clock configuration**\n\nI'm thinking about how to configure a clock divider for a requested frequency. The hardware maximum for the SPI peripheral seems to be around 60 MHz, but if I'm requesting 60 MHz, that might push the device limit. I wonder if the bus can be set at 60 MHz, even though reading four bytes signals a potential issue. I only have the spec evidence and a netlist to rely on here, so one anomaly should be enough to highlight.",
+              "format": "openai-responses-v1",
+              "index": 5
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y7WpJgOlJrHKXdCWjODJ9nzzMhbSKljhABWglsm6YJByDmJpw7DKbNYcNP-LtMNj3s7DubIJdk5boXl_4usJ75PcVU5LE0qX21cOmJTKdwmKFNx1VTA1w0JeCLjEqXKBYZZrtM8Y0OeuO38T7yYEai0EtLglkEkfnthanqM4bvZvC_fwjIRwvQ6uS0GOCQnJvBMeAjLJEI-CD-2ZIrAtUPahrhFsWZARaWWwVM3ICwks-2cWPgI4er8xxVRjXV-S0xrTUCxWIVeZ9HHtFXbXszfDZeTrqy6iL42UIYatPerGqulfTAiE7Q5SuAKj_Yxos4SSuJAj09yl882e3DXYVyjONa_GzqZMwKmqjL0vV6wFVcx1ckpwDNbk9yikXWX_wIUySVHwSlnHyreqYQWoaz16NjhYl49KhHiogjUCUZEl-LIsosFRLE_d3abP2q5ggJdtYxk1niQMteiVXsSq9SmNXFMi1n96yHjaIWj1aJ0U-R1QbJbMUozp1psFa_SQIaMiZlQcN1gJ75x9rBcSI7VUjaYa9TpblRi55wFF_Q3NgZuTE_jOCxayxsPphf5xzcNcSkAL-9WdiBdSHdUTiHBiSFNzLL8NdajZcW6SNRdx2fAC4-vWIMy6SosTUoEQgJ8Xosbu6rVhJWos334LK9-FjwWtwoOqVvgp8Qh850MTpG15iIhimL4GVT_YbDH_065ekFm2_tBcTFVCtDL54aKMtMxl23ugA2H1oqdBKvj0JaxAkzs72s-KqY6zlJCh8ECyuyNujTfBqpWwgm9rphmWnKuNd99DxT1zmA6TZ9H3fDfoMs-aDeqCwk00scqK_tbiIzebu6FY2sPe7nXWCr8JMpk3RNDwLi9jw3H7Ful0Uxrjj33l_6Q_HkcPy_cTHVqMXemvki1Duh2esSs4sYIWHQtUdVxhpeovyVV-4-uuRHghfBZ__eQxYVjk1nh9R7_y325kpRUS0HFMhxCYEzlnV0CHmxDr_TheOcZmk74ktUtZl7oO_97IQs9uQiTisDQIWMZEkmXpHoz2i3VcXRsO3WCYzQZO94n1o62aZNvOW-oA5cXqR6vgsFX0hwih1wSVBK-GK0innw0SVGFCDBKMMYsknIBbEHKxauXRNks43qt5EztGfh9Pst7ROV38JANJAaftVkfULSwFs9OcsOJUuVHqsTHnLYOr0x0wpSM_BrUVhgmABz2m25fgcXiRCaleuvmyGIQiX6rb0jJt--FwWF8vwIozlmAf62L11BFpxn5hUbkiCG_-Xm-ZmZeX1hZshh5gDsI4ETDsm0i71gFWmzvAPOnzlcu4z88DikTXAT4R6_6L2LJu1X_1bdFBuFLrtq_NqnjNAQxgKHIuYRcrEqa42y-4R7VP_wDkwH8DgGELc5eU-UxcUVIggbusxvBWyclszlt8CyxGz5hpEkyNhkknDG9rURUJbQBzBk_OAZoUZXsomHVxqbFa1q81rVbt5LbbSi9VTiIx4QOGdQM6zw-HFLG2vGabiDzPyz9HTISPzBFWudfpLXdp7HtsahGH7ajF2RbUG6duV8YE964-0-Y1y2XBhcsXeitwVn_WHVoqm0Nw_NlwLGs9sFE1pvA4RJsTF9jFJ2e-WSq9SxNcVhkfT9vn2-futNF4ZZCiwsRRx4whnhr24wav5HBN4Lji9TmF1vtbx_M_or9pmhdNAegQPnwlFW0PdtAOI2EFrLUj9nXhxJyX_1WnoX7Qb64SUOWy6112gOt0eiWoKzQCUYv297-gZCLzkfRcQDgafev2XcRuu66QIeez2qhbJ15BufnuPvI3lOc_0bEeUEbASLyCxkchpEZa9-owdyaFRRNko0YFe2DNb-CrM44gOeLtsp17LZEwCykNfx5RyQ4ZUASSeC9iBZXJN1czMEyWoX-QjFpvWRz6Rp0lq_OI4tZjzhi4rdueNWFhSSMqrPUtQ7rm60DkOiOPGtVDaBt4RJBAzS32WXOpjqdOPXZDfeC1RhsF5oTDs7212werG0DSH7L3SaCCCjX6maEOA0NhxpDLZNiXEEhbvbShGydYmGW47adZEk0AZ5FYXNHunlkmSttLa6Wrtm7PbcSzqiXwby5cbe5wl4JnPgjPcWMsdtArDxJK7O5D_x9NDhBs64gnXpE0DGpnbFTHyCdnBgBI0maQXwSo759IUrI4ZkajKFacm4ww5Mu-YcRK_VyJNF1nar5TH65PkiV2SK4Sy3kcUQp_0OJRGaroJpxJLJeUzr-hmyXAO34iW1JDFj0fxG0ONdGLllkMEisRx8_7xm_WR9y3JUF2u_vTDDKYfd0CBbNUuaTrM9TX1sSgQcVMbB_6A4INIKSYTlb270g0fcki7Kj5wHwccysaYZ5hI8sB3Guox5H0_0SOjx7qxqde3raaFmqfGUQSwZ-vMiVKRC1LpplFfVYxJMam_a-a8Um--XIiOtmtjdZlIR1Lop3amsO6hoCg4MiIy35H4hpij7I1sFAEuPL2-2gU8L2rZocIFljg9Un0WhyoxcZRrtbEq5dPk9P9GATmwyGRJfaHzM1kGh_0kV3EB0a7KB2_V-Y7rj0h68PudEEUMB2tHy3HYcfCt2_JAqxlSGN-mmvhom6RtCqIOHzmx59FG-Y_iCJlyZoSyhUT9P2aJOaeVjF8kyEm-WbltXjlEEJgjpbjKWex2cIP_5YJuvdMZy20yDA8iLa.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0782fd83ab831b27016af72ed5757087d1a2fe127637be9f97",
+              "index": 6
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794584258,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2078,
+      "prompt_tokens": 39908,
+      "total_tokens": 41986,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1622,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 39905,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.006027425,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.006027425,
+        "upstream_inference_prompt_cost": 0.004988425,
+        "upstream_inference_completions_cost": 0.001039
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

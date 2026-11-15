@@ -1,0 +1,229 @@
+{
+  "id": "CF-Chef/ResistorMagnitudeDownRandom_Value1",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorMagnitudeDownRandom_Value1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorMagnitudeDownRandom_Value1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/ResistorMagnitudeDownRandom_Value1/spice.cir",
+    "chars": 122600,
+    "sha256": "102945e531ccfe3ed4209601c555a6bc7a50a39ca8aa4ea90cc25de83fd640a3"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R1\"],\n      \"pins\": [\"R1.2\", \"R1.1\", \"J12.A5\"],\n      \"nets\": [\"Net-(J12-CC1)\", \"GND\"],\n      \"observed\": \"R1 is specified as 5.1 \u03a9 between USB-C CC1 and GND; the SPICE deck also gives R1 as 5.1.\",\n      \"expected\": \"R1 should be 5.1 k\u03a9, the USB-C sink pull-down value specified for both CC pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R1\\\") (value \\\"5.1\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"24\\\") (name \\\"Net-(J12-CC1)\\\") ... (node (ref \\\"J12\\\") (pin \\\"A5\\\") (pinfunction \\\"CC1\\\")) ... (node (ref \\\"R1\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"R1 0 Net-_J12-CC1_ 5.1\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"USB-C CC1/CC2 pins go through R1/R7 (5.1 k\u03a9 each) to GND \u2014 the standard CC pull-down value\"\n        }\n      ],\n      \"impact\": \"The CC1 termination is about 1,000 times too low. A USB-C source may fail to recognize a valid sink or may see an abnormal CC condition, preventing or disrupting USB power through U5's IN2 input.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"Anomaly detected: R1 is 5.1 \u03a9 rather than the specified 5.1 k\u03a9 USB-C CC pull-down. The netlist and SPICE deck agree on the incorrect value.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "R1"
+          ],
+          "pins": [
+            "R1.2",
+            "R1.1",
+            "J12.A5"
+          ],
+          "nets": [
+            "Net-(J12-CC1)",
+            "GND"
+          ],
+          "observed": "R1 is specified as 5.1 \u03a9 between USB-C CC1 and GND; the SPICE deck also gives R1 as 5.1.",
+          "expected": "R1 should be 5.1 k\u03a9, the USB-C sink pull-down value specified for both CC pins.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R1\") (value \"5.1\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"24\") (name \"Net-(J12-CC1)\") ... (node (ref \"J12\") (pin \"A5\") (pinfunction \"CC1\")) ... (node (ref \"R1\") (pin \"2\")))"
+            },
+            {
+              "source": "spice",
+              "quote": "R1 0 Net-_J12-CC1_ 5.1"
+            },
+            {
+              "source": "spec",
+              "quote": "USB-C CC1/CC2 pins go through R1/R7 (5.1 k\u03a9 each) to GND \u2014 the standard CC pull-down value"
+            }
+          ],
+          "impact": "The CC1 termination is about 1,000 times too low. A USB-C source may fail to recognize a valid sink or may see an abnormal CC condition, preventing or disrupting USB power through U5's IN2 input.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "Anomaly detected: R1 is 5.1 \u03a9 rather than the specified 5.1 k\u03a9 USB-C CC pull-down. The netlist and SPICE deck agree on the incorrect value."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Inspecting anomalies**\n\nI need to take a closer look here. There's an obvious anomaly with R1; the value is \"5.1\" instead of the spec that says \"5.1k.\" This indicates a possible typo in design, meaning it could be a 5.1 ohm pull-down, which might overload the Type C CC pin. That's concerning since a 5.1 ohm value effectively creates a short, impacting detection. \n\nI also want to check other suspicious netlists, especially around the heater connectors and diode configurations.**Checking reverse polarity and components**\n\nI need to consider the reverse polarity situation. If the input is reversed, the diode could conduct with the negative relative to ground, creating forward current from ground to the negative rail. This looks like it could serve as reverse polarity protection. \n\nI'll also check the R1 value; it seems to indicate 5.1 ohms instead of 5.1k, which points to an anomaly. The other components, like R6 and the generic diodes D3/D4, need attention too, especially their pin configuration and connections.**Identifying potential issues with R1**\n\nThere seems to be a potential issue with R1 showing 5.1 instead of what I expect to be 5.1k, particularly with the LCSC part C27834. This might indicate a value typo or a reference value mismatch. The real part sourced via LCSC suggests it could actually be a 5 ohm resistor instead of the intended 5.1k in the bill of materials. I need to clarify this to ensure everything aligns correctly."
+  },
+  "usage": {
+    "prompt_tokens": 39876,
+    "completion_tokens": 1248,
+    "reasoning_tokens": 783,
+    "cached_tokens": 0,
+    "total_tokens": 41124,
+    "cost_usd": 0.005608425,
+    "cost_details": {
+      "upstream_inference_cost": 0.005608425,
+      "upstream_inference_prompt_cost": 0.004984425,
+      "upstream_inference_completions_cost": 0.000624
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:28:51.622612+00:00",
+    "ended_at": "2026-11-13T15:29:04.827056+00:00",
+    "latency_s": 13.205
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:28:51.803Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4378,
+    "moderation_latency": null,
+    "generation_time": 13054,
+    "tokens_prompt": 31189,
+    "tokens_completion": 852,
+    "native_tokens_prompt": 39876,
+    "native_tokens_completion": 1248,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 783,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.005608425,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794583731-6Njc2Vb6UtEbhe1WCF7a",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794583731-Xi9y7LFsvlmHpdcn04Oj",
+    "upstream_id": "resp_0ceb7f915b5cfb87016af72cb3f82c87d19bfe4990e29e06a7",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0ceb7f915b5cfb87016af72cb3f82c87d19bfe4990e29e06a7",
+        "is_byok": false,
+        "latency": 496,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.005608425,
+    "cache_discount": -0.000996825,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794583731-Xi9y7LFsvlmHpdcn04Oj",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R1\"],\n      \"pins\": [\"R1.2\", \"R1.1\", \"J12.A5\"],\n      \"nets\": [\"Net-(J12-CC1)\", \"GND\"],\n      \"observed\": \"R1 is specified as 5.1 \u03a9 between USB-C CC1 and GND; the SPICE deck also gives R1 as 5.1.\",\n      \"expected\": \"R1 should be 5.1 k\u03a9, the USB-C sink pull-down value specified for both CC pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R1\\\") (value \\\"5.1\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"24\\\") (name \\\"Net-(J12-CC1)\\\") ... (node (ref \\\"J12\\\") (pin \\\"A5\\\") (pinfunction \\\"CC1\\\")) ... (node (ref \\\"R1\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"R1 0 Net-_J12-CC1_ 5.1\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"USB-C CC1/CC2 pins go through R1/R7 (5.1 k\u03a9 each) to GND \u2014 the standard CC pull-down value\"\n        }\n      ],\n      \"impact\": \"The CC1 termination is about 1,000 times too low. A USB-C source may fail to recognize a valid sink or may see an abnormal CC condition, preventing or disrupting USB power through U5's IN2 input.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"Anomaly detected: R1 is 5.1 \u03a9 rather than the specified 5.1 k\u03a9 USB-C CC pull-down. The netlist and SPICE deck agree on the incorrect value.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Inspecting anomalies**\n\nI need to take a closer look here. There's an obvious anomaly with R1; the value is \"5.1\" instead of the spec that says \"5.1k.\" This indicates a possible typo in design, meaning it could be a 5.1 ohm pull-down, which might overload the Type C CC pin. That's concerning since a 5.1 ohm value effectively creates a short, impacting detection. \n\nI also want to check other suspicious netlists, especially around the heater connectors and diode configurations.**Checking reverse polarity and components**\n\nI need to consider the reverse polarity situation. If the input is reversed, the diode could conduct with the negative relative to ground, creating forward current from ground to the negative rail. This looks like it could serve as reverse polarity protection. \n\nI'll also check the R1 value; it seems to indicate 5.1 ohms instead of 5.1k, which points to an anomaly. The other components, like R6 and the generic diodes D3/D4, need attention too, especially their pin configuration and connections.**Identifying potential issues with R1**\n\nThere seems to be a potential issue with R1 showing 5.1 instead of what I expect to be 5.1k, particularly with the LCSC part C27834. This might indicate a value typo or a reference value mismatch. The real part sourced via LCSC suggests it could actually be a 5 ohm resistor instead of the intended 5.1k in the bill of materials. I need to clarify this to ensure everything aligns correctly.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Inspecting anomalies**\n\nI need to take a closer look here. There's an obvious anomaly with R1; the value is \"5.1\" instead of the spec that says \"5.1k.\" This indicates a possible typo in design, meaning it could be a 5.1 ohm pull-down, which might overload the Type C CC pin. That's concerning since a 5.1 ohm value effectively creates a short, impacting detection. \n\nI also want to check other suspicious netlists, especially around the heater connectors and diode configurations.**Checking reverse polarity and components**\n\nI need to consider the reverse polarity situation. If the input is reversed, the diode could conduct with the negative relative to ground, creating forward current from ground to the negative rail. This looks like it could serve as reverse polarity protection. \n\nI'll also check the R1 value; it seems to indicate 5.1 ohms instead of 5.1k, which points to an anomaly. The other components, like R6 and the generic diodes D3/D4, need attention too, especially their pin configuration and connections.**Identifying potential issues with R1**\n\nThere seems to be a potential issue with R1 showing 5.1 instead of what I expect to be 5.1k, particularly with the LCSC part C27834. This might indicate a value typo or a reference value mismatch. The real part sourced via LCSC suggests it could actually be a 5 ohm resistor instead of the intended 5.1k in the bill of materials. I need to clarify this to ensure everything aligns correctly.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yy8pv6ATaTSCnARl9_jHaa4ufTVWEZXlxm0iS1ofih4swpaR9P6sjkkfITzSVAlpd7qqLMpnNagkbGhqWg278jtx_MpRE2VMMqEqEkSqrCPhlkrEgBmJ_cdX5leRVLSBvHD95YXeHf8-nP34-sqEIiadzQTglN-lWiLMcDlCM5TNDgHgpHV0ncD1C-zuX5PT1uFTikM8H6Y2OdFFfIJ4tx51wtpL5aJJlYiLWoFgJ33BcUP5W0rch9dThvOOZ0LNM1YZb9nJPBzLEga4z3_586O-5u8SwOWTyxnQ5aqgcgVyYvn1_i9Eiy7qCEAnFXYeM7Rmz4eG32nLh1JusprZfJLTWTev6wVUXjyTv5DnDFdxJrGX-AkMyPLG_MQRAA7snQ6jspOti55trGowkz3hmzlYrvfvexiE-8iorfVP5UhetlEtD-ucxnq-NHneCMS_1Gg9gpfbLy8GOAvdNhsBV3l3kkFKQkwK3wWFzsHnjf9LaTE6j6y0z7mwb9TkIxQSQ67iHXWoYTQqVVQ5wUPmDmHBlYtjmO0LGDLU-YhD6ayLTMp9lgdSSFl9Iw_7pzqOK9nuIHUfn6Ey4qDFOrTXMFLMf-se43uMLX16RX1IsXzgOLmiTyXsgkkEzPD_5qZEZdRzArrxi34Pi6zzzaxTUb0n2pkXDGN30M6ANwQ1BwLQN-wy1p1Bg3iVUQBwN-Ld8TxG6jJfKzM3WcKuy1nAl07Kl4I15uG4X2h3oQKiqQDLknWLlOF6JLDssgId7kr9ZcWgtzRrCAC_5x3rqfpAciKp1v28x0RQcW-yuKumdr6Qzh9yFzkWn55ZvUdzf1J0FlibAM9pfns9F2tP19l7IRPjRwR1eo4qMQfWeFn1q_bmPT5M1MLpzzpl-P3X18LMSvDtW5kczvK2Yh3ao7zIun9kmg8OxOqzfMUFwGKOOnb_RrUypiP1lCDWNTXvhoSfZRuK6-jjLkqj2ITUKWnq1zimAwq1EYCqBe0lMx5KKFChnd3st6iS-VMKGe9zgfU6vGhqpMVRSSCpOM41HCCJZ2L2VA7BW95MsnmzZwTaQIMe_RlL114Bjvt8E5wbBIhQKm5rNOPDhHiypuI8dw5eIuHKmfibNQZmuHhOAnnZ5OA9fWKRZFXzztdz3JdVGUdy0kupEC9BkwXL7FjeaoBVOWDWbXXKe3xH22BuBDZvr9hbHsKGE588YaVmcMNenmM-mj65lP7UcGnEhtohkY160odw0PBDOPh2OjDXM01FxfXLdv84JLrR0bCNrF4I77g_WB4UHaSXu7Oc8KCHlI0v4kFYt4p8jwdXD8oZwLLIjhIjfO7RpyKGnGXZBPtDnJAjDvi8NwaLW5VD5EaoFGC2Xjc2EquumwfpOsAQNK2cIzYiHhBWYU2RM_gK1lQHQvxql0IGh_lYYKsb04XLQQi-s0qFVVdw79ezfWoHKg3t14Uwj_cRUUNkPfzSSKsaqgkopZF0ZOJrPWUrW9YfGdQSI_s_aHubhB2Ev9-sb6MeI6BhHWgE2GB8a6auItol9y71QTHQnXCP-lbt-vSN4ZbbGYk-0opWp7leN7uka9oBW2xYzV6i4OgKBqYqQjXz-Nuel2AskChRFvJ6BswV1e-7hMFt7FeI-DUcvrqFBeMHSp7n5zp2T8OfKkkQS-X32jlAcVmjFcOhleFAeemHnib2bn_hM0vrRpYjZKwdDc9Ffon7dD55ERZzatj3W1VKlzNQXVytYhfW-0n-4XxFGrdnbDzC0A9WXSZzNSshI5BpIO2xYM_g4hNUpvUkdoZ0I6XV2_ukQipnhQvTWTKZYuczcehwEEQxun8bJmnR-KHUIRrSd4FiPLV9rjqMyP86fSuuoW_55JAcvDEMsz-lfScB0AJ5iwPVeNg2PupaMVfagYsR4UP3etagyzSBXQVg46P1td7wp6M32wE1WkgaQrFjWx8LnkwLZ5xEKfzFV6fFS_NuNDRihkYqvI4T5SSCL9eqsrsxn6TGvwlqp3FfSE8T5ofv294yrLYBYtpxxPFpMr0G3plZ_ajRN4Tvp7EAiWXr45FjBFMwlsfDHPpLkjpSGgILJ4mbFsZPC5ZnhCXtXLEwKJQfPRmklk8sjy5BdfUaHOdi2nldtmp3ON-PkzqkerpDtl0kMBqyIIHT_FCH081TKLaqNDiv1LdUB3RgfI86ukxlssn_pqOjv5mpwEVh3fAA67OR2bXPvh0r3G4k6wIXKRO_6VMNBQd12O7DZLGmwy1yqSPLm8DdWJSD7gU1Q6FGc-8C5Fi4P_fmqMshi8ERCziiDD43jKGcA8K7sCf6ud0hMR0oAKPqPqfgt2jA7uWNbBjJ_LEikZGOjSF4-FE8g49o2oaJot7UK-zg0cxpCyCaYqwX7x_8xvhYCRnNXAzANYmwRmyFovuoSyCv1H0UZvdMmCYbOT0dnuBCStY9tDRo8fageYPU-QYhlQKILZ_AmSMSmfIYYwy729l2R_PdMbxi0UNlXdHjCV4LQcjCLW3ZPO94xENfTvO0gm0gljeZ5QGUHqeIeE6vBOpMQPmW6AyLJPj1nslvwg-wsLD6CSwtTAHXKjm7U8pJKmYkeqlG5TYEJrcZmRA2hPF8OzXww4LxXh-Jr0p0sK1QD6RgW0j0BofEmmqP4byp4S8k8qqPRsqwJIX_xTa5bqUsNYmpg2Bb9i4wPfw8-HVsu4XH6YVA4Kc2VYKw4lpp-53MOFY-zF21ItUNTWSQvyDgbKuGhdwTKJOU9cOE_Jka-iD5qTznCuqwcoX8HGweVm6llva0qtrn6ez6YqS7CxryDdItFqqVdExWKdyjKSCmNavCdwxlNCp3jDGYjmAA8xkcTSbcwqwR1aXJUpR9ybR-h9dW738ur7-gQJlSexfNLE0g3Wl4TpcicnJwGwKNbsMZxz32fD_kSkFWBdJ0-Z-DbQihRVNxaleDgK3ZK72ul_ZG5G_JMM1RLI-lAZ9tp0z04v1mgHlRsC5A7GX08a-yMbDG-gI6dlG4e9JzdfulEOafABwQ05j_Ur39WR_3EQ2wuGouDFrCmNPaILcTmnT1yVWDkxDnjtLKgMXQRMtiEuTpuRUaPGDg4O-T1rtLKJ8QG5gkmDvZz8O2fbJ6DU4hWRbUQWLpsxapI4L6XV0_6M65er1NUgUdGlFZqWLchH2yuZYghCboHqMh8n0dsuvkbu5sD60JBlhhXJC5RSti-_EAoB_8AjjvPPO6ylMmbPBKdZkF2WKs3ScvfjY9FtHe7enYTQWGU7PQHJdA0c-q_AFrxrOnkcRh8KaMYu4CFeOA3KYeY79ZrOxJ9dLu50uO8dAQB3oOTArqk2INwC8Qt_pM9VD_hldcojGw1EuGKsdt_edyp87wEwzs8uvQh4PwZQ2CEyoMgwxuTNngzXz-mFXO1F9Wmpwo8LUsw73W_1_vWQuK_TJK8PRL4SvTNyS8Z1WHKEtIMaUdyzZ6y8t5LODIz5mmh_VmLS4wNvYKaFGeyNhH7lvPahTVIjemGGanUk8P1wqoDGbEtFst0gPAoXUxFrN6oxlsszvmPfU2hfdshexXX4VFFT4ZUVvDKy-IFZ9XAMDldS06ImhLW08xmDQ4Lu9bYlGKQfpcRnMP4UanbmqZ-QPQIyklPuLKcAaqniC2Ix9NTk6KAj022Dok8HfcNj9TzvxfB40Q3MgS4JE36G_eICtOJn2jZMipjrxKSaBt_o5KyLSyETwRcPQeaL7--RduVionCTjHFjF4o_64w8Ko0IZME-UnFZ0AJGRmNUha-2Vfz9xH8yy8NuGX6Lf0InktNcNfeWS66qSFgXAddokt32wDwjeXL3LDr8m_fYMhj-N4dHivkY2k_vEhvnsedMubAmWOuh0NEJgZzGLUimquxzfMmANeY6bvBCsQCRl2VnC1OEk2dvuF1p-1X_k0LMy-D5NQZpmHWjoBBq--zZXp_esP7k8UaqKgOn_6SHXVujpgeTDFHggn6h1Ca3qxzT0yrj2QPELkNqAWwSYlMow53VjYgVBMdEDKMFcPNfYK2uRhI8mJvXDxpKdM56BleG1--PhSLlKD0CddzLcsqNmA2OuBdw7YL-gaCRRs5sXxlUWlliO-jgD_YKOq-EbdqRFH7CxgAyGzaaBLJaaXMMLPaxY4z8-Xx4Fyn5RGN9odw5LfdcbGjj6Fq34P4kcvoLKq-Gt26DqpoaRL4xviJs5uPVN-Wx3QGPZQaoY6MdUof5Bx16k9kfvuVVbSu4-lhDgIPihGY9lyTEQ-b7RaJ9nhz4z3d0jlZlTs_Aav6yOAsUV_31q00dGYth3Et_xOsUqM79nhLwuX6KfKkMo8F6vaujR2xMSNpQHIqi9RT-bbuQSO19FjXzTh4pVAvYa0_r16U0d5LOz9Oc6E8RcDZt_uhtKKvcXZFu7GT4_EH7TN-G8lpn1I2j7CrLzkmf8-6dh6DHgWHDahHg55OwOBwrgle-3bW6YWRSJjdya5XnXK8dMMRVCfdXv-Q_kE5TMqN75q25-zmUM0iuJ4w9XNHRrIWfzcdrHi6CjeYU5jSqSMCpp6o1pIuVahrGfXy-cQ-05462tXUztF1Q8brnBRMG505kqTsKud3HfrDUb3tHDdscruTW5MUAb10JOk_sRBWxxVAXRYiPKKd9mIahldd_hjVMmz0NYJFPHOZ78pJGssDqnzADXvSho7NpcIk0lsASYqDjn543h6xxTnJNBCjZ7YRswacMPvC5XTIlOIiF7M1IjC7SnsxgBBF2iz25DvLMalvvG2r4kidKNq40j91hCL1ksFNt_WqYnBMJrej7drqnlerr29UtoSmuicita4IK56_8SBmtDZstjpKPQekEOJp5HVB-nS7OFDc2DwASCV2XrHUC_ARcde0h8ugwWyteeN0df0-sTk7FO7JFiTVc2uDwWFWNGBdoWRxd7Y4EY5vZ7B6TP6FRIiPqKSrTtSLzU2f-EibclkT925cDMZfuYk1FfKacTCF2BeG6CCFVEtPymGTs7EOHal9ivZmmpFkMuHVvH49SHyWOMk8XF951kTfSF1GyVqjF3nx3PLEh9ljew9yiuuAk78vAVEQ9zcyvtJp035edG4cKkyeBSLFWYJJkl3iLI5zPz1mH9vb4e-akfWbcxIRVDjgZYx11t-_O4zK-RBUmSnK049DQbBtYNSnD8sHkVFgy3RntQTHuSPTZEF4FtUmcXn3lMNMqHbMjq8IMl1kxHl1ZMOirSusptZx8OPIkl6CZQZAkTKmeXQTyFInS9-yG-UG5qATke5O9Z0zWjsUNkqHZgaPO1pOUlfzNz6i08FkKqI-biRxyLFISym4Y-XXBwYC_Or3w3_iQ-ex9JnR2HFHK8a10dPRtrXNUaJ0XgI89hpKBbrLgGn_5t5AihoEiJe6jaDWdJRv6w_3mxuxT38Shr-I46VbmbGuOyI5sRYsf_GtzSK9K0hw5idMjEzYlCneUU1tF871UVLE_GMYRvkJHCx42XrKVAHOT04p1tHI8HamvyvLYeIvqTW_ONnqA0Ox2SBU6rvsox9-buv8FnlIREITSnS0T1K0GwjVO4v9cajFGo1xUvbpX0uUAfIE3_9ytvxHmScyjBUVPPFVUZG8c6td4NqUAlLmRW1Wv9ffUkZvVZNwJCTzPrOBWu3-O-2SdOCIQDZ32VFcbdmDgKi2oF4oNhN9yY4Of6GvsshQCo2gThQPNXrsH8IMqdMs18ANCtc8uOV09oujpl6AvrdJg-IR0VMdQoJ5cWt4anGnFZCh1ksrpyHhpAY91TIt8Ppqrv_sAUSl0ZOjnsPL2KS7syPIZNpMAt7xtuT0JI7N1BEFd6a6-LnxkyI3ZHFPW8MSbTBGwNfznQviq06oRWrTDlhl-06wp2TUvucV7zYUt-4PXVe8AvGjD6jpzb_WtLo_V9_8Wd1XZgqJfkK_r6GRGeeR2p30Rk45AjvzMGmyFcoeSVNeSL90Bjl8as6aCD1fzZhJOYTWTOXRIeWcWoJC5nFelU2wOJBI7ub6P_ONFuQFPxjykpdR51OLdcbhgM31Eorvq92ikUNbB2PSOhV-u1H7kZg0eepUEzliKE_a8wDvfX1nP-1NI_narJIu880BLrEkfScfRIp6_fVOBrkcLOMumuBAgd5Izm2cy8VEHH9i9yw6KLR_V6Whf5iQYwmOGHhrNlGDqemymE9RNLEaFH8HPwARwfAslRxnAw403Pr_nutG4g_2GDYPlfe_i8mfFRE2_h3dVEYOduKn9WvZ9T7SZsUGI8RNbXQM0YVIeqAhZF22mUPZqk00Z-pHMk2PDMzfs7sX0HSB4h3PKJdraOUQaRgTgan_6eJdW7WYxgDMszOqunRV3BVOPF_EDWwYSHAevqfTLPBRtFFInX_AaT_5WRpmCnNm1LPXnDney8vcJ8RzjgRwZoitLrWJAvlyz9VGGvKT2RlFcYKTUujSjA2fRiqs-hqeApetlDy2eNeunYt5R5tun-Pa5Smugl3vaZhZEpfMHh1ChqZTCpMvLhEW8O4Kg4gCkhHfrOZL5meiodqZLqpNAAgp89yKusCVCk0CJzcZ_LvnI6dSPYkulJ6ZnjGLGXzK-Rx8FtaIh21zjMHFvVB8cnajXz9e-Gr-Jl_KJxouST-u1cCF4eHYAMUt78SI5PFkYkzX4Wx8lSbEduwWoD3FMvbRxz0vZqU75kbkTpSrEmGYJ1Sb21ZhM6WXDOJe-vbAJN0ZcDkkcTCK6tSZD1Bf8jCqdgINx2Vbb747ra8PUUSFhow_hkoRPekljJD3klA48-3T1nTpQ1D0nKe4oIPPXTWoMEyj0TzWpwX46M3TidMgtbI0yUoFN6CakS2XXY16tFzZ8UVh3F9rU9d9NXgVx8Bgi5mtZ-KvNSMItw4mFBZyqVl5nOOgoenkMco3vFmrrzm4avpPTnPz0p-lCd7ZkH1hPMEwwIiU_Zz-7UAYgQ7UVFJuVQcGVMq9xEDE_IehwYOnGl-NGxLRjTBnPWXB3NbANrpe-HWIlRKLhOvMBoiscSGU012CXxvogi_JiK0HXxP2_h3vsZftRPQ2oBGRbianu9J9m0Qq08lZ6r85UGaf4wipOK84akmrLWcY5PWuyJWp_qCgOb6scAleVV_8FlHfwSldNBxu6mWenWB6nmbbCxyw2DzbsSTpbJDnZ_uzbuRUcElnWc-YiPUX7s23FWWMXNGAoNwblaE2i5zUkfPpi-b-u-3cy0mRLu3MZsMZ86J4iFysqXqMq3BL6zYIidVfiZ11L_cwWmUHMcdXMfhxrq6CZc1NHEC033SNe9BS00bW-o8R9ZUNF20_WQQ236cc2L1gJxtpo1J0sA1G-eMMRoR-Dm9Qi5evlcRfHD9D-FFYjorXPtLUhNFZtQFO-5Iki_UkwSaVK97tsHt8aZc2VzPsaBY8DwS8LaEUTmH7iWcBvz5MtJvi8M779jS64p_PSLkhDhkRkfrIE5OLJjRJdIl04Esp9OfU6_-T5U03IJzq2k7qjv2kqEiIwBNQWeVFe9AbkUBJ6OUWWuuxpE49LZqJahFlCfPahPSDzaQA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ceb7f915b5cfb87016af72cb4a5dc87d1a9d0aab8d7d91e77",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating USB configuration**\n\nI'm looking at the pull-up resistor of 56k at a 5V output, resulting in 0.45mA and a CC voltage of 0.025V. This seems to fall below the required range, which might cause an accessory to be seen as invalid or disconnected. It\u2019s possible the USB source isn't providing VBUS. I could note only R1 and R7 as valid components. My confidence in this assessment is 0.99, and I\u2019ll make sure the JSON is valid too.",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yy_QCql26reO5Bfs9eb5DadZr1VYjzRTQjpKF2I98fdNWopImQaV6DjGxBokzLrkWBCTGuf7m1IOjr3qM12RVnZ928rP-6-2MNlccpkV1DSJPm7dEbUbkytBiPT4pNi9WXS-L4qD7j2GYe0w4cFHXORSFOZInAVkZrB_F7Zb1SJcPFnZlvqLQyTQyU2NTwphZcudShucasUXOxRRNqnjtENaAvvh2rpERen-pinFum3iAMvaml4amXtWjR6sOdOLWRksC3fg-8u0Qwlqp1Nwy0Szhxtn4XsEXmVS1Mda5UrZiVR42jIn8WT9qddbwb4EDbukcf1IIJtfPiQKqxiOs2mcGDB2wy_BcZuNxFrkCCSihzZY0yfMGPjqCvjvCYW5xchT7ht1oKi7WSwwIaPU9ct9J_C3cQNimLZUZUSZjOzm-68auX6MLpotYG_0wn0VHYdk0w7YITacLABYSBnOilfr-NGzD3nKXJvrvI0TvGQa78KgUQRNgDbm-Cua-vjpuhjPOZSdoT-FDGegqRJ_xkbAjPXCiZ6kOuaKEoyGc53T6WgvH7x0fvDhotc8TlguG9vEpqSkNnNii_iB8YQXOdRgYmw0laYd7zm3b3UbaPlJqrSFxKUQoJoxRwLzrUzGe9ciU6DibasU6NIGok9RQhcFsipaU4kxcwwBUHcx4Wy63_DNEZYEmjyI_Yo4Pvbk_aDe8SfHYq-mm9qPpw8op8RCdbZu7JOYL4rz4aAOYPWKKTB5A7Neqzlt2DDbNeXVHS6AGha-qKnA6o3Gi5XNcQizLDYcN11Bn9vRjHNx5oq-fqgjt7udtjCtV3SmpGiGV9Om6nE1KPuKqgow-q0GB1tVVQSKTbtQq1rS6XqWs_s7NavRDxVl7cQT9tCQlRq-VW1byc_qWuQ80M-XcX8fqiRs5LWaz5mgqkuhSLXkciEDjbDdHS0j5epZ0qSmGzkVmYfnlXe-Kb2iPWdx3G_XmOTq9ML2XJH9ruw04Xyk-GzldJgCMVs1CStbV3IJi_Q4HzUbCLMMu8hRfLLC8jlvDx4CzrDJzRd6ffPq9LALrm-fCteY-vsbZqaEwMYsv4zfT0zZwv5a9bLhb0MFBTTgE9lXeg8ukhvs80Onc7-H9etc1YmSpFzv3XmhTvdQXjHdqM_PZKw3pUFbzZo5MKmaChvpliK25QM8ZHmKx8RDjbIIcEDX9z88xgBSrLx3r95Dm5BeHu6pt-CRQvaFp-LUwgWcCb6558VGo5LeBs8kf93w5d6c33jYjHNMS8h0x-0N9Wni63Ap24UqeUs5DFuqyQT6GJPa-SIERlrNuj2Stn-iRwPbye8NBpeCRbhahR8HIyXUDYXwi9ckSME34phAiiLyS5zOo3PddJ_DiFyPx0d979u4PGHHLJXqkNlobPNgDfOkQ1pJN70cMISJ8XiyfEezv-waxoFaeAZx4iUGovnnOKx8WfFrI7FFOexor4lrLjH7Az2-LC18-r5zH8OqWO7WpAPwBGLhK8uB4hArEz8FeprR6fAJaSGJn7v7vUu-0Xh8RlGBd69rcfRIIBeKFhxPiLrEtC2lIo0G8akBxf-jUgKQer4fWsjewGP36-MZpTb5cbvFdolMC2KCQU8-DQrJtnIvSj_GDJ6Ykc7m3K85eG5vA6Uvrx7qwbnOLOxEPAMsW8_lqHT87lYopXmzV0Lj3xueKW5pJw7RXKUmmH1CYWj76Sm6mthPbwTr_x0PLuXFRBhMljlZC5dwSnweJiq9CBQQ8EH9VocEz7LggrGJpZWos623G03YySlHNT0B_e9zNMQyL-UTJRg_wORUGpPYWOCjn-GTMonMh_ac07ywWykNSu3MgbFVSdQ3lDYQAXfjypzeyqg0V6NsNc4rDQhk2eVC3bSc13ycRzOnJSt_1bhrJxvgLwen8_nDsAWCuXjZuhETxfgbsKpcwqgifRp-9gD7_BhESQ1KQidoDcdDtmXn0GnB9lQI8vla1SWxUxBrB4Lm9jQ8bP_95JHeMy5Cfuo-4zl5jc-WZLkw2PZtl-3aW2ODAdX7-_FF0p7eTEOL_-bBXCAJV5yx49WSQMtfkfEwyS7EOO237cfHC6sQJvcPjlvot36jh7vqNH-uRP9SKALVSz5NQ6RqkMEgJB-4R127rd0F23WZaD3uztjWqixl00rVUN_hB5nFFlt2ipI_FMfSihIc-lhNCqwv9lktjNl6OXUNw4GiRa8j_md71qwGX8NNQtRjxIiBJcnOWVmppp8X1nVGarp8JPmqQGNFEpuYg57WsEXFfhilfy0zxJOzSyWTnHKdEwwHgtTU0gvQ_ahTCob3DzmXs6Y_Iqj14s8dg7l2_bh2XXBLBH1XXXY75OvPGuALHe0WNWmbQefqFlfhdhsB0rTcdQC0GcARSjz-XPMITNeROVe2S4Fz438t3z7ojWvTP3glrQiPAT1urca0AKv3degePZoHyCVsZVVQGM4AbTKX2-tQsGg8teKWJLlLFpyHDDmzAQvdWlaoH2RPFgiOBZzxQjgo-rFrmDo0PGWo6p-jhGdl69vyrK0ulETjMPo4L3JAPEPkOvv8q4RM9xSGUSgjqnJwAhasBVaOZV2IQ8zQSnZy572HnbZaLpVkC2Anzs9cZ8CUfKGGe5WUMkRxjICNlMwANa8212IJr65KWfk937DFNMjTcaGIYJ4098EryPtzDdPNZsYuuhDQq1mZHnEnboM4tkGtVpj1vo1agAZmQTkEEFMZF6fT3euE2FNcJF5FeaXHWib8W39y_omKS8oA3gVOFViM5y0QpI_3rfI9-_iUK7I8_l1qXivwZ8T3JUc4tiItS6o6Ov5O8Qj9PjlRsCuRq7swlqbsTFRMO4A6vQrJD4AzFBj2vu5eIJvUS8Gmn5jNKncv6PoVebxrfq5J6urFHp0ZtRW3kEiMCzoku6ZERIgaTEiUeOqHOyuNSdrcySVt6zkd0hzH78AeX3pTrIT-kASlfybb8Cp4hPTL-_vacmbRMMzCOvmCe6tFcwPwaKdtZp0Nq7tKSRxinH5jWCFGBSM7Yw3DngfOscE7l_K8V2BFSQXX30s4gMHEPyNC6ufWQVmGqsl2PZ_Xhk8b8WvmKGql52wy3a8DjWyWb8OJdmdnEmCZ7gdS2Uq9pN7cZipZoGOicIwzqk5AfJwH6YW0VWNeEeNr0lU-6mNhB2P_oFPdzgW4UK626jn7NVeoFgIgStv7RihkqbxJWsMKlD_0Pk7QOTZ9N2KIG241coaLCEb-JeeEelsDQOGx74aJ8ItBX_keUQfZC4kSWOfyvMXzapcXS6pj6zSWohQAQWYPiHOVfkUjfOMFyro8Ki5YELArlKrx-0QOqz-3np-pE7MoNAkZD5q0jbPeU177EAsp8wyl5SebOy4Yb99QftNOpRU444DAqqQAyAhiy8_LZbpTy54rR0ZwBfm4FgunPdVHLgUXZtWW6lKDD3ZTuSnGXa0HL0JJb8jsm-CUZDrxJs7e0loga63E1cpLscFWZ0uBg9B-kY16YZGSBvl23L4OJKIn4uVj178kFF1WOtH42olL4X7Rip_WhtfxUhV6TVIW-o9k763sHi7Q0hnihErPU_hrpXhzbIJKOTSe2yfJw_4VkU5aMLMkYjmTIIcyIbMefFnPqTb6xiWVzShE9kPIcqFmLjdPgecLMSYN0Qq_jB7GVCegusqe_Prty-e-Xg3W2kbv90vwAcjaJRMrV5T-MJj2m0Obl_On-F-5pAtV8My_7u6w0Z_Go_aczrc-WcblS4rBL4dhGeGqN_C1fhO1z1i19VQdtrh8O5K5bftCVvQysEpxEU3pKMtWKuHqTGla6bRoEKv3W4J1q8koTjbxxu8RaW_WUZn8mlJK13B6QRM0oLR48MLqekGuxx3QdHKh2Qgry9RdQGixPX-i6ktw_ygfCYaioC61f2sR5f2MLFxwjwV9iOvTd5sZJWTy0-vgh2RZDOBLY6R-g_BdzAqBA9RsNemVdsVGtGhKSHKjWSRQLsSqZUzuAOy9HKQhqixXQw2pDIhkOzP-RXbT9QnQqf6Nb4qOqDfbC5IsdwESFwXYY71gKwPNNOCI1q-lSmye99bmiu-2btp6XWVGIIaes2aEjxedRMCNEgdxQocdBFAK1-DP38aZ3UJTG6WfEUXcP1I_KpLeE7AymQKXiaN2gxUQ2iH60l6gPtDR9wg2bq6kyeumH8wfUMcAWTgrZuBCuuGhepqnz8dOUcfwOLIa7XrZJwPxLt35FvOAE4UewGHT4UZvRus3dwJGUvzWQhZGCv_AeVUUaLdA1R84GJA4vCRzS8c0Hyg1pLTXjH6oAy7u1gb-9jc-0MtC-5bxeKgRSgVqbYx9e5VU2utWvXF-WuXlZAW22Gt6E9A9cIF-zOybfgYEJWC4h5VZal9R3bpynhbV6EbEPGb1iApmpb2_DP6wiYvnwb3NkiOrICXd478bDNtkNpVOY7BhHRfgkWFN9HhsNxWCS3EqW3RzNmc7GXMG7Elm0l-JTVvB9UTZoSwqMDlfGOxd8ILdhYFw0iMcbaR_pz2mJl5ctLlSW_d-LpGxcVPqHPoFwEtpgB6g6CimPyGqrH6mSvVG60kq51Dl7ZugCI5ui-z82ToI2iBlYunN2bQr5v9Ul4v8fpaEBSfIQgUmW6Kptvn4ZJjBJnwO1VF6LOElaW2k504sXyIzfBUpzP3NcwbQBmw7nWIyw9KVnpb9QBHySs3lPLW9OQRWovy0PcvYEk6q1cdQ7ppcscIoLKQEii81Mtd7t3Stkx5HKRVBV5vqo05Y6r5OCAVw080S3J4PcfTSGBvpimPOd70UkpyLqQ4mI8w1o6dJb_9oY2MdBjsNtmggLxDTAyGay6CzP5iHomKhLilpDaqWb6eiIl94g151K2FQMIYuik-mNqsTISGrLkZWBWKKQ8hVUoQ63awqbrXR9PFgEZJTVBtgYNsNHZ1aHDKS6m4ls26xC4WXQ==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0ceb7f915b5cfb87016af72cbcd03087d1bfccf161305f3760",
+              "index": 3
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794583731,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 1248,
+      "prompt_tokens": 39876,
+      "total_tokens": 41124,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 783,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 39873,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.005608425,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.005608425,
+        "upstream_inference_prompt_cost": 0.004984425,
+        "upstream_inference_completions_cost": 0.000624
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

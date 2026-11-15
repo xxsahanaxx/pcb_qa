@@ -1,0 +1,215 @@
+{
+  "id": "CF-Chef/CapacitorMagnitudeUpRandom_Value2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/CapacitorMagnitudeUpRandom_Value2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/CapacitorMagnitudeUpRandom_Value2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/CapacitorMagnitudeUpRandom_Value2/spice.cir",
+    "chars": 122602,
+    "sha256": "718f5631c4c1817ab0df6216b5ec31561cecdf719b89ec169f675baffde52a75"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C7\", \"R5\", \"U1\"],\n      \"pins\": [\"C7.1\", \"R5.1\", \"U1.8\"],\n      \"nets\": [\"Net-(U1-EN{slash}CHIP_PU)\", \"+3V3\", \"GND\"],\n      \"observed\": \"C7 is specified as 10mF in an 0805 footprint and connects from U1's EN/CHIP_PU net to GND; R5 is a 10k pull-up from that net to +3V3. The SPICE deck also models C7 as 10m.\",\n      \"expected\": \"A capacitor value compatible with the 0805 footprint and a practical ESP32-C3 EN reset delay; a 10mF capacitor is not a plausible 0805 part and, with the 10k pull-up, would create an approximately 100-second RC time constant.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"C7\\\") (value \\\"10mF\\\") (footprint \\\"Capacitor_SMD:C_0805_2012Metric\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"26\\\") (name \\\"Net-(U1-EN{slash}CHIP_PU)\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\")) (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\")))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C7 Net-_U1-EN/CHIP_PU_ 0 10m\"\n        }\n      ],\n      \"impact\": \"The specified capacitor is physically incompatible with the footprint and, if interpreted as 10mF, would hold the ESP32-C3 enable low for an impractically long time or prevent normal startup.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"Anomaly detected: C7 is listed as 10mF in an 0805 footprint on the ESP32-C3 enable/reset node. This is not a plausible component for that footprint and would cause an excessive enable delay with the 10k pull-up.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.98,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "C7",
+            "R5",
+            "U1"
+          ],
+          "pins": [
+            "C7.1",
+            "R5.1",
+            "U1.8"
+          ],
+          "nets": [
+            "Net-(U1-EN{slash}CHIP_PU)",
+            "+3V3",
+            "GND"
+          ],
+          "observed": "C7 is specified as 10mF in an 0805 footprint and connects from U1's EN/CHIP_PU net to GND; R5 is a 10k pull-up from that net to +3V3. The SPICE deck also models C7 as 10m.",
+          "expected": "A capacitor value compatible with the 0805 footprint and a practical ESP32-C3 EN reset delay; a 10mF capacitor is not a plausible 0805 part and, with the 10k pull-up, would create an approximately 100-second RC time constant.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C7\") (value \"10mF\") (footprint \"Capacitor_SMD:C_0805_2012Metric\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"26\") (name \"Net-(U1-EN{slash}CHIP_PU)\") ... (node (ref \"R5\") (pin \"1\")) (node (ref \"U1\") (pin \"8\") (pinfunction \"EN/CHIP_PU\")))"
+            },
+            {
+              "source": "spice",
+              "quote": "C7 Net-_U1-EN/CHIP_PU_ 0 10m"
+            }
+          ],
+          "impact": "The specified capacitor is physically incompatible with the footprint and, if interpreted as 10mF, would hold the ESP32-C3 enable low for an impractically long time or prevent normal startup.",
+          "confidence": 0.98
+        }
+      ],
+      "summary": "Anomaly detected: C7 is listed as 10mF in an 0805 footprint on the ESP32-C3 enable/reset node. This is not a plausible component for that footprint and would cause an excessive enable delay with the 10k pull-up."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Evaluating circuit anomalies**\n\nI need to detect likely anomalies in the provided circuit details. First, the C7 value of 10mF in an 0805 footprint on the ESP EN looks suspicious, as it probably should be 10uF instead. The SPICE tool confirms it as 10mF, which seems absurd for such a small package. This indicates a significant anomaly. Additionally, I should check the D7 orientation since there's a known issue with reverse-biased diodes not being reported. Overall, it appears that C7 needs to be corrected probably to 10nF.**Clarifying component values**\n\nI\u2019m looking at the C7 value marked as 10mF, which seems like it should actually indicate a typo for 10uF, especially since the SPICE tool confirms it as 10m. It's odd to think that an 0805 footprint could handle 10mF. Other capacitors look questionable too, like the 22uF in an 0805 format. The TPS1H current settings and tying in the DIAG_EN GPIO seem uncertain, but the docs are clear about their intended behavior. I\u2019m also considering the D3/D4 diodes, likely for isolation purposes. Overall, C7 still stands out as an anomaly.**Identifying diode issues**\n\nI'm noticing a potential issue with diode D7, which appears to be a generic diode in an SMA package. It could actually be a transient voltage suppressor (TVS), leading to some ambiguity. This is concerning since the specifications indicate that this confusion is known. I need to ensure the correct component is identified and used in the circuit to avoid any potential problems. Clarity in part identification is essential for proper functionality!"
+  },
+  "usage": {
+    "prompt_tokens": 39878,
+    "completion_tokens": 1048,
+    "reasoning_tokens": 516,
+    "cached_tokens": 0,
+    "total_tokens": 40926,
+    "cost_usd": 0.005508675,
+    "cost_details": {
+      "upstream_inference_cost": 0.005508675,
+      "upstream_inference_prompt_cost": 0.004984675,
+      "upstream_inference_completions_cost": 0.000524
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:13:35.613008+00:00",
+    "ended_at": "2026-11-13T15:13:47.706604+00:00",
+    "latency_s": 12.094
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:13:35.738Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 3684,
+    "moderation_latency": null,
+    "generation_time": 11911,
+    "tokens_prompt": 31189,
+    "tokens_completion": 824,
+    "native_tokens_prompt": 39878,
+    "native_tokens_completion": 1048,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 516,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.005508675,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794582815-SjvQTRRidstGgJBvnTDV",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794582815-vtYlBFfoUD144KHvsc7w",
+    "upstream_id": "resp_094090dfda8a0be2016af7291fe4e087d1bb0c4a3906845341",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_094090dfda8a0be2016af7291fe4e087d1bb0c4a3906845341",
+        "is_byok": false,
+        "latency": 458,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.005508675,
+    "cache_discount": -0.000996875,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794582815-vtYlBFfoUD144KHvsc7w",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C7\", \"R5\", \"U1\"],\n      \"pins\": [\"C7.1\", \"R5.1\", \"U1.8\"],\n      \"nets\": [\"Net-(U1-EN{slash}CHIP_PU)\", \"+3V3\", \"GND\"],\n      \"observed\": \"C7 is specified as 10mF in an 0805 footprint and connects from U1's EN/CHIP_PU net to GND; R5 is a 10k pull-up from that net to +3V3. The SPICE deck also models C7 as 10m.\",\n      \"expected\": \"A capacitor value compatible with the 0805 footprint and a practical ESP32-C3 EN reset delay; a 10mF capacitor is not a plausible 0805 part and, with the 10k pull-up, would create an approximately 100-second RC time constant.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"C7\\\") (value \\\"10mF\\\") (footprint \\\"Capacitor_SMD:C_0805_2012Metric\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"26\\\") (name \\\"Net-(U1-EN{slash}CHIP_PU)\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\")) (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\")))\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C7 Net-_U1-EN/CHIP_PU_ 0 10m\"\n        }\n      ],\n      \"impact\": \"The specified capacitor is physically incompatible with the footprint and, if interpreted as 10mF, would hold the ESP32-C3 enable low for an impractically long time or prevent normal startup.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"Anomaly detected: C7 is listed as 10mF in an 0805 footprint on the ESP32-C3 enable/reset node. This is not a plausible component for that footprint and would cause an excessive enable delay with the 10k pull-up.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Evaluating circuit anomalies**\n\nI need to detect likely anomalies in the provided circuit details. First, the C7 value of 10mF in an 0805 footprint on the ESP EN looks suspicious, as it probably should be 10uF instead. The SPICE tool confirms it as 10mF, which seems absurd for such a small package. This indicates a significant anomaly. Additionally, I should check the D7 orientation since there's a known issue with reverse-biased diodes not being reported. Overall, it appears that C7 needs to be corrected probably to 10nF.**Clarifying component values**\n\nI\u2019m looking at the C7 value marked as 10mF, which seems like it should actually indicate a typo for 10uF, especially since the SPICE tool confirms it as 10m. It's odd to think that an 0805 footprint could handle 10mF. Other capacitors look questionable too, like the 22uF in an 0805 format. The TPS1H current settings and tying in the DIAG_EN GPIO seem uncertain, but the docs are clear about their intended behavior. I\u2019m also considering the D3/D4 diodes, likely for isolation purposes. Overall, C7 still stands out as an anomaly.**Identifying diode issues**\n\nI'm noticing a potential issue with diode D7, which appears to be a generic diode in an SMA package. It could actually be a transient voltage suppressor (TVS), leading to some ambiguity. This is concerning since the specifications indicate that this confusion is known. I need to ensure the correct component is identified and used in the circuit to avoid any potential problems. Clarity in part identification is essential for proper functionality!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating circuit anomalies**\n\nI need to detect likely anomalies in the provided circuit details. First, the C7 value of 10mF in an 0805 footprint on the ESP EN looks suspicious, as it probably should be 10uF instead. The SPICE tool confirms it as 10mF, which seems absurd for such a small package. This indicates a significant anomaly. Additionally, I should check the D7 orientation since there's a known issue with reverse-biased diodes not being reported. Overall, it appears that C7 needs to be corrected probably to 10nF.**Clarifying component values**\n\nI\u2019m looking at the C7 value marked as 10mF, which seems like it should actually indicate a typo for 10uF, especially since the SPICE tool confirms it as 10m. It's odd to think that an 0805 footprint could handle 10mF. Other capacitors look questionable too, like the 22uF in an 0805 format. The TPS1H current settings and tying in the DIAG_EN GPIO seem uncertain, but the docs are clear about their intended behavior. I\u2019m also considering the D3/D4 diodes, likely for isolation purposes. Overall, C7 still stands out as an anomaly.**Identifying diode issues**\n\nI'm noticing a potential issue with diode D7, which appears to be a generic diode in an SMA package. It could actually be a transient voltage suppressor (TVS), leading to some ambiguity. This is concerning since the specifications indicate that this confusion is known. I need to ensure the correct component is identified and used in the circuit to avoid any potential problems. Clarity in part identification is essential for proper functionality!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9ykqu7RfVUg6LVHnBcSzsS0c8QQmdR-sPZrF_GhdkmP4LoQI8pxDrQHOR9H66DxH232VQ6NHGUhXoMXZRcmjQoVWE68jjoajNwERGYAK1nGYvwSzLJUDBwAljH_7TYCZYvz2InvAbF7MLuNerSbI9XYmiHc6B_qigPnUdqESSgIubg-5HoOzZa8lgDy74_Ley9nq9mD_HKLkm5CGkmyvlZVhxuwRJ1CusG6lggmt_YQYWwnBrOVoaJRbrVlXeL6m20qQySXp6kmL7913DzKi8apZBjs5soc3LQVqgFXJMYUh4hjlfSSTGNcvp0v1qnvpIehwnalM3m68zWIgrNe0dnZyoDJJPr-WjJ33rEIC4zMWbgrlJS-3Y8Rtgw8IzXiqMI_0lbF-nWN7mkWm7u8cVpT9QPVpRytxyQlEGJNBx6mGS0ieA5GMVYjZR_iMBeCEsHiTbJnOPp_X_N3pJqmlUT2oYbXrhwh2jB9o6dsJrRwgDYdnfF3WJseqU5rYMAUvCM9vdzohGNzd3XUOvPoYPvvzNGndClZg70vSyLUyREj9yujkt1KrQKGsnwC58Tt3X-2agG9_XOK07sCRVm6bChMGuTGxIL7I17fZ4XCue-i1Dbwu0V2aslwzTAhmQahjh68BoTowNc5FvdJ3s3zqyuUICnK1gbT4MHduNc5QXq3JPE0Rm56_fnrGyr7srXWV2MprNfkkVVPuQGXcFNRpXDYNbP8EwPRiy_YqzElkbPWqQa_ngk4ejmru37fwuiif5pkfDqGIr8SyLNXsQhMjOwjpE1ur3bNekTS3NaRx16vr_2No1WFHIkkKHXnDVCOpsAlWf7LTCHVPTbiNMUiZeisoQGB1k02rIHODcxQnJono0Fo1QlUvXUq4wjGSryh-EAjsdmRDtUAukpRx3qih4DEcLxG4eUOAgcZelMPqOyv_9ZZXqb26jeCsQnv387Z2pc5K5uHvr_YuVU9VMmSvDYm7lcWmro3U_cFN0Md-vb-8JjnpWLxN75XhVUXxJQhDJQLAaU9gxjSGg4KTh2minL8JFBYWux0NKqr72rgPdKRmKrmS_8nFL65Gc0Xmkcb4C3G3HuRmVbHLSMoijl7Itr7z8eW0F2R9jQKZxsEQW1jPHjxh5HNzUnzOqCGf1a3ocwcn6-gPvjneXDrza6imgIIs8svoFzOca7MfiC4RerLOLkYxGnDX1YNE8XM_P4c95vpbCgI_Yz7E3oe9Rrqkr8uG8Yv9LdbyIUMfz_UEs77Upeo9PzuUEiw9PIotqzL5F6BZIEZaYX0qTOzh7HQvg2qxRnEuRyp0sw1Scbsjzm9HnZRrTSqQBuNWy-YSWNpxs31oc0fY1INuvY0G7_1MvrXkImzkpFBM5AaiF-kBouCRhbV3aU6aIENVhFao4pxf1IzVH4DgqOa3-wi17nlXeisWSoJC0kyfUfZiLJT_UKN7ToGq_bRqsQcdykuAIIga27qwtAXWrwvGzPLdPe3EPnQhrdmkZQ74A_OftakmCUyzll9h4UqOCnI3RSo9BPvh5LsuFT6MT1IyEiMNr1yvBysoHjozUy6jq4AL3KtLdvd21ff0mnV9FAMfVov2nl8MWDd8K4tcA8v6phfFp_eP2rUiTzdkMrJMmbWEvXkgjhzBG3rkGVU0F0-aT81RNJ-gk9EjVwfMi4mXWlLPl1fBIDuLJ0fTxdrzdXT3Ljydx_uxxPOcnWOlbBJNdYu1hM0qwSANKJhUPZa5Dkprfm5iBgZ1d_RK98NLHmeuI1gW8qdLfGMfLF91jbcHcmcoJMvkZCH8aNyCOFROf8GQY--wCLgfwIZp4Laaotprxi1i5wOXTbdxqQJ6cL0UtzUbe6ep0qNJ6KkSoDJ-IN0J5AUYSffSwbJTnGBytt_mpV2SFXMu4sRDGi0Bg7t0tQ1WWd_1FucCOvWe0S6BFlPwRl0TZZinlkiumcofxwE4txUvlgWrpYv5ozYPw9uosEDhLs-IDrprUSpgDFnNFhz5ZLhsFZ3SOWm6ZHwLoVWRTj6xhaqB0RxoVYQm3-qIoe9EE84xPet-2dphbJlw_dB1mrk1FQP-i-L1jZgmy0gAGDZxlX9RQu_dTt3_l6yBknDTJ0RUuqNpbYpoPleYto4pyX4aCYmmmyen_1Tyh9y-f7GYANioN27q_itoUUNgm9-u11UEiF7oYEcHTd0Hg_LuKf-hgemVcFS0Z-3DNsRFdgHVVmsZfI_EAxkw97amSSW5gcEyHLAx6vBkhl_h5m0ecbIEn6PDBnl2FHj3WEuMogDAvX9BhzRZbss1i5EKPgmdnsBJZoQKCBebymgdFWfQ9MhsKzxdOZENxDkxqx-rBFG2AkuWHqJs0oaeJqdsnKQQzZ4JRGAzPReot_u4vwqis_qf1m5KrS8PJAaHu5ZHN4VjPtT_ap8sTHJHcVZ7GNj9zLkutWCyz7SJd3IBQDHW4C_rEuHZPHMMq0uQrwd8DcgpVzwLaYEEv8uwqoME6EXI4cQwUUD4MkEgHx8HTONWzf82CrFKdgavDrW09NK8XJ9jxUrax_cry94W7RTkcaSZShfCcD4DM5NR_j89yGSar5VeAE46kvk1qvQy6_53V6PrFe2qEthItK2VfgQkRgsQlyghTHsQ7iSPHHUYq9uVp9BVzCvURUtzRnvhn1D0hWgC5jdo-vOQr4xI72-K8Nm9XJmsOeZ0XZn_rq55deiHPvqG5Idx9T0s7VqcTtNUIoZosou_NPLzT9f-hZhnwXO6sKbWl8wdE7qG0T_8ntQyzRAd1xjp_AI3j4l_jCEUkrhLFYP2jAwx5GOHANNSxkIcFvTF3idP6bfyH6VAor65q9iX6kcPIpZmWNpdYyZVbsS2GbP8ATXJy-MpQAfKaL45E4gs7g_Kj_isxN0FzYhKdxJXb5poAql52JZM4PbIzmniGGg7fuC9OE5mO4lrMPZUKhb_Qi8vH62E3EK-43ku8XAmIeMdJnhnazFptf_K6xaXx9IDbwgegctYvComyFaic9Li4XrSXhmHWsfccnLzAq1ldZ5y_TIYUbSptYqgx8bSPuYGvSkOfUFqZ6dUvL3qauKnvdXQ10CMLHe0XuNAbHr01NW5bU9LGZ_mmlmx-xy_N2PaSZAZDkNYPpctnclxuwNofJ3rRQRMSiitMdyZLuLWengSwqmjw7cVS2X7iXg3YgtUva_cbKEDF5txb3hyzTOICdob1-fgxc31lWrOIHcgW5GYgS4-BF3TSACalprNYmeedjQd5pV8_XrTy7Vfn6AwPi38q3r6fwevxBZEpKxgoJNpUku9chTQVY6tersv92NX8Am49wESCG8B8_G0Tzyqcx0ShFfjHLi5j6ajAWegvN791UBsgub5Km0cv4CmyDUJ7WEQ3Sa0a3cYent_wrofEkvAOFXrZSCSAp-EG72ZnBqxJXL06QlV2UwBUQpCxsReyMx79xP0xDtjRUQAC8T97fTt4dXhG5g7HADRgPKCGIcDaIpA8GHhHdEJdkiVPAbJMfo1vT-q90jQhlZe3bXmlYPMUXhMT3ylzCeKhlrIQvmQlI6bj_ZrF4jO7kEDA8lIHKaJ8Xjyx62dTJrlQfoAeOyHnIBQ1mzTDFT3FmTK95h_liTPVzHOXvuubNyAoLSr4vmBNnAMblfA57WBCEylT37Nzi5pI0elMU8O-YRCeTbuADyCsW8JxKchXftSRPnXIu8c6hzzgrii3MvXpKEm4QuxjazGYLp5mbI_vekWeb0xLtFSUxl9Cgh5U8Krw9iPNHFFjPn40V-0fJ9q8sQmW18O6Pqoc624I3gQnu0Z24Zcs1MefhNdKoOZNNS8DsLVzO-ndq2Askg9JwrqT7gNuQY80cEyXwgtX07BBhJomTVbegQmipeIIEAEB6Dr5BWB1DjAjfqbgWyQgGnw007GOLjOlSrlWtT0j9PKDjmJxgs3bsM9uVNoBSQ7Q-EWvKdVwRHWIdVR-R0w2Nu4tWenlvsaT978WYk3jGPI32S39gNo2ZHp6L1g79eSagWAmBYNE2475iY8z1wLvu41N5a08ybfoiyAkJbTNWvWF59H3FN72sXdpto1FTAO7MOGluIqH-7Dz99iFBiwtegzok5yra0BN212MV3dmekiylK43otNVjmCGm5WggGynIeDp7DS-tij0bgCxWfjNq4fqXVQoIvTRJmW6yNCH51hZzTc0GHMo8x77i4tHRIQhEMEewWCcutbQsAz2LjGypd-SH_PH2O5Oj3c5b7iKXSccFcqOC4XXCsIz-ZZ6QaJHwfJM529x9GpxMQ5BiWebXYs_TShTJFKgN-9dAvyGe71Od3K4lsNvyFzI6GIXdXmRDzPQgXfYtlGG5WEFVaLDiQ_QHROoBbImolxvr86F-0pufDBbSkDPqM9erYXTh3yFQ3gPRZel4vD3F0kiT0MqeIMtkMKRetf9HIU5kF6LB_R-AfFjBQcCWndb_5sB6U7vXfScgHf_MmtCmG-E3Vj-6V0M5yzXpgJsnXeoGPyulbZPqQN_UXcqUgN51qHpYsI0fbUSGVvtKx6YWDBasUKXc0M4UQgHLycTkrjGE0y72_Yl78-niv6vqLy4nPlpfRAsl9wgwgbcEyv4aX-eqhg33uhcKAOHP5wKEhZCoz4tzXtn-DLKbjB02RFgmtMEQV0269ppo3xZNsakAfvYhzwmbid1F30d8v_Tyfv9-VK6NN-H62ptMWocQC7e3Vm9Fn94pNhbPuu3Z7OISHQqMF8qF0JC7xy63E_xiZKtPsLh14mSYaUzmWsBQyqgRLTEysy1jwIQI4WoWBygE7LNvrBXaCVHiPwi_T6S_GX3zO7SBlB3dQuBkNZSmsSUdJSnMoCr8f16ev3hqeVt-z9ZwZSH8Pj86sFqhotFFfLK83Q9yooXfF_L9WUqzYa9lcMGDJLqUdqWdBZ5ouojJELVY95TEhLdBrPlDbBMq4HRxkJs9Yt6S-Bh9DJO-2eo-4bJuWKpWn20r94u1Ni4-_sUncyQJxDJ1bNvM3RN6qXKTj6T8UZO0PN3vk8-QPHjHIfPc75gFAVpgbd6TKYfq_mimBlSR-2ZF4320sdZF7mly5gEsGMld_h1-s_f3utyap9G9x7GuXdbroABEaq-nyHOgSf5kRKEC_Z9L0et1HVcscenW1icSg13BnkTp7jhZpG1fKgD4JrDT6q281W88fng0_ratvP1birPxJyl9lwsevLCEp_AePRVR5X6ug4vaIJ7DQ5wVQXcM9W-wctaW4q31IvaTtKCIIiN4-s7b1e45K1iW9_Rx_VSvCqow-uFXhqmFwdKJHryVTTesSEJTdG8qw2JdrLnp66EYY0XqA5PitN1cwr0jO1IIh-3C8-1VfIzsQWAzzcDC3WSsDJE6_je977JKAl7I_OWGFfbjt3zDByrm7erniseO0WI4RPhihATUYt_d1pNSgarJnh3Tcd1yljAr5LAFkAl4LJBqmDb2M5M2yDeY5E35PIFzeHGxUa_EJqXpEf4jq-yDgOdF92wcWXFVFXHCs-hZ8m4qPwMwzRui4njEgFOucUUjZA1u3T862XzSQPN9So0QnuEtZIyYBSCRnFouqxAATsmgTKZjjw2D_dRisoz9nG-0RbPLD_oOhBTpSXZJPRV9Dt9LTWKb_zVaLxhLjNnV38eI3r8lXZjDYeMZGLnN_WzZnXR-Z72I2cxThVpXnwSE321oKnOZk4txI822ypufF5rdLQQIQsXTG4Bqp3K7E4qoTN0DEp7sq3D9ZBn_fuX7ZIZBr_jwt2h2AA2vyrMYJFr0yeFOqCRnEEGhsALIL2kh6LdP4-UqSmGeaFRwLrfH75VuUD_sqt7-rNr16dAj8G5q6K9DH1uBS4AebcRBu8E_bm0cjtJffyDQJ_n3m8GZhHqILEpRBML-0X_GwDBObZqxcy7vTPnbO2Z7lL6QYPDe9INOAJsWV17o5gFE0Wo5YeIwCHdb94AA-0kQM_bw4iwwfTRr4BzzezpxYbrKkznnhuAafwhkD1VBi9szz_ev7XBr6y_GoYIHCMHkKP54zWftmf2dSzlGHStTeJdM5LkDDrN3-RvBtMlDRZOYeTeA0FwfljvV2SgJEhxdUMtTJHp01UWZkf2ZTmgG_EonKLFg0ZR4H3clhRErjsQ6M3DnxLC0g0f9ukiZwLOTmoc1suY52sTKuiu9rlaoSj61ZT4g7P7vsX3xaQ9xdGkKmgUyq8-sXVj4ouiuk7JghNQ5b5dSSG20--nwBasY7xWbL-BoGH9XXJ_LJ6MF9IehXMphwMLPxAlqprFgbvP340bgeTdZB5Q-4zKLWyMBrZ3OZ1q4s_dmlEA__J0giCACDPN11r0zgQxGGnOTz5moS6TX_wUZMdAMB-WGfpiOeaFCUXbPU0TnHfaqix2l8JoA63o-xAU-gwjY4V_ftcHCQ2jTT9Zhd6I5KFYDr4ROy78JRyh1853R2JK47HKKzVAWDfjkx_BQ8M6udHX4PMyyeb0fjin18oF9qCzt7cCC5YJRU-oMIXfVLeH1BQ01AjF54aKyiiMnFKiKN8OBNqxDrtnxdl_PGQ6yioHODFVVsIDVyPDaM5_xbp_VwoOptyCFMG_32Q5fQq4WKKU8wFm43FLB87uouQyq4Dd2Fu_RK4oFa0RKmytXiiwWiCH8kqkC6stUhhDLD9SoaM2WAwe1_ckyw10Ygj8X8jWNX7bsf6BqHpMkBeq4jgx35YnR97Z0mTIVt4p5MXxlx2inKIcaAXz4jx0IL-iZzyoadoKb3sGJYLw1t7DjUuG0NVSeY8AJkWWNeTzqAsfYYmPNimIUcOAUiknATWIgpGCJvTzyASPDNEXlE9c0QY4tyMvjYJL1gSdK9sXeZyKCG4kbxbGM34DestktnJL3T8FAH87oRH5_1t_yeDVChnZk7vmbcFown0hX5s9VLv6jc16S21qpLwSUAe2BbN9NZ9QETut8jNTiruB51JQWQt3PvEIMsMtAlg79XEevBFJ2klVucjybTZOJ5-j89gq7IF0AAOB5klDzqcGQI3WTTzcTiZ6gScmOQQG34FB5PiMcZqe76kDEJjHC81fyGWYWJ6MyXHeJFOSDKnMZg6ZspAr-6PgvcNMDJga4mpodVHD-JxVoHqYHvykROepFLkGD7Fb2ERhmcSmg-_fm7a9UTcFpsVq6fykBZAPSFHJIUU95dTvq3Tb7o_-Ll6zqI3yOCkdAFCiPDGK51-AwJdyntGMVj1v35GXq2TxJzvtW28o_OutLGwxAHwYBN3FI3hQ2uxfbPuV-5LHYIxvWp4iTDl2F9EE8foX8w2PLZdGqHm7TWQn9qVMr4ITpsB-DNDXS4Twli3eZqnk1E29_cu1hTFiAkEWp9IEwMsaOJaZO8jHiwzoRMHBJPf7KD8kWqxQU8tlfZIxdiK8y90vlgDqChP696HarnRx9Wlf0rGod7o_rJGhmIAIEv5jHeq1jPZWdAkNal-TDn4zOjrv2TVFqY8gZkHevVZKkZeRlHYNvEuzdOL0EeS0Znn1wf2Ryv21Am5HRypHjRKsssonZfo-LK3H4sux-ZSMVG9nhXaphb4cd0OOOQvHeByLxzl.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_094090dfda8a0be2016af72920b6b487d18c84a40139ad1b68",
+              "index": 1
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794582815,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 1048,
+      "prompt_tokens": 39878,
+      "total_tokens": 40926,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 516,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 39875,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.005508675,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.005508675,
+        "upstream_inference_prompt_cost": 0.004984675,
+        "upstream_inference_completions_cost": 0.000524
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

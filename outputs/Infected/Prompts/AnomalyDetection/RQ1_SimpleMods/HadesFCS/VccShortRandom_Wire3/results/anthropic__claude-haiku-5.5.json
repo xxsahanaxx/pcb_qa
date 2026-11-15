@@ -1,0 +1,266 @@
+{
+  "id": "HadesFCS/VccShortRandom_Wire3",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/VccShortRandom_Wire3/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/VccShortRandom_Wire3/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/VccShortRandom_Wire3/spice.cir",
+    "chars": 317505,
+    "sha256": "7956c46c1e30677b5245e5c1725a61ebdf52b9d80fa5b3043194c27e75eb60d2"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.8, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"FCC1\", \"UART3_FCC1\"], \"pins\": [\"FCC1.73\", \"FCC1.48\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"], \"nets\": [\"UART3_RX_FCC\", \"UART3_TX_FCC\"], \"observed\": \"Both UART3 signal nets land on FCC1 pins that the library defines as VCAP (power_out) pins, not on UART-capable pins. UART3_RX_FCC is on pin 73 (VCAP) and UART3_TX_FCC is on pin 48 (VCAP). The connector pins are UART3_FCC1 pins 3 and 4.\", \"expected\": \"UART3 TX/RX should be on the MCU's USART3 alternate-function pins (e.g. PB10/PB11 or PB13/PB14 as used elsewhere on this board). VCAP pins are regulator decoupling/output pins that must only have a stability capacitor on them and must never carry a signal.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"143\\\") (name \\\"UART3_RX_FCC\\\") (class \\\"Default\\\") (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\") (pintype \\\"power_out\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"145\\\") (name \\\"UART3_TX_FCC\\\") (class \\\"Default\\\") (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\") (pintype \\\"power_out\\\"))\"}], \"impact\": \"The UART3 port on the FCC cannot function. Its signals are shorted to the core-regulator output pins, which can disturb the MCU's internal supply and may damage the output driver or the connected UART device.\", \"confidence\": 0.75}, {\"category\": \"bridged_nets\", \"components\": [\"U10\", \"GPS_NAVC1\", \"C16\", \"R9\", \"SW2\"], \"pins\": [\"U10.4\", \"GPS_NAVC1.5\", \"C16.1\", \"R9.1\"], \"nets\": [\"GPS_PPS_NAVC\"], \"observed\": \"Net GPS_PPS_NAVC contains the GPS TIMEPULSE output (U10 pin 4) and EXTINT (GPS_NAVC1 pin 5). It also contains the 3.3 V decoupling capacitors C16 to C26 and the pull-ups R9 to R14, R28 to R31, which the SPICE deck places on the +3V3 supply node. The 3.3 V supply and the GPS PPS output are therefore one net.\", \"expected\": \"The GPS TIMEPULSE output should be a separate signal net that feeds only the PPS input (ADC_FCC1 / a GPIO) and is not connected to the 3.3 V supply rail. Only the rail decoupling and pull-ups should sit on the supply net.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U10\\\") (pin \\\"4\\\") (pinfunction \\\"TIMEPULSE\\\") (pintype \\\"output\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"C16\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"C16 +3V3 0 100n\"}], \"impact\": \"The GPS module's push-pull PPS output drives directly into the 3.3 V rail, which fights the LDO and the MCU and pull-up network. The rail can be pulled low or damaged, and the PPS signal is never delivered to its intended input.\", \"confidence\": 0.6}, {\"category\": \"wrong_value\", \"components\": [\"U2\"], \"pins\": [\"U2.1\"], \"nets\": [\"+3.3V\"], \"observed\": \"The PCA9685 A0 address pin (U2 pin 1) is tied to the +3.3V net, while A1 through A5 are on GND.\", \"expected\": \"The specification states the PCA9685 I2C address is 0x40, which requires A0 to be tied low (to GND) with A1 to A5 low. Tying A0 high gives 0x41.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}], \"impact\": \"The FCC will not reach the PWM driver at the expected address 0x40, so servo outputs will not be commanded unless firmware uses 0x41.\", \"confidence\": 0.35}], \"summary\": \"The netlist shows the FCC UART3 signals wired to VCAP regulator pins and the GPS TIMEPULSE output merged into the 3.3 V supply net, both clear electrical faults. A weaker concern is the PCA9685 A0 pin tied high, which conflicts with the specified 0x40 address.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.8,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "FCC1",
+            "UART3_FCC1"
+          ],
+          "pins": [
+            "FCC1.73",
+            "FCC1.48",
+            "UART3_FCC1.3",
+            "UART3_FCC1.4"
+          ],
+          "nets": [
+            "UART3_RX_FCC",
+            "UART3_TX_FCC"
+          ],
+          "observed": "Both UART3 signal nets land on FCC1 pins that the library defines as VCAP (power_out) pins, not on UART-capable pins. UART3_RX_FCC is on pin 73 (VCAP) and UART3_TX_FCC is on pin 48 (VCAP). The connector pins are UART3_FCC1 pins 3 and 4.",
+          "expected": "UART3 TX/RX should be on the MCU's USART3 alternate-function pins (e.g. PB10/PB11 or PB13/PB14 as used elsewhere on this board). VCAP pins are regulator decoupling/output pins that must only have a stability capacitor on them and must never carry a signal.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"143\") (name \"UART3_RX_FCC\") (class \"Default\") (node (ref \"FCC1\") (pin \"73\") (pinfunction \"VCAP\") (pintype \"power_out\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"145\") (name \"UART3_TX_FCC\") (class \"Default\") (node (ref \"FCC1\") (pin \"48\") (pinfunction \"VCAP\") (pintype \"power_out\"))"
+            }
+          ],
+          "impact": "The UART3 port on the FCC cannot function. Its signals are shorted to the core-regulator output pins, which can disturb the MCU's internal supply and may damage the output driver or the connected UART device.",
+          "confidence": 0.75
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U10",
+            "GPS_NAVC1",
+            "C16",
+            "R9",
+            "SW2"
+          ],
+          "pins": [
+            "U10.4",
+            "GPS_NAVC1.5",
+            "C16.1",
+            "R9.1"
+          ],
+          "nets": [
+            "GPS_PPS_NAVC"
+          ],
+          "observed": "Net GPS_PPS_NAVC contains the GPS TIMEPULSE output (U10 pin 4) and EXTINT (GPS_NAVC1 pin 5). It also contains the 3.3 V decoupling capacitors C16 to C26 and the pull-ups R9 to R14, R28 to R31, which the SPICE deck places on the +3V3 supply node. The 3.3 V supply and the GPS PPS output are therefore one net.",
+          "expected": "The GPS TIMEPULSE output should be a separate signal net that feeds only the PPS input (ADC_FCC1 / a GPIO) and is not connected to the 3.3 V supply rail. Only the rail decoupling and pull-ups should sit on the supply net.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U10\") (pin \"4\") (pinfunction \"TIMEPULSE\") (pintype \"output\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"C16\") (pin \"1\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "C16 +3V3 0 100n"
+            }
+          ],
+          "impact": "The GPS module's push-pull PPS output drives directly into the 3.3 V rail, which fights the LDO and the MCU and pull-up network. The rail can be pulled low or damaged, and the PPS signal is never delivered to its intended input.",
+          "confidence": 0.6
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "U2"
+          ],
+          "pins": [
+            "U2.1"
+          ],
+          "nets": [
+            "+3.3V"
+          ],
+          "observed": "The PCA9685 A0 address pin (U2 pin 1) is tied to the +3.3V net, while A1 through A5 are on GND.",
+          "expected": "The specification states the PCA9685 I2C address is 0x40, which requires A0 to be tied low (to GND) with A1 to A5 low. Tying A0 high gives 0x41.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"1\") (pinfunction \"A0\") (pintype \"input\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40"
+            }
+          ],
+          "impact": "The FCC will not reach the PWM driver at the expected address 0x40, so servo outputs will not be commanded unless firmware uses 0x41.",
+          "confidence": 0.35
+        }
+      ],
+      "summary": "The netlist shows the FCC UART3 signals wired to VCAP regulator pins and the GPS TIMEPULSE output merged into the 3.3 V supply net, both clear electrical faults. A weaker concern is the PCA9685 A0 pin tied high, which conflicts with the specified 0x40 address."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 148815,
+    "completion_tokens": 7685,
+    "reasoning_tokens": 5982,
+    "cached_tokens": 0,
+    "total_tokens": 156500,
+    "cost_usd": 0.09362,
+    "cost_details": {
+      "upstream_inference_cost": 0.09362,
+      "upstream_inference_prompt_cost": 0.0744075,
+      "upstream_inference_completions_cost": 0.0192125
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:45:11.433446+00:00",
+    "ended_at": "2026-11-13T03:45:46.179290+00:00",
+    "latency_s": 34.746
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:45:11.591Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 30185,
+    "moderation_latency": null,
+    "generation_time": 34668,
+    "tokens_prompt": 80785,
+    "tokens_completion": 908,
+    "native_tokens_prompt": 148815,
+    "native_tokens_completion": 7685,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 5982,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.09362,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794541511-GZ0QIYQm39QAIlwGhkwy",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794541511-dmoD6ubBXOPqkzNkGmNp",
+    "upstream_id": "msg_011CgzEqX8tNg8TWisSdgirh",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzEqX8tNg8TWisSdgirh",
+        "is_byok": false,
+        "latency": 434,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.09362,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794541511-dmoD6ubBXOPqkzNkGmNp",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.8, \"anomalies\": [{\"category\": \"bridged_nets\", \"components\": [\"FCC1\", \"UART3_FCC1\"], \"pins\": [\"FCC1.73\", \"FCC1.48\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"], \"nets\": [\"UART3_RX_FCC\", \"UART3_TX_FCC\"], \"observed\": \"Both UART3 signal nets land on FCC1 pins that the library defines as VCAP (power_out) pins, not on UART-capable pins. UART3_RX_FCC is on pin 73 (VCAP) and UART3_TX_FCC is on pin 48 (VCAP). The connector pins are UART3_FCC1 pins 3 and 4.\", \"expected\": \"UART3 TX/RX should be on the MCU's USART3 alternate-function pins (e.g. PB10/PB11 or PB13/PB14 as used elsewhere on this board). VCAP pins are regulator decoupling/output pins that must only have a stability capacitor on them and must never carry a signal.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"143\\\") (name \\\"UART3_RX_FCC\\\") (class \\\"Default\\\") (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\") (pintype \\\"power_out\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"145\\\") (name \\\"UART3_TX_FCC\\\") (class \\\"Default\\\") (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\") (pintype \\\"power_out\\\"))\"}], \"impact\": \"The UART3 port on the FCC cannot function. Its signals are shorted to the core-regulator output pins, which can disturb the MCU's internal supply and may damage the output driver or the connected UART device.\", \"confidence\": 0.75}, {\"category\": \"bridged_nets\", \"components\": [\"U10\", \"GPS_NAVC1\", \"C16\", \"R9\", \"SW2\"], \"pins\": [\"U10.4\", \"GPS_NAVC1.5\", \"C16.1\", \"R9.1\"], \"nets\": [\"GPS_PPS_NAVC\"], \"observed\": \"Net GPS_PPS_NAVC contains the GPS TIMEPULSE output (U10 pin 4) and EXTINT (GPS_NAVC1 pin 5). It also contains the 3.3 V decoupling capacitors C16 to C26 and the pull-ups R9 to R14, R28 to R31, which the SPICE deck places on the +3V3 supply node. The 3.3 V supply and the GPS PPS output are therefore one net.\", \"expected\": \"The GPS TIMEPULSE output should be a separate signal net that feeds only the PPS input (ADC_FCC1 / a GPIO) and is not connected to the 3.3 V supply rail. Only the rail decoupling and pull-ups should sit on the supply net.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U10\\\") (pin \\\"4\\\") (pinfunction \\\"TIMEPULSE\\\") (pintype \\\"output\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"C16\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"C16 +3V3 0 100n\"}], \"impact\": \"The GPS module's push-pull PPS output drives directly into the 3.3 V rail, which fights the LDO and the MCU and pull-up network. The rail can be pulled low or damaged, and the PPS signal is never delivered to its intended input.\", \"confidence\": 0.6}, {\"category\": \"wrong_value\", \"components\": [\"U2\"], \"pins\": [\"U2.1\"], \"nets\": [\"+3.3V\"], \"observed\": \"The PCA9685 A0 address pin (U2 pin 1) is tied to the +3.3V net, while A1 through A5 are on GND.\", \"expected\": \"The specification states the PCA9685 I2C address is 0x40, which requires A0 to be tied low (to GND) with A1 to A5 low. Tying A0 high gives 0x41.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}], \"impact\": \"The FCC will not reach the PWM driver at the expected address 0x40, so servo outputs will not be commanded unless firmware uses 0x41.\", \"confidence\": 0.35}], \"summary\": \"The netlist shows the FCC UART3 signals wired to VCAP regulator pins and the GPS TIMEPULSE output merged into the 3.3 V supply net, both clear electrical faults. A weaker concern is the PCA9685 A0 pin tied high, which conflicts with the specified 0x40 address.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794541511,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 7685,
+      "prompt_tokens": 148815,
+      "total_tokens": 156500,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 5982,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.09362,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.09362,
+        "upstream_inference_prompt_cost": 0.0744075,
+        "upstream_inference_completions_cost": 0.0192125
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

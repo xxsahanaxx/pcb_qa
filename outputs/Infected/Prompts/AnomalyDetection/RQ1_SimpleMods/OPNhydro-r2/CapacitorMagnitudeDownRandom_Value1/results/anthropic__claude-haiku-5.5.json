@@ -1,0 +1,284 @@
+{
+  "id": "OPNhydro-r2/CapacitorMagnitudeDownRandom_Value1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/CapacitorMagnitudeDownRandom_Value1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/CapacitorMagnitudeDownRandom_Value1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/CapacitorMagnitudeDownRandom_Value1/spice.cir",
+    "chars": 367404,
+    "sha256": "68ba3240173e864665294758e4be2cfe1d5578b115b023cb1f744885b2512264"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.5,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C32\"],\n      \"pins\": [\"C32.1\", \"C32.2\"],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"C32 is valued 100p, but its footprint, description and part number all describe a 0.1 \u00b5F / 100 nF X7R 0603 capacitor (GRM188R72A104KA35D, LCSC C77058). The value field and the part metadata disagree.\",\n      \"expected\": \"A 100 nF decoupling capacitor on the +3V3 rail, matching the other 100n decoupling caps on that rail (C13, C28, C29, C37, C44, C45).\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C32\\\") (value \\\"100p\\\") (footprint \\\"Coert-Vonk:CAP X7R 100nF \u00b110 50V 0603 Murata\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(description \\\"0.1 \u00b5F \u00b110% 100V Ceramic Capacitor X7R 0603 (1608 Metric)\\\")\"},\n        {\"source\": \"spice\", \"quote\": \"C32 0 +3V3 100p\"}\n      ],\n      \"impact\": \"If built as 100 pF, the +3V3 rail loses its 100 nF bulk-high-frequency decoupling in this position, which can increase switching noise on the 3.3 V supply feeding the I2C bus, the ADM3260 primaries and the TMC2209 logic.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_connection\",\n      \"components\": [\"C5\", \"C4\", \"R9\", \"R6\"],\n      \"pins\": [\"C5.1\", \"C5.2\", \"C4.1\", \"C4.2\"],\n      \"nets\": [\"FLOAT_HIGH\", \"+3V3\", \"GND\", \"FLOAT_LOW\"],\n      \"observed\": \"C5 (100n) connects FLOAT_HIGH to +3V3. The mirror filter C4 (100n) connects FLOAT_LOW to GND. FLOAT_HIGH is pulled down to GND by R9 (10k), so the filter cap should return to GND, not to the supply.\",\n      \"expected\": \"Matching float-switch RC filters: each float input filtered to GND, consistent with its pull resistor (R9 to GND on FLOAT_HIGH; C4 to GND on FLOAT_LOW).\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"74\\\") (name \\\"FLOAT_HIGH\\\") ... (node (ref \\\"C5\\\") (pin \\\"1\\\") ...) (node (ref \\\"R9\\\") (pin \\\"2\\\") ...)\"},\n        {\"source\": \"netlist\", \"quote\": \"(name \\\"+3V3\\\") ... (node (ref \\\"C5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"C5 FLOAT_HIGH +3V3 100n\"},\n        {\"source\": \"spice\", \"quote\": \"C4 0 FLOAT_LOW 100n\"}\n      ],\n      \"impact\": \"The high-level float input is filtered against the 3.3 V rail instead of ground, so its debounce and noise filtering do not work as intended. The float-high sensor (overflow protection) may read incorrectly during transients.\",\n      \"confidence\": 0.4\n    },\n    {\n      \"category\": \"wrong_connection\",\n      \"components\": [\"R5\", \"R1\", \"T1\", \"T2\"],\n      \"pins\": [\"R5.1\", \"R5.2\", \"T2.1\"],\n      \"nets\": [\"/G_PUMP\" , \"+3V3\", \"PUMP_MAIN\"],\n      \"observed\": \"The main pump's gate net G_PUMP is pulled up to +3V3 through R5 (10k). Its pre-driver T1 is the only path pulling the gate low. Every other low-side switch gate in this design (ATO via R12, and the main-pump drive path) is pulled to GND.\",\n      \"expected\": \"A low-side N-MOSFET gate should be pulled down to GND by default so the pump stays off at power-up and during reset. Pulling the gate to +3V3 makes the 24 V pump default to ON whenever the MCU pin is high-impedance.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"46\\\") (name \\\"/G_{PUMP}\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\") ...) ... (node (ref \\\"T2\\\") (pin \\\"1\\\") (pinfunction \\\"G\\\")\"},\n        {\"source\": \"spice\", \"quote\": \"R5 /GPUMP +3V3 10k\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"75\\\") ... (node (ref \\\"R12\\\") ...)\"}\n      ],\n      \"impact\": \"The main circulation pump may run unintentionally at boot or on MCU reset, which is a safety and operational concern for a nutrient-recirculation system.\",\n      \"confidence\": 0.25\n    }\n  ],\n  \"summary\": \"The netlist shows a value/part-metadata mismatch on C32 (100p labelled on a 100 nF part), a float-switch filter capacitor C5 returned to +3V3 rather than GND in a mirror of C4, and a main-pump gate pulled up to +3V3 (R5) rather than pulled down. The first two are the most likely genuine deviations; the third is a design-judgment question.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.5,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "C32"
+          ],
+          "pins": [
+            "C32.1",
+            "C32.2"
+          ],
+          "nets": [
+            "+3V3",
+            "GND"
+          ],
+          "observed": "C32 is valued 100p, but its footprint, description and part number all describe a 0.1 \u00b5F / 100 nF X7R 0603 capacitor (GRM188R72A104KA35D, LCSC C77058). The value field and the part metadata disagree.",
+          "expected": "A 100 nF decoupling capacitor on the +3V3 rail, matching the other 100n decoupling caps on that rail (C13, C28, C29, C37, C44, C45).",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(ref \"C32\") (value \"100p\") (footprint \"Coert-Vonk:CAP X7R 100nF \u00b110 50V 0603 Murata\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(description \"0.1 \u00b5F \u00b110% 100V Ceramic Capacitor X7R 0603 (1608 Metric)\")"
+            },
+            {
+              "source": "spice",
+              "quote": "C32 0 +3V3 100p"
+            }
+          ],
+          "impact": "If built as 100 pF, the +3V3 rail loses its 100 nF bulk-high-frequency decoupling in this position, which can increase switching noise on the 3.3 V supply feeding the I2C bus, the ADM3260 primaries and the TMC2209 logic.",
+          "confidence": 0.5
+        },
+        {
+          "category": "wrong_connection",
+          "components": [
+            "C5",
+            "C4",
+            "R9",
+            "R6"
+          ],
+          "pins": [
+            "C5.1",
+            "C5.2",
+            "C4.1",
+            "C4.2"
+          ],
+          "nets": [
+            "FLOAT_HIGH",
+            "+3V3",
+            "GND",
+            "FLOAT_LOW"
+          ],
+          "observed": "C5 (100n) connects FLOAT_HIGH to +3V3. The mirror filter C4 (100n) connects FLOAT_LOW to GND. FLOAT_HIGH is pulled down to GND by R9 (10k), so the filter cap should return to GND, not to the supply.",
+          "expected": "Matching float-switch RC filters: each float input filtered to GND, consistent with its pull resistor (R9 to GND on FLOAT_HIGH; C4 to GND on FLOAT_LOW).",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"74\") (name \"FLOAT_HIGH\") ... (node (ref \"C5\") (pin \"1\") ...) (node (ref \"R9\") (pin \"2\") ...)"
+            },
+            {
+              "source": "netlist",
+              "quote": "(name \"+3V3\") ... (node (ref \"C5\") (pin \"2\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "C5 FLOAT_HIGH +3V3 100n"
+            },
+            {
+              "source": "spice",
+              "quote": "C4 0 FLOAT_LOW 100n"
+            }
+          ],
+          "impact": "The high-level float input is filtered against the 3.3 V rail instead of ground, so its debounce and noise filtering do not work as intended. The float-high sensor (overflow protection) may read incorrectly during transients.",
+          "confidence": 0.4
+        },
+        {
+          "category": "wrong_connection",
+          "components": [
+            "R5",
+            "R1",
+            "T1",
+            "T2"
+          ],
+          "pins": [
+            "R5.1",
+            "R5.2",
+            "T2.1"
+          ],
+          "nets": [
+            "/G_PUMP",
+            "+3V3",
+            "PUMP_MAIN"
+          ],
+          "observed": "The main pump's gate net G_PUMP is pulled up to +3V3 through R5 (10k). Its pre-driver T1 is the only path pulling the gate low. Every other low-side switch gate in this design (ATO via R12, and the main-pump drive path) is pulled to GND.",
+          "expected": "A low-side N-MOSFET gate should be pulled down to GND by default so the pump stays off at power-up and during reset. Pulling the gate to +3V3 makes the 24 V pump default to ON whenever the MCU pin is high-impedance.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"46\") (name \"/G_{PUMP}\") ... (node (ref \"R5\") (pin \"1\") ...) ... (node (ref \"T2\") (pin \"1\") (pinfunction \"G\")"
+            },
+            {
+              "source": "spice",
+              "quote": "R5 /GPUMP +3V3 10k"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"75\") ... (node (ref \"R12\") ...)"
+            }
+          ],
+          "impact": "The main circulation pump may run unintentionally at boot or on MCU reset, which is a safety and operational concern for a nutrient-recirculation system.",
+          "confidence": 0.25
+        }
+      ],
+      "summary": "The netlist shows a value/part-metadata mismatch on C32 (100p labelled on a 100 nF part), a float-switch filter capacitor C5 returned to +3V3 rather than GND in a mirror of C4, and a main-pump gate pulled up to +3V3 (R5) rather than pulled down. The first two are the most likely genuine deviations; the third is a design-judgment question."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 182667,
+    "completion_tokens": 13187,
+    "reasoning_tokens": 11330,
+    "cached_tokens": 0,
+    "total_tokens": 195854,
+    "cost_usd": 0.124301,
+    "cost_details": {
+      "upstream_inference_cost": 0.124301,
+      "upstream_inference_prompt_cost": 0.0913335,
+      "upstream_inference_completions_cost": 0.0329675
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:03:12.605830+00:00",
+    "ended_at": "2026-11-13T03:04:12.947901+00:00",
+    "latency_s": 60.341
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:03:12.67Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 52929,
+    "moderation_latency": null,
+    "generation_time": 60226,
+    "tokens_prompt": 93735,
+    "tokens_completion": 1035,
+    "native_tokens_prompt": 182667,
+    "native_tokens_completion": 13187,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 11330,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.124301,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794538992-KpJlb5fEvnEw0uLyVwwP",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794538992-jo8Sbr9t7evx4KbuLZl3",
+    "upstream_id": "msg_011CgzBdujksUfPuKrTU5L88",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzBdujksUfPuKrTU5L88",
+        "is_byok": false,
+        "latency": 1349,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.124301,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794538992-jo8Sbr9t7evx4KbuLZl3",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.5,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C32\"],\n      \"pins\": [\"C32.1\", \"C32.2\"],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"C32 is valued 100p, but its footprint, description and part number all describe a 0.1 \u00b5F / 100 nF X7R 0603 capacitor (GRM188R72A104KA35D, LCSC C77058). The value field and the part metadata disagree.\",\n      \"expected\": \"A 100 nF decoupling capacitor on the +3V3 rail, matching the other 100n decoupling caps on that rail (C13, C28, C29, C37, C44, C45).\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(ref \\\"C32\\\") (value \\\"100p\\\") (footprint \\\"Coert-Vonk:CAP X7R 100nF \u00b110 50V 0603 Murata\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(description \\\"0.1 \u00b5F \u00b110% 100V Ceramic Capacitor X7R 0603 (1608 Metric)\\\")\"},\n        {\"source\": \"spice\", \"quote\": \"C32 0 +3V3 100p\"}\n      ],\n      \"impact\": \"If built as 100 pF, the +3V3 rail loses its 100 nF bulk-high-frequency decoupling in this position, which can increase switching noise on the 3.3 V supply feeding the I2C bus, the ADM3260 primaries and the TMC2209 logic.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_connection\",\n      \"components\": [\"C5\", \"C4\", \"R9\", \"R6\"],\n      \"pins\": [\"C5.1\", \"C5.2\", \"C4.1\", \"C4.2\"],\n      \"nets\": [\"FLOAT_HIGH\", \"+3V3\", \"GND\", \"FLOAT_LOW\"],\n      \"observed\": \"C5 (100n) connects FLOAT_HIGH to +3V3. The mirror filter C4 (100n) connects FLOAT_LOW to GND. FLOAT_HIGH is pulled down to GND by R9 (10k), so the filter cap should return to GND, not to the supply.\",\n      \"expected\": \"Matching float-switch RC filters: each float input filtered to GND, consistent with its pull resistor (R9 to GND on FLOAT_HIGH; C4 to GND on FLOAT_LOW).\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"74\\\") (name \\\"FLOAT_HIGH\\\") ... (node (ref \\\"C5\\\") (pin \\\"1\\\") ...) (node (ref \\\"R9\\\") (pin \\\"2\\\") ...)\"},\n        {\"source\": \"netlist\", \"quote\": \"(name \\\"+3V3\\\") ... (node (ref \\\"C5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"C5 FLOAT_HIGH +3V3 100n\"},\n        {\"source\": \"spice\", \"quote\": \"C4 0 FLOAT_LOW 100n\"}\n      ],\n      \"impact\": \"The high-level float input is filtered against the 3.3 V rail instead of ground, so its debounce and noise filtering do not work as intended. The float-high sensor (overflow protection) may read incorrectly during transients.\",\n      \"confidence\": 0.4\n    },\n    {\n      \"category\": \"wrong_connection\",\n      \"components\": [\"R5\", \"R1\", \"T1\", \"T2\"],\n      \"pins\": [\"R5.1\", \"R5.2\", \"T2.1\"],\n      \"nets\": [\"/G_PUMP\" , \"+3V3\", \"PUMP_MAIN\"],\n      \"observed\": \"The main pump's gate net G_PUMP is pulled up to +3V3 through R5 (10k). Its pre-driver T1 is the only path pulling the gate low. Every other low-side switch gate in this design (ATO via R12, and the main-pump drive path) is pulled to GND.\",\n      \"expected\": \"A low-side N-MOSFET gate should be pulled down to GND by default so the pump stays off at power-up and during reset. Pulling the gate to +3V3 makes the 24 V pump default to ON whenever the MCU pin is high-impedance.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"46\\\") (name \\\"/G_{PUMP}\\\") ... (node (ref \\\"R5\\\") (pin \\\"1\\\") ...) ... (node (ref \\\"T2\\\") (pin \\\"1\\\") (pinfunction \\\"G\\\")\"},\n        {\"source\": \"spice\", \"quote\": \"R5 /GPUMP +3V3 10k\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"75\\\") ... (node (ref \\\"R12\\\") ...)\"}\n      ],\n      \"impact\": \"The main circulation pump may run unintentionally at boot or on MCU reset, which is a safety and operational concern for a nutrient-recirculation system.\",\n      \"confidence\": 0.25\n    }\n  ],\n  \"summary\": \"The netlist shows a value/part-metadata mismatch on C32 (100p labelled on a 100 nF part), a float-switch filter capacitor C5 returned to +3V3 rather than GND in a mirror of C4, and a main-pump gate pulled up to +3V3 (R5) rather than pulled down. The first two are the most likely genuine deviations; the third is a design-judgment question.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794538992,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 13187,
+      "prompt_tokens": 182667,
+      "total_tokens": 195854,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 11330,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.124301,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.124301,
+        "upstream_inference_prompt_cost": 0.0913335,
+        "upstream_inference_completions_cost": 0.0329675
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

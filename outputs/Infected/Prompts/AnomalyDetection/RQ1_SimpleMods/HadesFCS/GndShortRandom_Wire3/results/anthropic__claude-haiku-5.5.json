@@ -1,0 +1,245 @@
+{
+  "id": "HadesFCS/GndShortRandom_Wire3",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/GndShortRandom_Wire3/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/GndShortRandom_Wire3/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/GndShortRandom_Wire3/spice.cir",
+    "chars": 317475,
+    "sha256": "6852bbaf8cf88a418d4f7ecab2d5aab5b6fd72de858a884c887df9053f35da46"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.8,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"R17\", \"LED5\"],\n      \"pins\": [\"R17.1\", \"R17.2\", \"LED5.1\"],\n      \"nets\": [\"GND\", \"LED_C_FCC\"],\n      \"observed\": \"Both pins of R17 (330 ohm) are on the GND net, so the resistor is shorted. LED5's cathode (K) is also on GND, so the yellow LED has no series current-limit resistor. Its anode is driven directly from FCC1 pin 89 (PB3) via LED_C_FCC.\",\n      \"expected\": \"R17 should be a series current-limit resistor between LED5 cathode (Net-(LED5-K)) and GND, as in the other LED channels (e.g. R15 pin 2 to LED3-K, R18 pin 2 to LED6-K). Its pin 2 should not sit on GND.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R17\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R17\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"LED5\\\") (pin \\\"1\\\") (pinfunction \\\"K\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"R17 0 0 330\"},\n        {\"source\": \"spice\", \"quote\": \"DLED5 0 LED_C_FCC LED_D_Y\"}\n      ],\n      \"impact\": \"The resistor is bypassed and the LED has no current limit. Driving the LED from the GPIO can overcurrent the pin and LED, and the indicator will not be set to the intended brightness.\",\n      \"confidence\": 0.8\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"U2\"],\n      \"pins\": [\"U2.1\"],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"PCA9685PW pin 1 (A0 address input) is tied to the +3V3 net, while A1 to A5 are tied to GND. This sets the I2C address bit A0 high.\",\n      \"expected\": \"The specification gives the PCA9685PW I2C address as 0x40, which requires all address pins (A0 to A5) to be low, so A0 should be on GND.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"A1\\\") (pintype \\\"input\\\"))\"},\n        {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}\n      ],\n      \"impact\": \"The PWM driver responds at 0x41, not 0x40, so firmware addressing it at 0x40 will get no response and the servo outputs will not be driven. The INA219 on the same bus also uses 0x40, so the strap also avoids a conflict.\",\n      \"confidence\": 0.5\n    }\n  ],\n  \"summary\": \"R17 is shorted across GND and LED5's cathode is tied directly to ground, so the yellow LED channel has no current limiting. The PCA9685 A0 strap is also tied high, which contradicts the specified 0x40 address.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.8,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "R17",
+            "LED5"
+          ],
+          "pins": [
+            "R17.1",
+            "R17.2",
+            "LED5.1"
+          ],
+          "nets": [
+            "GND",
+            "LED_C_FCC"
+          ],
+          "observed": "Both pins of R17 (330 ohm) are on the GND net, so the resistor is shorted. LED5's cathode (K) is also on GND, so the yellow LED has no series current-limit resistor. Its anode is driven directly from FCC1 pin 89 (PB3) via LED_C_FCC.",
+          "expected": "R17 should be a series current-limit resistor between LED5 cathode (Net-(LED5-K)) and GND, as in the other LED channels (e.g. R15 pin 2 to LED3-K, R18 pin 2 to LED6-K). Its pin 2 should not sit on GND.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R17\") (pin \"1\") (pintype \"passive\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R17\") (pin \"2\") (pintype \"passive\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"LED5\") (pin \"1\") (pinfunction \"K\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "R17 0 0 330"
+            },
+            {
+              "source": "spice",
+              "quote": "DLED5 0 LED_C_FCC LED_D_Y"
+            }
+          ],
+          "impact": "The resistor is bypassed and the LED has no current limit. Driving the LED from the GPIO can overcurrent the pin and LED, and the indicator will not be set to the intended brightness.",
+          "confidence": 0.8
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "U2"
+          ],
+          "pins": [
+            "U2.1"
+          ],
+          "nets": [
+            "+3V3",
+            "GND"
+          ],
+          "observed": "PCA9685PW pin 1 (A0 address input) is tied to the +3V3 net, while A1 to A5 are tied to GND. This sets the I2C address bit A0 high.",
+          "expected": "The specification gives the PCA9685PW I2C address as 0x40, which requires all address pins (A0 to A5) to be low, so A0 should be on GND.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"1\") (pinfunction \"A0\") (pintype \"input\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U2\") (pin \"2\") (pinfunction \"A1\") (pintype \"input\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40"
+            }
+          ],
+          "impact": "The PWM driver responds at 0x41, not 0x40, so firmware addressing it at 0x40 will get no response and the servo outputs will not be driven. The INA219 on the same bus also uses 0x40, so the strap also avoids a conflict.",
+          "confidence": 0.5
+        }
+      ],
+      "summary": "R17 is shorted across GND and LED5's cathode is tied directly to ground, so the yellow LED channel has no current limiting. The PCA9685 A0 strap is also tied high, which contradicts the specified 0x40 address."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 148790,
+    "completion_tokens": 7122,
+    "reasoning_tokens": 5917,
+    "cached_tokens": 0,
+    "total_tokens": 155912,
+    "cost_usd": 0.0922,
+    "cost_details": {
+      "upstream_inference_cost": 0.0922,
+      "upstream_inference_prompt_cost": 0.074395,
+      "upstream_inference_completions_cost": 0.017805
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:23:50.833256+00:00",
+    "ended_at": "2026-11-13T03:24:24.067166+00:00",
+    "latency_s": 33.234
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:23:50.995Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 30871,
+    "moderation_latency": null,
+    "generation_time": 33148,
+    "tokens_prompt": 80777,
+    "tokens_completion": 680,
+    "native_tokens_prompt": 148790,
+    "native_tokens_completion": 7122,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 5917,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0922,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794540230-mM0mpwK6i9SnhDTIEIkq",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794540230-yJhsJhaSAsf6RW6wIVV6",
+    "upstream_id": "msg_011CgzDD91FuMGc8ndSr2kyv",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzDD91FuMGc8ndSr2kyv",
+        "is_byok": false,
+        "latency": 528,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0922,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794540230-yJhsJhaSAsf6RW6wIVV6",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.8,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"R17\", \"LED5\"],\n      \"pins\": [\"R17.1\", \"R17.2\", \"LED5.1\"],\n      \"nets\": [\"GND\", \"LED_C_FCC\"],\n      \"observed\": \"Both pins of R17 (330 ohm) are on the GND net, so the resistor is shorted. LED5's cathode (K) is also on GND, so the yellow LED has no series current-limit resistor. Its anode is driven directly from FCC1 pin 89 (PB3) via LED_C_FCC.\",\n      \"expected\": \"R17 should be a series current-limit resistor between LED5 cathode (Net-(LED5-K)) and GND, as in the other LED channels (e.g. R15 pin 2 to LED3-K, R18 pin 2 to LED6-K). Its pin 2 should not sit on GND.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R17\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R17\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"LED5\\\") (pin \\\"1\\\") (pinfunction \\\"K\\\") (pintype \\\"passive\\\"))\"},\n        {\"source\": \"spice\", \"quote\": \"R17 0 0 330\"},\n        {\"source\": \"spice\", \"quote\": \"DLED5 0 LED_C_FCC LED_D_Y\"}\n      ],\n      \"impact\": \"The resistor is bypassed and the LED has no current limit. Driving the LED from the GPIO can overcurrent the pin and LED, and the indicator will not be set to the intended brightness.\",\n      \"confidence\": 0.8\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"U2\"],\n      \"pins\": [\"U2.1\"],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"PCA9685PW pin 1 (A0 address input) is tied to the +3V3 net, while A1 to A5 are tied to GND. This sets the I2C address bit A0 high.\",\n      \"expected\": \"The specification gives the PCA9685PW I2C address as 0x40, which requires all address pins (A0 to A5) to be low, so A0 should be on GND.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"1\\\") (pinfunction \\\"A0\\\") (pintype \\\"input\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"A1\\\") (pintype \\\"input\\\"))\"},\n        {\"source\": \"spec\", \"quote\": \"NXP PCA9685PW (I2C 16-ch PWM), I2C addr 0x40\"}\n      ],\n      \"impact\": \"The PWM driver responds at 0x41, not 0x40, so firmware addressing it at 0x40 will get no response and the servo outputs will not be driven. The INA219 on the same bus also uses 0x40, so the strap also avoids a conflict.\",\n      \"confidence\": 0.5\n    }\n  ],\n  \"summary\": \"R17 is shorted across GND and LED5's cathode is tied directly to ground, so the yellow LED channel has no current limiting. The PCA9685 A0 strap is also tied high, which contradicts the specified 0x40 address.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794540230,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 7122,
+      "prompt_tokens": 148790,
+      "total_tokens": 155912,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 5917,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0922,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0922,
+        "upstream_inference_prompt_cost": 0.074395,
+        "upstream_inference_completions_cost": 0.017805
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

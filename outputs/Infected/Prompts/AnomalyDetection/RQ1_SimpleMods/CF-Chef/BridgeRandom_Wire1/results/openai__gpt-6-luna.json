@@ -1,0 +1,233 @@
+{
+  "id": "CF-Chef/BridgeRandom_Wire1",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/spice.cir",
+    "chars": 122509,
+    "sha256": "ca8a424b8e780160d603f3fcd56e0475fd2c3c24e9ce838f43b208bff49440aa"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U1\", \"D3\", \"J8\", \"R2\", \"R5\", \"C7\"],\n      \"pins\": [\"U1.8\", \"U1.31\", \"D3.1\", \"D3.3\", \"J8.3\"],\n      \"nets\": [\"Net-(D3-A)\", \"FAN_1_TACH\"],\n      \"observed\": \"U1.8 (EN/CHIP_PU) and U1.31 (GPIO21/U0TXD) are tied together on Net-(D3-A). D3 connects that shared net to FAN_1_TACH, with its anode on Net-(D3-A) and cathode on FAN_1_TACH.\",\n      \"expected\": \"The fan tach input should not share the MCU reset/enable net. It should connect to a separate MCU input so tach pulses can be monitored without affecting reset.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"15\\\") (name \\\"Net-(D3-A)\\\") ... (node (ref \\\"U1\\\") (pin \\\"31\\\") (pinfunction \\\"GPIO21/U0TXD\\\") ...) (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\") ...))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"12\\\") (name \\\"FAN_1_TACH\\\") ... (node (ref \\\"D3\\\") (pin \\\"3\\\") (pinfunction \\\"K\\\") ...) (node (ref \\\"J8\\\") (pin \\\"3\\\") ...))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Monitors 2 fan tachometers (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls.\"\n        }\n      ],\n      \"impact\": \"When the fan's open-collector tach output pulls low, D3 can conduct from the reset/enable net into the tach output, pulling EN low and resetting the MCU. Fan tach pulses may therefore repeatedly reset the controller instead of being safely monitored.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"An anomaly is present: the second fan tach input is diode-coupled to a net that directly joins ESP32 EN/reset and GPIO21. Tach pulses can pull the reset net low, disrupting controller operation.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.98,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U1",
+            "D3",
+            "J8",
+            "R2",
+            "R5",
+            "C7"
+          ],
+          "pins": [
+            "U1.8",
+            "U1.31",
+            "D3.1",
+            "D3.3",
+            "J8.3"
+          ],
+          "nets": [
+            "Net-(D3-A)",
+            "FAN_1_TACH"
+          ],
+          "observed": "U1.8 (EN/CHIP_PU) and U1.31 (GPIO21/U0TXD) are tied together on Net-(D3-A). D3 connects that shared net to FAN_1_TACH, with its anode on Net-(D3-A) and cathode on FAN_1_TACH.",
+          "expected": "The fan tach input should not share the MCU reset/enable net. It should connect to a separate MCU input so tach pulses can be monitored without affecting reset.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"15\") (name \"Net-(D3-A)\") ... (node (ref \"U1\") (pin \"31\") (pinfunction \"GPIO21/U0TXD\") ...) (node (ref \"U1\") (pin \"8\") (pinfunction \"EN/CHIP_PU\") ...))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"12\") (name \"FAN_1_TACH\") ... (node (ref \"D3\") (pin \"3\") (pinfunction \"K\") ...) (node (ref \"J8\") (pin \"3\") ...))"
+            },
+            {
+              "source": "spec",
+              "quote": "Monitors 2 fan tachometers (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls."
+            }
+          ],
+          "impact": "When the fan's open-collector tach output pulls low, D3 can conduct from the reset/enable net into the tach output, pulling EN low and resetting the MCU. Fan tach pulses may therefore repeatedly reset the controller instead of being safely monitored.",
+          "confidence": 0.98
+        }
+      ],
+      "summary": "An anomaly is present: the second fan tach input is diode-coupled to a net that directly joins ESP32 EN/reset and GPIO21. Tach pulses can pull the reset net low, disrupting controller operation."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Understanding tachometer and diode connections**\n\nI\u2019m thinking about connecting the D4 anode to U0RXD GPIO20 with a pullup, and then considering the K FAN_0_TACH. I wonder why the diode orientation matters here. The tachometer has an open collector output that produces low pulses. With the cathode on the tach side and the anode on the MCU, the diode will conduct when the MCU side is higher than the tach, which converts tach low to MCU low. That makes sense!"
+  },
+  "usage": {
+    "prompt_tokens": 39836,
+    "completion_tokens": 2025,
+    "reasoning_tokens": 1458,
+    "cached_tokens": 0,
+    "total_tokens": 41861,
+    "cost_usd": 0.005991925,
+    "cost_details": {
+      "upstream_inference_cost": 0.005991925,
+      "upstream_inference_prompt_cost": 0.004979425,
+      "upstream_inference_completions_cost": 0.0010125
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T14:52:30.580370+00:00",
+    "ended_at": "2026-11-13T14:52:50.446297+00:00",
+    "latency_s": 19.866
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T14:52:30.684Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 7718,
+    "moderation_latency": null,
+    "generation_time": 19631,
+    "tokens_prompt": 31165,
+    "tokens_completion": 585,
+    "native_tokens_prompt": 39836,
+    "native_tokens_completion": 2025,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1458,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.005991925,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794581550-3ma67ntVgw6zUsADatsI",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794581550-HZxurSdsrvWoWioRcRkX",
+    "upstream_id": "resp_079acd2372b39c4c016af7242f074087d1a3af1992a515123b",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_079acd2372b39c4c016af7242f074087d1a3af1992a515123b",
+        "is_byok": false,
+        "latency": 669,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.005991925,
+    "cache_discount": -0.000995825,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794581550-HZxurSdsrvWoWioRcRkX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U1\", \"D3\", \"J8\", \"R2\", \"R5\", \"C7\"],\n      \"pins\": [\"U1.8\", \"U1.31\", \"D3.1\", \"D3.3\", \"J8.3\"],\n      \"nets\": [\"Net-(D3-A)\", \"FAN_1_TACH\"],\n      \"observed\": \"U1.8 (EN/CHIP_PU) and U1.31 (GPIO21/U0TXD) are tied together on Net-(D3-A). D3 connects that shared net to FAN_1_TACH, with its anode on Net-(D3-A) and cathode on FAN_1_TACH.\",\n      \"expected\": \"The fan tach input should not share the MCU reset/enable net. It should connect to a separate MCU input so tach pulses can be monitored without affecting reset.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"15\\\") (name \\\"Net-(D3-A)\\\") ... (node (ref \\\"U1\\\") (pin \\\"31\\\") (pinfunction \\\"GPIO21/U0TXD\\\") ...) (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\") ...))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"12\\\") (name \\\"FAN_1_TACH\\\") ... (node (ref \\\"D3\\\") (pin \\\"3\\\") (pinfunction \\\"K\\\") ...) (node (ref \\\"J8\\\") (pin \\\"3\\\") ...))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Monitors 2 fan tachometers (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls.\"\n        }\n      ],\n      \"impact\": \"When the fan's open-collector tach output pulls low, D3 can conduct from the reset/enable net into the tach output, pulling EN low and resetting the MCU. Fan tach pulses may therefore repeatedly reset the controller instead of being safely monitored.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"An anomaly is present: the second fan tach input is diode-coupled to a net that directly joins ESP32 EN/reset and GPIO21. Tach pulses can pull the reset net low, disrupting controller operation.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Understanding tachometer and diode connections**\n\nI\u2019m thinking about connecting the D4 anode to U0RXD GPIO20 with a pullup, and then considering the K FAN_0_TACH. I wonder why the diode orientation matters here. The tachometer has an open collector output that produces low pulses. With the cathode on the tach side and the anode on the MCU, the diode will conduct when the MCU side is higher than the tach, which converts tach low to MCU low. That makes sense!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Understanding tachometer and diode connections**\n\nI\u2019m thinking about connecting the D4 anode to U0RXD GPIO20 with a pullup, and then considering the K FAN_0_TACH. I wonder why the diode orientation matters here. The tachometer has an open collector output that produces low pulses. With the cathode on the tach side and the anode on the MCU, the diode will conduct when the MCU side is higher than the tach, which converts tach low to MCU low. That makes sense!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yQ3RfjBpM66V91yZdFtH8kvD0uLpI-tzXZkGilMcnHDMBrjC5QqqwswfXpcMv6bcR30rZjCSABKLZtOX7e1J6oSQc19W5Jhzy1blPmk77-CcC6wdoEPlAcwV2abpQcpdng9FJkYpKO5AuJggow0zisO6BcwH3w_DvobgYr5p114PAPExchFa9-JCctH9zcoJ_eTr5uDNfBLXazoVAFJpFEaIlmKroow16RkPEAywRun4z5dnbRAxXjgalQbrAp5mGeQoR9DtsejBBLVgnf0P9C2SwoXvEy1c28EXsOF4TuFPmW53fv39YbUX_rAr1zDLZ7n1PKWNkaFW7A0kDhrSA_wL-TQC53qWB1MN4b7o5WVsKcYol3dGRK7MXbrIYfgtmhxXxNivnWiiH_0V_kMveqZ2iWgjEo2Tz000eqj6-0Yk9w7evjzTzibDZNPuvE4w5Ws7wDYPC-9m06qUNA5fVTAVXHyOi8oWlPu3P_vqXX_6iY-ZXW8wtdZeN_efw6qKRjMUZL5urkGkJqjurafEdYKBsmD3iZqCcBK9s9jDiGfdmkb_qrz-h4uSVygc0vq6YES0hBhrSLDjXUmc53giUYqcEvA9IHgDPPhFIRDuXBrbJvaCEUkR3i39pRjxCKRaTIBrRBYir4H4sdTKYYh107TLNNd5RRmaUuuRPQcSzL1BcaeCQ71cuPRp2AAIPPBNfZ4Ge-XLva4BHXMSP22cas8H1pxsCKUXvdgFEzxHDlXm2CFs_xhMdbNdoDg3X_WLm1eQ9GYQAUR4ZqeaHvFxZH40iGYJX0LaqxEZC43kZqXw8ih0yteyTpF6rJXQEucFDtKoHMzdTUV6bB5h2_pyU1hCYvDb4F0889AiOfwxPqPdm2KeAuXfJTa3eus5LKC5Igr4Oma21iImUol2r3vFP3r580htyqiL7b8fhmb4zEcuR6xP6Bh-hqYjCSOeDL-9wIRf3g4nOKID_3uLnHYjx7H4srxkK6gfwTBEUSRfbYD0y1FY6hcxFV3L5FhMzUe5QGjoLv1oEGHxzu6TRI5RZyY5MBdRPub8n47wz5bXsRV4ieY8RkHk-_JgpBpG61eEIgDyT5b9k-FM0nljt2Fkjp7rWu-rpY5ENTPnwVrN60_DJvglqx-ECk1K96aTnocD2VnkuPITEnsDz7RHLMPy16Bafq99hg2y7DFhsElnD6D8pzx3Dmv1n5XmrzDXd6bJxjK7hcZsewa3KGyJLIRQGPGQwNAKto90rHK3iuMyPV1CKLnqcQNi4MmyySyZwnD6bQszvUVLvTW7YLgP9sowH_6UgJkrts_7t5mQwBhJWU7j6bvz2Pw179CPeJidvLwyTNR5z9K0q4gnYF5y37cnwdARUOxKdVBcErOUluhErag0asQuRmhI5jeYLQpsxSu6C8ASs2ncmE0I5mb3aRqtvsMs48YAQ_m0wVcxfXpyX65QVpTtWS67paZjTeaZ4LtubUtOqFSz3ycLsDj4aIR8_IcEFaZv9c85L4RDvPNM2GZpIW7AuzxmkCv_xlXdK1GKieGUvw8XA1HuviW6utu-x-6oOFWYmB5KIH9G8NSrvQa0_J4MCLKU3YWnFYL6_ofGl93lOVwrnzpFILzvTWVkgt7-eKyEknef_ygiAbdXBaQjRw3Hk7jjMAqK1_ZlRIbAQSiAeS4Y7GpTAqcMd8I2IcYUmH_Z0KmMCfsyrvzb2TAtIeH9kOrcyRcS5BavutDNf3UtNuHOCfwk4ehBQnQkYOU7aIvaOVjZAN7sIW_r4JXcpei0QnNZwWWaWK-hC4NbV5juWbkmqwszAHYIZz99chqugg4nj6lJYHFay08nrbupLYL0JRPONdx4jZWxDKSrvHnmLgfvgTZCMXOLGgBVlzeLzqGMtOMJ5bvWXRuwFVOUFK7rKsOXYde0R1AWsG5oHJDhGwPYzZa0RL_0Yxng2PzKinMZ2JIHi2b4N1mI6ESSptpqZ56pjFNzl9vG9KP7SvvsbobmKlSnAqUSbfAM8xJAFLa0GvnkDYQFDaRQvV0vRNt886UgxloYHhpL-nm9rZfktboyQdwnZNC3SZE1bzBjSg9-fjC6F4LFt0GJBHdqKkVNtH_rYNN8UamvN9NHHbQB53heJccQv_7bBOv4iaQ6tqIIZclEu_8kuokOXczS65SFcX9obi0XvpHYA8XmbKdJ2CUe5UYiwbcWCFsE19DNTeJB45s9K1fLfWnramgL74sEfXRihDZvfig03Dg6bjL_ieABLbFSlwByExUoo7k5mPR4230j-kMgtTtt3xVCK1huiygl3_izT3YRM96ZuHSPh5H0n1yIYZTNjKtp7heyBTDcAO9T08KqRAdClFJGqVa4NF5gMqxBRl9whCIKyrP_ro6S1AiT-gPdilyHJRBiaN6ahSyDxlDjKTzuTh7SfSHlcgh8sYPIYWMKIU66Lp0yFDrRJMTe9TQI6AiWJXQetCYbRy-5UjlS0SC-baQuxAP3NEpESWkw6dqxAm0LmfkkN6qDiTjZlx0xxUgrt3Svi2j1obdRxOfHhCs29vm_2u99BJeQfDp9pGL9-cTlciE6gow-TKKzm-xzluoXYl7V5gXwTsVQGVpM9NJ1umqPZmvBczNyMQz-N6GL4pi3cIsXqeq6p7LYtW4SP84vafUoJrf4pzm2rpx2C6a6J8U2VrsCq3yijus8Pmr1X1Su0jVvk734_sGW-0h2v-04H_v_42w-N4tAsvQuxFnEMVuO29l2kVvClBzT45fzARuuflNCZ7qvQIua8yKVCVV9HwYx5y0AvrhkStJzID5QGVFeIB0h4qEX2Hb4_BoQZ8hnRl6lzzODXRslY-gZq7w-YX2aIyJ_a2ZHVfBvKfMPeP7aLEfl3frbw673HMqLJy38eb3pJHE6qnLIn8NJez5qdfAD3dm9VXDFUzj5w1xinpTPxu-v1ED50P6CahaxacaQj8nVA1xmgGIgiKKAI5mvsclUdWj2l-6dPa-DMcKs8MDnnw0xKSfqZXM8jNnZJ00PuqKXJNmZNg1drlf4pqm205j-wzznEfTO-t5S7tyLIQircNjLeRKbJTkeI36dIVlX01op9PTaDc5mfY410b6pFlXEB1PwWYu7rp5LTTWuMso8u715bycC-ZcjaLiv4q4TbKVWloDG1VnFBimKUGUaF8naQBAXzc2l5n8LGZFFSZSeeZUzXss5-XEtrfYD2Pab5JQljPg-AmzQbaFYzu57RcqhjsOVkJhjN7HwJq3FMa3_6TUQ6AWQ-gluMSHNYpM2RT17ugffp1F4sww6RAeGS1okhV8-df_xiU11w6lOhF68cnoYVKXjfOJ4vzcmgBIRhkV5EtcukRDQ2JRznW7AhZ1ICRlwr1c9UR1zg7_o6cb1-B7qt38kljK4XRxUrFo10FTm3oNyaMXn4tnAGP4-W554gD-d1ZPMKqzQfFHZJO7iTlPt77uAZczgH34OabrJ0krH-b1_1Urw-SEB9o89DLOc08OTwwmmo0XAsT1f7pRl34IxB27YvpmBN_T9jcZ-FhBad5UU7qq6sugy9B6qmfQ_npov2Y9DrS_gFab1TwkW0eKfikDUAZOCqoWu1YnEhw0CgrR9mwn-0UgHyQBubBaf9Wu7VIfjFG_4TaEtAiiypEP6apBOLb1tE9NhZdMhxk-gcR9zS-4KLixPPtaXdF-87stIU983RW61MLZRU6zom5BPLfeGLlyB6-_ZkR7W9AM3xQu_ErIKFAJF2R-1HbnOkxdx0zPerL-mHi_cIAaobVNElp8WH68GJrDqVvmXYBRIHhuZpbJGKF7RWixJh8hxd4MbDS5tLS0sWDfEJcpi7-ZoSud_UOSyfOpLFcdhATVdyl2cWaHk0ntlLWEKhY2xP4g78A3hbKILq3PnP_SZRWAbyIUQCXwWfdizXdyEKtNc8hIzeWoTWpqEtyJJWcitDDUhTTcyi2rUyg_1ds7hHsXd6t95Ad64dxvInli5nf9rfa76-WYz4kKqxpRssWoVeQGZ7WjckXGBv7kv0y2UvHrllIyDdvxlonrBtJlrF_5Skte-qMNRghVntY_EOD0SmrO5kkFBLQUxNtCujgBk5WUfi55R11kZImXqQMa2rGi3ju4VRtl4qZD59QoHMYG-iXSuVYDtgjpOZ1aqyAWFzv-Mc0lIkmRfzAwR9W_OA2u5Y5uf-4yDThXCCJjzpdRiRhuD2FKVEClbS0h4xOXbq4u2NG8Q88L5kLfOtn4MvHWRyefEQGmlacuqCrBpto1PPx9IJ8RRZ6scZL4glgDocUa-h7FNUh4O0p2Dmos0Spy0hNIvGbKhwxxcOzi-DivszthktzRM5h5wmk5J_Sifl-9Zcf3jiOYisVNBuA1HCeGHXFolMHiIMH5kRuYZG8JuPjGkCKRdT9uzLwkgOhKYDki7wTnRc5P88DJv9cI68LX_M-nX47UWIUZv70aEYzKWBese4tIUlNOZ7Oq6FcFF9NLkCIJDVhRtH2jtzYx9Jd44XSsoOS-IP9--2NtEMyteCLB9riiBclgoq3xKJd5JEtfMU_1XoyQ2Q9ngE42ODQn-o6gD8ZK6Hklf8dgrjsxfRGsSDauu2hWovGMgjXNs3fMIXnP_J2LjNJJ2CXlMaSBwm7hirzehqL0BrANssNHp9AxFf_NCaRmRGQBRoIqM0lu2Em7BjZvV_3JcrhwfNn7imEboWj-NUzTMsEEVDeEdr2Ijli9-Vcf2P3iPBl4DSLTUgSl3qi9xh7MjDkJJICiUGx6hzCW8h2WN66nQLmYF8jMxZlXsWjnaSSQD82WoPHZiPpoWKkJ-hxuRtFQ3yfXPkb3YPV2ULP1zofR_bSz-MEwataYuLcmFZpI4bLeky-8v7026cRBrsMr0WRCDw23ZrqIRQ7FUTj9zlsqgEX_JLuhnnKSf2HCbmdHiS6_n48nkiJeTGYIMtF7refVrYD883aHx_Bxsy65BtCZ_wZheOVM7husXkEE8zybJvTgNf1swURMcqepzTONtcOMsr8wKc5_ZnO8wxLqsLuC7wE-b9h91kM35_0RFdjSyfzZWR4M6zi2eryQxWC9CvqQzlhNuvonhIDWa48YrvI49VNMcyZEXwjpHFNnzqAn9uQMXHqp-Sj9wvBc4g-DYUCQ4CfxqPP5VOkQHmHl7lq80cBmx6vmJslm0MCjite59R2Riku8OlvVfClJxZWi1QZFxORCwSmp0nCHcFSNMxpwUhB0CDuF91q0peHC2SpqDEyhEVtFaTp8368D9050-z6Zb6W20IQFWa-yB1r-E23TLFfmYEgoQRZ3fwZs6YPUZR6RmjT6-akOxBnM5OETZvBx4-N1hEMAEiG5zgjYFGoVR4sFrOpgQIH8cLH7TRI5sYvvAvlsHDS3rW5Zi02PRzF99PegAk4K5ZH-BH5NIhX1X-8X2Upe5wq2JlateMqpzlwEEaLynAV1G_r9AUzcjV8m_rQIXtBKswbFNBza9AwBckbZFmreHDDskiG1sO99lrldPvOj0TwNoUTnWjmfm8Njq8blaHDQ2ekBozd0plPz8mMZhPTMkBzd2v4ooJyXC_fGJ79SZleZDE25fjZiuVLP316gTZ3jlAGkJfSbBIamBV-18t-c-1ufP0hM5Q786aQ_mz4qCLOCg65VlyZ7HFx4ZMgynO0YTfrVwc9LK0xLiVUF2ZYGm4B7dlulORleqvxStxWA2log2XGdwuPq7RlmPNrrZGr9uADYRvQ0t6KLWf4DqZvgoxkpJsd-1EVu07TfXLeXWJ0D-JqEatCsng0AutymBGmGVuH_rNgj9gIyddIx7xkeSGfP1f1rS17iqcMpvaTlRPxwTdNWVZaChKw2cNELRg_cmjUALXog9uKrflvUToz3b3Xez6dJVW0DryN7_4-pSRw8yr81Tm6Zc4mFcz3RLEMOkLVgu1lX9Q0pmM0zMKkzAj9HsImp_ESQTbS5KFZS8cVIt6yO65u-1cR_2imwsdzaghSaV1UM1XygTDCA39Uyy2-Z_wt0avGJyWoIRoaziiRV8DrX40xGaEoLf3zgDOp-cDgqtPYd_tldgQM4sORYAbyJHl7u_-Lsb91hLwckGF8YHlB1jQwHSst1WUICVFsqgGKJ5iV_I37H7OE-Lxr_OtAY4rvLrZvqaPbTDGgAaSMzSx8XdnE62uziNhKLidgWp2OfNvbtLhcWosRBI5zCMyA30fBknD5eM6lJSDU0dQI68Hc9PcsjwPavw2tiRLjmgzdotx19eeM-vkyFbVlbcUwFRxTulAQhuR7pliAbHbBq0F3OKX-jWAqH8YGIarntnZsVZtRCHUT4ifW7yqYl1BZv2JPqrkknwyZ1zq7r6Rm7Lk4hvZ7Ks7Ve1FUGSp5GG3-BjA_V07V1aVXMzqLcOP_4wLkEha8f8jUcmxd3aXOjWx3oY9K68gLCnXNZyHTEkOu_t2fXfTvQgGmgYNjO0qxbUQO-JgeNIUZiSX54k14uQAjzOKW1WaEreB_qtL3W8ZRFteuwq_OUNaiAPUvJIgUUA52goYuJhGBvozDm1REpYyJjcICNwgMn0Z_9jYuHSdPglLcLFvZcArPqYJZoZPg6yOXy2AUzVT2b0HVY8c5G1AAKZKdIFUtDXBdM6_AXNzd_4Bj2HLq6fnr_ZXILlw0q4tQ93p9NxRIR6wFkJ0RdiPoqzCGS4ef8FPhtghadN8O5SJnYDECrFu1Fh9ajWYRhOcXCj8HbxZSSEQwOBL6OwqUthb-_UBUzUN8poRojUndC64G7lXTWwsBHaPeohWV4lj0VZ9_FqWiyinxTq_eKLShH7IKbYOdTlb7wmchNxysMqfkjHjH5yPdGz7yl1xTtOkjw3Pxn-1eLDk3Fcb3787vvKG75znGSHR17ql3enokY4Q6t-JPn8yX5UIeoI0u4f2WY8-Z92hBCFeJg75o8kIQw9TqXHl-L_bxciGHYwV96_DGo8Wz_TFINCPVVCGQT86IuVN7ub9V9TTsUmGcWaL-DWEc3d0AXnZ7Qr7vVT5_IE59MKxTh3j3lRYpifSsfMXjH4u3-K9cwYaMBwiOIkG9ee_uLg0xPuxIVileawH4T0_hv-mxH-FE5vnbz-BPX_RlYAO_UJlgWELgcjJQr2VqguUVwbeYmxW2Pmr7-L0Z8ea743xzCVV8f_AWg-E18kDZB2DfeX3KXnPb6elSltY34k8qQHSeqynaTnbj-NLTK7SyFrPsdhLbpQByetuoQviARq5-pLIULenMowAhtXeh1r9Sa7Ro8AD5s39tsF1xNsKSVpo5IDtfpuDOAEkVVTQXq-vPAspnB896CTFIZlEzzPsxi5sfD91nYL45w0iu4PsQDgRgS_wS2ZGQs0crCTwXBf1DG7ra8UVLQXsNAn1Lj_LsBkO4o_yk62UHrL5wun7oW0UsoszYGukVw2CY5Ey3cLnNxCmgd7kBD4OW02v6UKMs7kNrceobSME3LrxesAbpo4wTzlWldh6MTPctVKss6jxgQGFDmirZpcTutr_Rh96F2xodSv2WblHIHRNaZsf2leHn2THGNI0QCcHzPPSKj0LFPKrGsW0kC_rzAy8ojDpyvb4K6pJKfzDd-5MD7mYo4XU23xbm7COtrhbMA6Z_QWIlDpdop7HXQCOBvEtzktFUZ_PoZGAHiVM_7Mma7xAES2VuFeQogTXChnjXBc9cihbnAF__g4p7UeV7rBTTKYHb60DpiS-DJekRMPqxrL_tbBqtGRhvB2-d9o9EZHrz1rW2U3JncyZo=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_079acd2372b39c4c016af7242fa0a887d1830cbd0feb1e0d12",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yQ8gonP9sbsxoRmNcQVOKnjA8IVur2GMtYOpgNe3VxOy0MHy0fsPgU6VFCPyPNjU0WuxQUv83nazmzxRLl2beguGZt1_wCGB4tjw77KKWmY3RX-EBrJERSJio7IQYvuNRcb9pm8w_ROYKnXUtJMRcNG2uz7-62WIHs1vf9F_Z-ANwrPyilqia8Nk7GVwIFL2xO9Ok6DOH235egXnjxEM51OiD63i6nKvnVrUho30M49wusfWFRzP0heFY7OL7Frr2sUyFtA2Fq_na_-lSkYpzKN-1YiQrqMgOBiYM2aQF6zcgl_mgjEDxcezxUe1_Qf4KutQhLOvGfwil3bUSiNfUjEbsjaJ0imJ2WPX3CPfcdG1EP_CkdrpnGzitOAr3H5csE0OW3nLTVVPFn90kjIyXlpEwNTgdeMxS5hn5-Wge75sACS3xBetWKfbDW1RH-TXnDXneFqBhT0xw_QNNjsv9YMLQJdZ4JAP08XudE64fYa2oqLrCUBpN4Amnf-i1Djre3BEm_LxtgeFTmHglmrHyNqoCsYls6M_mMBFPirewh0d8vFwCLJBYNodRAqu0UmdNZwfBxMkfD3T8rOlLd7irKytdoQTNQaf3yuHCJsQpF_xtNo4v-G6u7tbv1orCNQTVZJjqQSq4ughOJK3K7vDFGiGDXVnJUSu9lAQAH-K69eo4TlXMEE_QM7fJnVZkpD6LYOHKxP4fyEStnW-TZcEoZav17J5RyXJy0v_4O9R8toj79B4IXqTU4jMe5oJtnNwEtrqFYp0ziku4y02cANoUxPiI1GtHJU78-wosnYewSgTCc3TtBWDBtrT44zDnBQzByBHdHp_G4tJJgazhK3GV1w0HgwjHMc6kepSk4di8njVj3Wy9CxHzB7kfKkCaIzCDdU7IsHkZcF5E8dD1tYq0Fzf5GomlXmHa335isCZneqK0x2m0dIHWMVyg8onvQl4wpx7NcosliLEYJxOvmf7_rc2RQ-0RQIpZg1wdhZ7P2iQZnDF989T_w9zPkKbJH12oqhjHleaxdgoPZdDiQKeJDG6RH7xIop9gHPohlxehm8GOkJqVkRvHSxomjlQpz5gemWVSKgSrS6lE-cxvG60emRXa_Jnk7sWd5aRbXglCBomaSs8MexM7IQztjAI9JZWq-oLPaadCun1HGVhTeZzxKp38mZnTeYQFyvI0oMjecs8Si207JS5NlMr9xzJ7NegpLpVe0O3Y7x6alLM9_FWV3Lay5K2Qh8cO9-BULGHbhrPLiTyNAgMHKZaZw5_UPe4_g5_fCbHKKU7wlzli6IB6zbpwqvCbAkXqWVCuKFSfK4iaT7tEF5DnJBqviQawIx3qoqyGNsS-GGMk0q5E0QhxS8OaPr8zyDwlQsoLE7w98ousEAA8byAQHei-loB3Pl3CMwIm3RSO19fdIE7onGzxqbStn5F7ti-BU6FLGBu7X-JolFoeptWqzi6L2RKP_PYbVgThE8ZIcxHkIKbGVwurjC1K_gkWxba8TZaqYfIxAulBYHB4crVyPnmqAtTVeqNJQjwleWQTRCCM6hjtyta3f8muJbf7p-t3jWdEX27m-R-7wlZRUsGrkOU5J_jWcYL2oIl_WBNH7FxCVrH0XYJfSlmPqxPqB8iIA56-Bnmym8NXZE4Agiejj4eofW8jzspkM6IDMC6h6fyfgVWL2370MoBkvk3L4HmSEttkVHbH48peudMMwFIXx20h31WbobMN1chxqtgUJR0_cUDkLC3HtxkRbB54ejTTUz1K16VRq0QLEiKLo_ugYzE8aoVTMjY-uLeT2nPq_axbyQSxw3nQZpV5Q3uxewERFsdTCX02xih5BU3llIeGDTiCB1CE8n4BwWoImejg_5Ar6Y_zIfFyHzKFCwxQAEZgbixP8vOUf_VmdFP1618FeaHeziK0GUCj6Dd_qbZdPpeVusdbXqFyHkWmRVKJf8pmw36JlLuNwaTtY-Gx1zfr9-QQnQil7FKQXAYX06VF3J6_ouy406luEGpm1GNRZa5KrFRlbPiLi-ZusjJSqbBcblY_ssglF9fAUw-SUv0EwUbV-OBE3MneyA_qEZig1Uoa6KuDVjivwAZ-_NalL30Pkds8OEyu6D9CrDBqY-ui-kA6YluobK_S-URaJoZr1RYC-c7F0Edm3pB75yF487c4ZtElm1dAa5lx-K-egFhpRyBTm-2dX9Nnn-M2EnCedAdeL6eMgEQ4sFwDzpmjmUw7L2mIKokQXDc0EzEv5dFaoBZ0GtczXkZmj2e-8DtJ10BLdvNhxk4FwpPkh0uB96EKRu-dLUShddhAcCx4QncCggZbWp9NOJGsUO4a8NGkiFuLqRxwRtIn9wxNqwlX54Y5C3ee2sO2qOe2SdLAeqkoUOGwXqNWKmyVKuUnJ0tzvwCduvAB0GcVq1hqjwxKWMhhWgElCKKv8FFsJbPpGm1rMTBj4c7E6mFMNHovBRzX2mndCDb0OHGV-7aJB1WVGKjQO6qb1x_gSiRnV5JhsfvigT2mtUBpgcBXkSCgr5CID3GDv-Ic_z_SWDxKyNGE0cmX_oa979SfaB_36qS4WjXfy-2rgu-tztwDaAp4LAdnTpS9bKN7xww0dQL5Fnk5pGcP6VxrLpqduXNT_Y4AonJ-oMLfK5uy4EiukK6RrlqTJOnByTLcWZzXaerREuVtFmcrN8qEIFkees9P7d-Y-r9oP3QU2uRNhEcEzR6oI854IwPUsuZBg7U1zfwvo7vL2APUXLRr0oL1lCrITkQHxNEcXP8UISe5wriK3FAFICYggNh4nto6I1ryOxerGqfER_y_z4DkXKnvI2Xfr_fF4MUAzmmRhBXv-CINg3KU-cHYshJmmLZX2bdQLNI2oPTvczWjHUGoviBz_NIMMNF3sYOTm0nANaKfM176ks-tmnpycPV8jgQIeVjnzUC8BrCc1PB518M1bVKYGBzI6Etwkf0T1uv0G8_5CPeMzUTRPTuXWWmU2actrqrKSOqVTlLaklKUrgKduX5Co_73EIpBmn-Ppb2HlsvLuWvqit1Geel-hdtzg3CgyR7aQaDssIuvD8HImXPkslkcJLFBbdzqOaK5NxfuwYWwStEhtHqN60S9fsSdpNb7yb57rzErUIldLF-DZLelohRrv8s7zlsOr1cGbNE-By9WgVqgzomt6eOnyjv6b6lWpjGCyUcYp41IDevqOLBH_I3cWpNpUeXyataw-KZuYbfbb9ihuOrfmOlZgxx5cr8zLG-UtF0XN6W_5zJbF3u6PTKgH6CwsrrlqV8v8az1qtLCIge1Jtz7sLzZNZhUGZMyj4zOL81T_3m6GOSBCy63rQ7JHqf9whFCA6viWiUbkg-55thH7MYwOV_VJWS0CDnlSc6LMez63IBaXHClhydW2xfzF_zNGDrvJU83D8ZIf2mhOPM8zSmRBHN3zisXYd8T8x3TqKDSLZBD1qVV5XJT9O8mxOpg2Y5qEKcCjDh0NX1HdnpyPLHbxo6vvruHZyocFmEeZwWRuUDOsq3wXGSmyL-unYGEIQE54JQxP2nrJtarI0Cv_6lzyPCExN8-gxtv8U1D34GWMVnQdLFHqeYZRXmF0wtWS8LHuokmzgaaMn3opc8mY8DYn3M-fC52Na9ws3OZWpTJ1Ar58QS0qNZzk30t14pviW0TKYrXI6FZnBAEfR2F6ftn0SejyxL7wMz7A5Xixi_NRf5Yr95aeJAtrL8bUkdV0XybMDE_S0S7nLHMYLKlyAVWF7LYOf7U22sFeEYei05HtY4S8SyUD-Ny7WEdAukgfVmuOESJyCVJG9bc30rMqepYx0nW-u7-oeaSxeg6Htacbu1k3bIqvBgPYJYvKQwVvaC_pAagA9Fm0BXIaf8hjKbANH4G4ZifboUmRCNzaPBObW83ktYHEHQmLGpQyknXigWhvUQ7rxsDZfII7Wp81uosCcXRxarnTahgFccfHWZE_rK0O91FJAkCJd4nkli_1f2O3Ey3JeJhNSmvzQY02Vqudt-rWHlqf3NuLmwDr089A2L3FSQ_NrUy55Z9Cgim1_a1YY74ezfddEbX9NAtdJOdIbSccfyejatCiliuFUrRsRJk6bsZg0kMRSEZ3FKc4sOKB3OxLmhDopCcMBzdqxuzW9nbqTMbDi_5RrKiSLKLRLUMyiiHu5LGBFVxSq7fANdNf2ugz2Qj2ve3jBGn5pgOFoitLgJ8aXNmQ4xBWv0o99oT8z8ILrnFBnCJT7lzN-UzvGPSuGHdvZaU_1R5V1Pb3xhfYcZSHmLdz6vDxDHkIn2X8uFGvQrQBdUzwcfoKWM96B4usY8qv7f-_9UFBW7T5KbEfej3BEdgL6RjFbM2iwAXBYGcxDzBMQ4QlhBXZMSBgFXWJ26mW1f2yFSeZw0nM5VzlSZEwWnEDXrfg-mVpMFDbc4tViuQVP-nS-OW3r4P8f9Da5nt7yYglnRLxfZ0KTxkVS0h6pYjYab7QiCdGWEwGRqgKLrvdiMdLMbEKvRlbd4iysOjc4UaUwfUbgjruFvZ_dt8WfSaAxv9Yazf5Ev163GldFd60xpHTMVdO6K2HRDTqc-hDc7qI1p5bGTZIEs9AEBF1kdv1aZVaOLf0gqPzYdAvJhW4POl1JPD3SPozBM8VJEFrUbQcfyM4rsm0Z5SgNIvriT_bpk2G7J0CGqAOl62lzE93caZjkXwYe5Ti2RH3HnI1I_4VjT4UTsVK-0sysJ31Cu-w47yYW3Pdy_6Q7Ddn3zO7zERuixFxLsmY2zrRtGx8yLwF48Z7J2zaBvkd2X2IJO63P3Cg2U2_OHBk5LkrBQhJbi8cukSTHktgVfDMHBkSicoF2h1aabjnIR54pXpVuW2eWTtiVnI3q6HgZbed0nzA4vEoX4OUAh_-pEm8I3iWdTrblbq-r9fPxsc9BVsLUKrK69BSATL0cUjujrZxUk-phRLZyKhQiYcPnJG7HtjTH_xzrVDbNa-4d4v1YsLrE-Mq5zAYo4Owxb1dDAjn2EdBXSemIswR6h5o_cGOAXgXllJS0uGeju9E-meug5tFhFttiwdc8Bn9meMizbJrZ-p6ekS9UNw2Pm_kS61uijB9_1Dmedr0bI9jdYDvk0zTqFE-l5znyQdha_POrbzc-S0iEcbgWrZrjR9OXIRADX51Tc9XXi1hBIrRjc0J3SAhoFC-Tiuhnyok0pMJ_RY0YWKD03JPmyLTBNp2FG7I1IkwD1WNAAgZz0xmNKKn6BCbnUeQ--5ARRMnsobk01y139E6CUxHT80sCumeUG5BZI2q3tMB76k922ebchwO9t5Y0LlNG2rkKVtTWje4QYI6T0LOVmdHFeE_YawsNPq7IHbaTJ4GrpuA6zeOBEI1ojLgEW8nro2pdjDw5HkBXol4vKQS8O3i6l5KNWSS_pTGPDpVVY9578cDOrwHkv1Una2yluOJdlE_0sS-Ein4TWl5s73qv1GkW3-gv32i5vnJAeq0jok41roAsr4SnBkH7EzLJOQePc3BuEAldLht5898YBkp_VeEEJWcL35lwmEqoyHHBwAn_NkJ3TbCoF6BXUTmUEDnM0ITBM2MJtyUeCIj5C2Nwhzy_vkRp6m24AJx5pEZHdKgmU4E-8cRA7AkkYoFDxuSV9_7ckdjIz426Ef-9nOOBIaFHXq4xLQajNfKDRwzSqFhn4fDBWIqEpTqXOzJi2ONiNY7bwOIUhBUzaxjvpjAYry_Dx-isPEmB9ORxUZxlDD84xOfNoPSE40uqLyCoVZRt9J-amq3mK1ud71zOcPWqqy64psWsQk5_zHQhedwIff44dT37XuCrGkCivypFWGsvMwBuJdASzht-al2fFt6anupK0tMoYSRv0u5Iaa4aHp8nJ7LQBYCUpRq62Sh2PjzfY8IsqAv6isLrqGWdbTGeahGTwrIGezhtqxu8MOveAw63lIwXdMzz0EajbN1KDpmq9kis3vnXCYMDi-i78iVoZetojHpFGlkP4MxXKHSkTpvVuk5kAqS68xBweJbIzOVrZnWX7ttJvtE0RY3Mu3xedOB1ithcO48UvqbV4miFEOFvSDiij4ujfHlxI1fZPz6RPPEWK6KFUpo3cCrLZ_Y01b-smfL3fydKWuOW_wWlaubGa_xpkirsUkAEZ9Qa9nMhILiLbG31xX3M4mD8FN6Hs9yT7V988DSDVjZdV2FF5OpugGfPEqcWwHlAs5k6evsEq8ErRsQoylTrWTpXvD04tG2rFbOetj5SCjIWwbwRJOhRK99HuypIxmEBh2xl2P44GxkLaI2tnnsGTVHkTeeSSp8GF0gRR6KrcVQqgzR-6kEehRLjzd5Q1nD-7Brs356R-cWt2ny9SB_1oYaBHp7ky9teFssmVhnEoLCHk9YuVrafhbflFziGWVHKyVcwdvIAz5NBg5SaERQhaNo3ocGnZcI5imNZHKRJZQYZGhf9iBChkL-zykv69cYNux5_tg4GASEv7bCT4ydgXyLF5_ZXJ8cbaOD5p92OVt_HzIBhuk5sz4GBQCeUKFwtjR4EyWudhOXnhC5T-xyJWXc2YlVu7gxkjTaoyoqVwunt9J1scCCEYvGkCsM6kThRJwR4pVJ6lYa3lmHpdpgHdE42z1Cora_03hPtiKzjtOki8bH7PsAeRBslCkZ9FBfjucXCOVIdVTg1d3xvQpaWO4Lk-V-Ekf4zoN6NYYt3CerHEpTPlkbBp1ZGJWT7fCyzSFbGat7MyDkoEviqSd83jZaCNSRX-Ha1Mr3bljM4nA0W3OpRD2VsuxPs0UJBX1p90zCodDJfhBxBXAK0WmpRLNS-ZS7j9-Oi-BfEDk9ev7rmB3tNDETxildVFRznQARbG4VuQFSr-RL10NiaO5BOi-MiKaXMs7D7d399SXMRuyEc7Sy4P7DskginCzDYdkvaHie8yW__-EMS6iaMNd54KdF5Ol3yLOlKiiraOX3jPJMdRZzYyPJN7wGBROxFMhSDYkvZHQslPOKBRwoGMgG03ZgS7-yM3wTJylyDkNYTigNPHGPJzqwF0ykc2NSWGuGNlkhg4dTJXNQ8B519fOfd6efI7MXJcOoMbLHl7yCenpAT171WWVa1OI-4FcLPtqaDPOqnKyupzkE4Q6CLpOX3he2aoAzG5322Qna-KhMi5lTnaRmlEFyQnD7QoiYOdPNloEW8PYhwWEW5cbJBJFKZPEyy_xW_DDL_L2NIB4fCtJBsWwPBK0IIonM8yP_W4nE4rZ1hE95OEN123OJ09IK0e0yxTNGCORvvfVfgahZpLiETRQV0UVBP63DEaKzhznmx0_NBW4-hEztl8a-SIKgM6PKy_7YcgcQfguTiLPvx3oZWcTOLxlm83gXjrFPpINvJcZ4wpw7NmZqFKveA5yyPZqPHaeeuYi1MgdVkGI8f-d_ICBvoPATsHD2RMHRYU7Vg2ZKUt-42jIXxeaMF5ubmVeWDRE5AXjfZZ00NrHLhDHgA_iBoocdM0yj77QB8VHfe-fi_WvofJMycqvtMWuEUomAIa7IJZJT-oYUNQxImh9N5CYd75gf7GVLtzTqIhEk7uDdEfUR3s04mw2x0XU1gHC2DC7VdYzTDQTROrjm9wX7lt12kQo2TLOExZ1xvzURE7M43EN8grTzSltsczk6YQuw5y0CR1PRTuMtU9z2G_TqcJ0fEYlntVsoys6yOAyzGw19k2SQl2T5gxBK3y5MgUmis35aJkhQg9wmgLZVnis8qM8qC-9ilv5x5oYVQQPbhSSKISH3uavtud3uL5KCrVJbE3QCKObGiAVU8p0cSnDgdm6-LEr5nOHheCrk9d1KvWIb2AYfh6z_X6oRF-LGFwvbpEf2Dux4sMDngWcuPzjuQuwUPCKto7LLTp8G1dfmT74oQF_Y5UlccdRexMZ1dp6wZACrT5wUwgkZGNQKYBNkJ4f9KyEap8SA-C_pnX6sLv4v_zyAMOvTSzEIhpDsrxZZoW9KNcJ9z0Vt2.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_079acd2372b39c4c016af724371af487d19dc41800e7fdaf2e",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yQ-D8nBb3Qu_PcS1RSmGnPZytDluQrUAfvaR3Umc6KDmiP1MINWoGQJJbQA_91MaBReiO_2E04XTret7y05NVjpCHnFQM3bL4qKWsYvn8bcuws5IyTUiIh2Uv89eRaBhld-9wR06kcVxFVwE8q7rjB2kO3Fwpo-dzhvU-nkysbo48eEqT7mTvxs-Kl4czgW8NRawgAJe6IqQV47BImwZwrq09zyHgdA6nfuB6TDZELGDJDJ3eC12OzXTGY3wbYpjBNZ-tPC26ZqqBYCPjhZyViwxsDH-iaaCPUek05CHxkJcGofYF-LpGP6FbJo4LEv3WDhmePVS3SA3NWrJmKniOdr8xaDohi_0lCZH2vrDoqiqS48guumrfLODI2aShTmDkU7XbhQRou4TRwj39Cr0xiMrCJifd-9FM3giz3FQpxQ1VInbAcpRs0tJvWf6UsOkPlTyVX0-6xDOMFkwkP_O6DoxVPXH8cwsCQGufsDq8k38eJDO3A7_RQKnYNmsmRpXi-0upKmtab9TnMEABx1TMVasyiu3PoqgI9_z8dvYAky7y36NEI0rppuyKQK-ksGnMhcesoTBfob8aA-QIDCeuZrABpSmBvkPCXafKMCbdZZLT4peF4ia-oyiWdY0kPeQnF_8h1innzr93Q28M2zeIUH545GA0IPHu09jzLpJxjPIFUz5NYJ5zc7JcL1h128ZmgrQQqkkHuN6cFgvqg54BM9E2Y7EpgCQAfWIrxJzr-B_zwewo7kwB-R7LdKbjrS9SJOGfDmWMuUBZuzB9kvGV-HqXOlUUcQTK_B2AAzUuEtVLrAZ1CpHXdVHu3vBiTg9hRf9_r28kHbBS8eZrkQvCz9iqr-xvsKlM7AVCId82NccbYb9_bPez0f650zUuLsaqMwPTuIN91Pg-gO9OWAxozXx5fp4e3xcSd-6xoRgPyCWxVhLrFRL9kk8-sNfi4iWW1fnqga7Hz1RhORix5atlkp0ZoLGHMY1zIMwVt8Cp5VjKcowoSw23WfcnzHkmmJ3udmcNC0DNIlhFYbQtNa0aDoROrP8kLqRZU9C0aAbEB9stNkYpIjngtEnoYt-djEoQweMMm0NcGLBN2RViGxJvi76aJTbatUgY2Gn115AY5HzPc7WqmF8Ts1LZqlwhayofW3ijHalxoBKFrvqUVs5gBHIaF2JPHuf9udNrZncRJPMLYCpP-R4544B9aUPiYWYK1KrHvbNq618ABYJOVSrX8sqBJvXGkIpNRaQDulwuLgVFVUWJOqP_GLRNbRHo6fBt9129DNpJ4CwwhDQEKqqD9tMyZrEwEyPtJagxKnNhq9av6-n4D8QbVJCX-ju99gEn_sxSfOjC8JU8VwxrXEMU36iDRg0kxrA4VAFh27m2-VEaiEk6GcvnAU2k_WQJOr3Zni4-7NWAGYjZO2WpaCuznGzcnL1ZxHd-JiQr8OCGm7C9U8QVJ4vh3CuJmiDcDfR7b3KclqbgnbLkSq6QQRXJeDFDIcKe4I0AhaCA1m3sj7cvez5l1eHikoJDnrfQyZrYQ73yArmEpC6RRwnCTrv0KwLEBRuEuyW6iOSfrWL6tDpZJlUSfAz_WPbF2DB9fAhs5EfgnUCBiRG9lUaHa1lMvHbe5GFEL-3iXmBLKFmBnlazB_oRhVvL4RH8cEp2xTLwqD4jbB7neVlOIrsDSCKAyCcS3lKAr1oTjtLR4BJfYN4F3JQeAe1dpg9zB9FLSB_7_YLeqbno92yqbGQ1GLVDu1pfDOr0JbbQUptPAb0CV0m2TClxVy-Az5HfUT4wc-6YGqgUPzEhHTE-FRPE_1yd-cGAuMQNpRLQQeNefy0cbMra5oZuM-MH229JOjRJOiZbr911mhGS876NTXg2hBPpkbhSTO-DDvkvFPA2XZG05L3vba9QJYM_9zV1n6L4vd92tHabboxgY9QVYxF4Ku9izVAVsxuRENR3LMOD5r05CmnIwp7UeTyUaYy11XNTL0VeXqvcoHULKBwA2HwkYImmjmen6KQ86CdZi6gujfqiI93oe5_YkelnU1Pr6MztzmYtR9ugH8ZPVL5gsX6_LVpv_da9dCfkl8aII-gasPA3Fr60dHGhtFvN7a5NJ-gdyXN5wfu1OI0z4QS1FQp1Js6AJSuIgW_B-aCSKmHMzZC7Sa9DI2LeZ_WGr23pKtnykDzBivUdcvIAZV7I7D8w3TfPczKcbUQ-YWrxti5AeLJVA-Y-rJIB0SE6WW9Tlh3cnCEFm0wBbhHesxj7gOpt-x2lPY9ceG9W1yOO-hcE3VTpVgdQjSS7CXm8evGu7ZihsspqLMGvw0bjhW7z2-zkeBrt_20PNDtuoHJFtnOG2NBwBvdvzfpMxxf7M3EMx-ddtmgH4KBGVdhQzr-7XpmrOyZI5cys9KzYAt4U4sx-mqlV20zM8N4fawIg4kc3To_-ygYAbmIkl9tKe59Dlk_DcglOqGWUxnPyot0nzVWSGeyBBswgilILcEN016u7LYVd_71jdDF93rlLIUbYSpdCE7grTvWPKaTEWrksjwIZIVEfdRvhF5yfei1qJ95XkNTlL5pFWMtti73J307DaIlPUztTmLpllyG8y-_RZuTJpIUPD6RIeANRwwhmssEpbjrERNCbXVaY207ZIcsOucZ268RSNpFYZ85pRBllyXuul1XJBFLI0pzfesJlnUP_iYvP1ElcxnU1cCkZlVWcexVatK6PXocCYKMWb8H9vMXvmS-mo_ssax6Qn6O_PCRKo-3TwejbjRoX5ItIveguFaZBLW4H7PLUtFOFIV7t9lS7PInw9hVVMH6fUIgqh2sI0rkMPq5E_6IhqPsN4oIfHD19gPIDBI5HF5MGJ-KstgpWrT-YCS4YRvugTq9Jra2ExND5gVyva1r4Vv5zvoyUi45SZY2-Au8jiGWJhsGdFv2k6CORsEnuW31xThEMCDlpOgf_ubj--tclThhnlGUlHAe4Q3robBlpM7Vvx0HsuOyvG5JE2EIGlExE4xPhHiPeWVyzc23HowUhuwordOWruFIsoYJcKGW81d8Wy5gKG2nYDUQOKjHLsUGZYgb55HnWUzi_OviMLAsbFP2p_RhJ093rSgMEIZOGeyx7zS6JlSmnmhVSi09x7fsH2S0JXhsebx1rxUBwIv_1NbaPcQ_2YFAGjzvxH8OznxcxL2bmh0KdzAXd6e1iVEeqZ2Y7IjKyObmFWwbxMnfGqkKzWwSpPHCSCqmMQK0nwG_takuUwJhGeR1Ku7-DNcoEJ5XIqZsZD1KDacO2HF1qhcQXjnIa06WvPSXqbxU42S7u0-NytaMijaS5Glwp2a-5PXqugwBCLGJhNFXtiCT5eXA3N51V7qiyFVnQ1YtElLcX4wxSeTNUrvVGMuyHRmuDs6PypFwwa5q3PKMoVm7yVFrToibWaj-JD2TSDdCc5j1kwqF2dY2ze2T20Kqe8yTXeDS32lUs1pPDo6AExfvuyOIO2FBRG9ipuRms02AVBmWerAej9-LO3BRZ2ElJtNgCNNmUwDGMQGq_6CBdzcQDyoOpAMFHVBk1NYUD3M8VUlK0FiGbZ95a4XRkqFaHbaHt8j76IbvShY36DeKELpmCvhQd6IhNKEI9C0HM_udqpprk_6w85J3tkbJLMHTl2KQDcM8S0wP5cQbp2V-hJdDn8y2IG5JnPrttcXxR1xMDT_2ElVQZK4KmF7I_zgupoRTskzP03jQVt_lm71rbEXbQ0dQvyBi0BFKAYol-2cQzGja9fFtVHfQUPq3Nf_1BQpveSFOZKgi3H-WdwPLfSsi0KR33o4k0j0VGJjOrRMsK3sjmI4DngBCtI583rW6DORB0AMGnmaRsatoz1_s5NvU95Blx_OpiLP45JxP8JEpAldUu7wkZwR8ECtEzT0DfA-h0gpp73ziZkS-C_I7DrKzZteeNBTz6JFtQsuUALahzeuQ0fMraPbBAuiVoY7G4sgEPbWDW6_zWjbDwBhEGIyP13GK6ylbVOCXE77Ax_z3yRgK1OWpo4gHuWgFDrbI-kPTF6B7Tb_CZrgVpEunZdqxtLa7NCXvsJ1TJ-1qGOcQ7pCz_xYTzfrto8gp9LXBwhGIFd3M9hUqRrh21rAjx3kFBaZLjXm-POqK40V5JQF5zlALUYujMwRj7e5gXgMereYgX6VaQkn8MOfIv6Nwm6jfDBiCvDfYqXD36hNPEt03-pi02MGpZZvT7Vdn2JgfU0kLPTWHHNirSXRz-rLFanZXGbdiFYD6QkMN7y49gvSjwr6SK8GXzx9784xBkoha38-vhs4XgoypWsVK8yRx_G6CZHrK9MImPPGaNiQK0ImZQ6yqej7K1ThQcS5NBx_kcxllDidI-fp12YHbYceu2s-OAV_zgLjn8Q_Yc1awbseZFIqqo3KCY3eD6Ib6ryrngoy9GlIQxPPbXl9KCwZ31PhLkDteZsQjTNRU4i_fK5bs79u4OsoAzv5hcU6Sq_EIx8EfCaqEKGwut9vmc90HE_ggBOVP-gVFq-GtmeOdfevwsj0p1xaQwTPN42JXBcOg2HOjzv_jKWrZUruzGbAEDZvtPnt45NflC8qsJQK94sIrkfq6Xau2ke1Fx3-jXW8sNoQUiVOSisYBy1XzBF1IOJLbKEXjRze4qYhRZOjk6VTDsAQL53eDf2PDH1TjkIBNkki5-IG46OEdryt2rf0WtT9RM_TEAkIQyAH8431Sbak94hoCC0vQQkio4rQ3Zx5ZgGhwj8IgqIdAdbj9sb8u26lTL9CUQXqcIgA4if6d18CZdFOn6K3cTvozwtLi4iLDZ20cAmw1gSvNntV64685bpo_6qaj3a-4NYk_1Oyer-J9c0ecwWc3jltrnufw0uK89RRd_HLo0hAeEvh09cwCrGGJabxtwlvROWZ-swbAIbwG8-tolgyCZvvhV7czDOh8xt1rHN_SEBBvjx0dMj10f15T4tXLANu7kfPRejmF0pvBQVSCVMpE6ulSzrA_K0mxPWBRwQ3YRRR9OYd7goJMLophb8oXX8D8OWcbyYRSxadeSXs-upEoQfwqj3oayYQMkx_iyLv-D0rlz0Bx3B84Ppe2cLf5SgYDgb0-CUWpjrjjya7iq4exhFHR0ojxRYdkXcR2HWYuEzWyWN0NaH_9ICP-sK6YNQhwM9Nn1KQ57QwqL5HnPh_aZZrU1jmO1bZSyx1A7gjvsVsOKnGE7gP1GztWREKN5pyipaLEcRZ-ipHrPwQCbAhI0K5l-sI0Naxi-7RqgKXqESadpDspJRBkhj2QfWXTB1ouTLtsmrfb40ea6dZtv6Sd9OwOHpGuTofuUtfl1YO5WG-5afmz03x2Gyhop6hrzz4lrvCeJAI0gWHxr0W9UsUncE2Kz0NaeXvHFseC9jl7x6HsA9MIm7WClIFiiHpqv8V6f7PF8LUyqRBRzgT0PJ4wJ0M5V8v7OgXHnf7AtzguChJEW-4IZqCDieW_SkhUv9mn-BAko3HiG2RqfenwQvxzulTXeaIZNWiJpD4Qqnfw4t561Da58EDDKOqWTR7XIEeWipkPy-yTnHU9VR5p_RKBipyYMv_F-y2GAPL3ALpMm-ey3Edd2WTU-3WRAZzKk4pXZfzLXsuqNV1B-HrfhMY04kGHojThH8FSam8rWjN6M76JtGGPiSFCzBlgDLE9_4_wC_Evmq20t54w_MYKO9tO62fSVyKYhxhGCQgr1EC5_t6bETgi7qh17J8bZ0-Fq9WNzo5ZlHcwg3DxojKvJMH7_MrTxAjDvCk8tEmV3g1CdzvWqF9LgmgJ3nYQeaEHFxFN-xjRi83MpqujppTMHjZkmKk2Ew2wVG56O_faTGcKBm-XMxVhWdQu9IKVKOa75Jx7Ku59npOlHFzqnB4PVp0UcAdaTXTX-lpoFvsli35URMq35e1aAqnRlr9iIZhg4oVlm4P0Jdqf4Wf0twd3nHwc1875UCVrNDbPrv0QukMcVYci1_uXvZyEjkzr-WSYruWkQurAxJ_DbGArITUgMS-iQ2FfHnnG2t3RXLdNEVC86kS5nZ0QfYRHPou0iKttn8m5T14vFKNcNT4Ow3elFKOiA_htcCbRiF3tAmE-Ws-7dhaz3ViwqKu0RKK90RIcs3JP6tx7evENAFXvqZ7QaVKHAmLAQgMI6n_bKG1wJ54m8Wn0-dXS3wBX1EMbAwiiOHKLmbugNsWsFcyLBXM4feBthd7rI1EMFodOZs-UWUKJDUCGXnLJO5eboR2Jjd0HujAuJFe16Hq8A7xlJfpZa3hxrZbBV3ahBJ1Y-z6NlphJzEk6853GSmahVt1jdO5hVjj9pby38NnJje-NQrwxs7Et9VTHUoFnDcfKlVHFECzyHIIA7IiAZGm4vSmi46VLQdSwqju7FH-pM3rw3lUc1XzMJdW6IlgiYeFLx874lxqqVbItnw37hbW03W_7A7fTjFMEZD_GH8bnORs8pTVADgOuWMJuj5-fKnLvFz09fliw414OsriBiY0Dfd9SkARzcSD7xfYbRmImIyethxImkYqgTDdCiHU0iuVc51Lp-PRLb7VYAUB2uTycv4Kxyv_Sk1Fitz8dTSo9fRrcOZXWA1j2_-gB3MQ7bkr0trOQkV2xBE-VwL9_RZcSkRlJ0A1YqCRY55CLaNstygpTtcLEBiu-ehi6dQs8bbyCPkpXBXPDe7Cvg6X2hPLR8i_vnnKNvmFQFlUJ36xtwGfPssu61LLau3dpH8aNDC1Ei6rIgxTTaoIGKVI5wPxDdV5k6_aUdzjL9CexeoINDPWcUAQ3X_z4jCcliGrZBpn_PeqnApHjMw8kcLjMmEZwiL9VOIz7Mx-GEO48Dj5jlQ4WxgsLkiSCRR7iKjspWP1HEGmCYMTCkWKSPnBJldLy8DqkAQFX6a9aIUXKRke3V_MjzfiE26bR7XQbvZcATyb3ZIX6F46L7OKpJxEX4MwjBN0_CPAyrQuNYesx96ApMIfQh_A0Ks3JHW2D4hzuHZNW1H0ThUw_rySnoYDw7wMvE_P.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_079acd2372b39c4c016af7243c7d9c87d1adc793e515ff5608",
+              "index": 3
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794581550,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2025,
+      "prompt_tokens": 39836,
+      "total_tokens": 41861,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1458,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 39833,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.005991925,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.005991925,
+        "upstream_inference_prompt_cost": 0.004979425,
+        "upstream_inference_completions_cost": 0.0010125
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

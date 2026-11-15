@@ -1,0 +1,287 @@
+{
+  "id": "Meshinger/GndShortRandom_Wire2",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/GndShortRandom_Wire2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/GndShortRandom_Wire2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/GndShortRandom_Wire2/spice.cir",
+    "chars": 100120,
+    "sha256": "b0927e217ba067ee2aa9be5419dc6322b37290350642d8c9a92fa362c04c0165"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.9, \"anomalies\": [{\"category\": \"short_to_ground\", \"components\": [\"J7\", \"U5\", \"U4\", \"J1\", \"J2\", \"J3\", \"J4\", \"R1\", \"S1\", \"IC1\", \"C1\", \"C2\"], \"pins\": [\"U5.26\", \"J7.2\", \"J7.1\", \"U5.17\", \"U5.20\", \"U5.27\", \"U5.30\", \"U4.1\", \"U4.4\", \"IC1.C2\", \"IC1.A1\"], \"nets\": [\"UART_TX\"], \"observed\": \"Net UART_TX contains U5.26 (UART_TXD0) together with many ground pins: J7.1 (the header pin the spec says is GND), U5.17/20/27/30 (GND), U4 GND/AGND pins, IC1.C2 and IC1.A1 (MODE), J2.6 (VSS), J3.4 (GND), J4.2 (sleeve), S1.1, C2.1, C4.1, and the GND-side pads of many capacitors. The net is effectively the ground net, so the SKW92A debug TX pin is hard-wired to GND.\", \"expected\": \"Spec: \\\"J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192UART_TX (SKW92A pin 26), pin3\u2192UART_RX (SKW92A pin 25)\\\". UART_TX should be an isolated signal net carrying only J7.2 and U5.26, and must not be merged with GND.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"55\\\") (name \\\"UART_TX\\\") (class \\\"Default\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U5\\\") (pin \\\"26\\\") (pinfunction \\\"UART_TXD0\\\") (pintype \\\"bidirectional\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"J7\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spec\", \"quote\": \"pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26)\"}], \"impact\": \"The SKW92A UART0 transmit pin is shorted to ground. The debug UART cannot transmit, the driver output is clamped to 0 V, and the pin's signal integrity and any logic or drive contention with the module are compromised. Because the net also carries the ground return, it may cause ground-bounce or driver damage.\", \"confidence\": 0.9}, {\"category\": \"wrong_value\", \"components\": [\"C1\"], \"pins\": [\"C1.1\", \"C1.2\"], \"nets\": [\"Display_Power_Switch\", \"UART_TX\"], \"observed\": \"C1 is 0.1uF/16V (footprint C_0805), placed across Display_Power_Switch and the ground-side net, where the other EPD bulk capacitors are 1uF. Its value differs from the 1 \u00b5F/6.3 V G1-group part the spec lists for the Display_Power_Switch decoupling position.\", \"expected\": \"Spec table: \\\"C1 (G1 group only): 1 \u00b5F/6.3 V\\\". The reference circuit's C1 position is 1 \u00b5F/6.3 V, and the value here is 0.1 \u00b5F.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(value \\\"0.1uF/16V\\\")\"}, {\"source\": \"spec\", \"quote\": \"C1 (G1 group only): 1 \u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value\"}, {\"source\": \"spice\", \"quote\": \"C1 0 Display_Power_Switch 0.1uF\"}], \"impact\": \"The EPD supply bulk decoupling on the panel rail is roughly ten times smaller than the reference, which can cause supply ripple and boost-converter instability or panel refresh faults.\", \"confidence\": 0.4}, {\"category\": \"footprint_mismatch\", \"components\": [\"C11\"], \"pins\": [\"C11.1\", \"C11.2\"], \"nets\": [\"unconnected-(C11-Pad1)\", \"UART_TX\"], \"observed\": \"C11 is a capacitor (Device:C, 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder, and pin 1 sits on a dedicated unconnected net while pin 2 is on the ground net.\", \"expected\": \"A capacitor should use a capacitor footprint. A decoupling capacitor should have both pins connected to its rail.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\")\"}], \"impact\": \"The part is a dead, non-functional capacitor on the wrong footprint; it provides no decoupling and may be placed with the wrong land pattern.\", \"confidence\": 0.3}], \"summary\": \"The netlist places the SKW92A debug UART TX pin (U5.26) on a net named UART_TX that is merged with many ground pins, including the J7 header's GND pin. That is a clear short of a signal to ground. Lesser concerns are the EPD bulk capacitor C1 being 0.1 \u00b5F instead of the reference 1 \u00b5F and a capacitor with an inductor footprint and floating pin (C11).\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.9,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "J7",
+            "U5",
+            "U4",
+            "J1",
+            "J2",
+            "J3",
+            "J4",
+            "R1",
+            "S1",
+            "IC1",
+            "C1",
+            "C2"
+          ],
+          "pins": [
+            "U5.26",
+            "J7.2",
+            "J7.1",
+            "U5.17",
+            "U5.20",
+            "U5.27",
+            "U5.30",
+            "U4.1",
+            "U4.4",
+            "IC1.C2",
+            "IC1.A1"
+          ],
+          "nets": [
+            "UART_TX"
+          ],
+          "observed": "Net UART_TX contains U5.26 (UART_TXD0) together with many ground pins: J7.1 (the header pin the spec says is GND), U5.17/20/27/30 (GND), U4 GND/AGND pins, IC1.C2 and IC1.A1 (MODE), J2.6 (VSS), J3.4 (GND), J4.2 (sleeve), S1.1, C2.1, C4.1, and the GND-side pads of many capacitors. The net is effectively the ground net, so the SKW92A debug TX pin is hard-wired to GND.",
+          "expected": "Spec: \"J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192UART_TX (SKW92A pin 26), pin3\u2192UART_RX (SKW92A pin 25)\". UART_TX should be an isolated signal net carrying only J7.2 and U5.26, and must not be merged with GND.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"55\") (name \"UART_TX\") (class \"Default\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U5\") (pin \"26\") (pinfunction \"UART_TXD0\") (pintype \"bidirectional\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"J7\") (pin \"1\") (pinfunction \"Pin_1\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26)"
+            }
+          ],
+          "impact": "The SKW92A UART0 transmit pin is shorted to ground. The debug UART cannot transmit, the driver output is clamped to 0 V, and the pin's signal integrity and any logic or drive contention with the module are compromised. Because the net also carries the ground return, it may cause ground-bounce or driver damage.",
+          "confidence": 0.9
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "C1"
+          ],
+          "pins": [
+            "C1.1",
+            "C1.2"
+          ],
+          "nets": [
+            "Display_Power_Switch",
+            "UART_TX"
+          ],
+          "observed": "C1 is 0.1uF/16V (footprint C_0805), placed across Display_Power_Switch and the ground-side net, where the other EPD bulk capacitors are 1uF. Its value differs from the 1 \u00b5F/6.3 V G1-group part the spec lists for the Display_Power_Switch decoupling position.",
+          "expected": "Spec table: \"C1 (G1 group only): 1 \u00b5F/6.3 V\". The reference circuit's C1 position is 1 \u00b5F/6.3 V, and the value here is 0.1 \u00b5F.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(value \"0.1uF/16V\")"
+            },
+            {
+              "source": "spec",
+              "quote": "C1 (G1 group only): 1 \u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value"
+            },
+            {
+              "source": "spice",
+              "quote": "C1 0 Display_Power_Switch 0.1uF"
+            }
+          ],
+          "impact": "The EPD supply bulk decoupling on the panel rail is roughly ten times smaller than the reference, which can cause supply ripple and boost-converter instability or panel refresh faults.",
+          "confidence": 0.4
+        },
+        {
+          "category": "footprint_mismatch",
+          "components": [
+            "C11"
+          ],
+          "pins": [
+            "C11.1",
+            "C11.2"
+          ],
+          "nets": [
+            "unconnected-(C11-Pad1)",
+            "UART_TX"
+          ],
+          "observed": "C11 is a capacitor (Device:C, 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder, and pin 1 sits on a dedicated unconnected net while pin 2 is on the ground net.",
+          "expected": "A capacitor should use a capacitor footprint. A decoupling capacitor should have both pins connected to its rail.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(footprint \"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"58\") (name \"unconnected-(C11-Pad1)\") (class \"Default\")"
+            }
+          ],
+          "impact": "The part is a dead, non-functional capacitor on the wrong footprint; it provides no decoupling and may be placed with the wrong land pattern.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The netlist places the SKW92A debug UART TX pin (U5.26) on a net named UART_TX that is merged with many ground pins, including the J7 header's GND pin. That is a clear short of a signal to ground. Lesser concerns are the EPD bulk capacitor C1 being 0.1 \u00b5F instead of the reference 1 \u00b5F and a capacitor with an inductor footprint and floating pin (C11)."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 46891,
+    "completion_tokens": 3482,
+    "reasoning_tokens": 1623,
+    "cached_tokens": 0,
+    "total_tokens": 50373,
+    "cost_usd": 0.0064301,
+    "cost_details": {
+      "upstream_inference_cost": 0.0064301,
+      "upstream_inference_prompt_cost": 0.0046891,
+      "upstream_inference_completions_cost": 0.001741
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:24:34.148435+00:00",
+    "ended_at": "2026-11-13T03:24:49.403907+00:00",
+    "latency_s": 15.255
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:24:34.258Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 8065,
+    "moderation_latency": null,
+    "generation_time": 15186,
+    "tokens_prompt": 25485,
+    "tokens_completion": 993,
+    "native_tokens_prompt": 46891,
+    "native_tokens_completion": 3482,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 1623,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0064301,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794540274-8WXY19jamM55HMDmrTpq",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794540274-NvIZawOPxr2MLzwbXZAU",
+    "upstream_id": "msg_011CgzDGJeWj89Qs34HDinAr",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzDGJeWj89Qs34HDinAr",
+        "is_byok": false,
+        "latency": 356,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0064301,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794540274-NvIZawOPxr2MLzwbXZAU",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.9, \"anomalies\": [{\"category\": \"short_to_ground\", \"components\": [\"J7\", \"U5\", \"U4\", \"J1\", \"J2\", \"J3\", \"J4\", \"R1\", \"S1\", \"IC1\", \"C1\", \"C2\"], \"pins\": [\"U5.26\", \"J7.2\", \"J7.1\", \"U5.17\", \"U5.20\", \"U5.27\", \"U5.30\", \"U4.1\", \"U4.4\", \"IC1.C2\", \"IC1.A1\"], \"nets\": [\"UART_TX\"], \"observed\": \"Net UART_TX contains U5.26 (UART_TXD0) together with many ground pins: J7.1 (the header pin the spec says is GND), U5.17/20/27/30 (GND), U4 GND/AGND pins, IC1.C2 and IC1.A1 (MODE), J2.6 (VSS), J3.4 (GND), J4.2 (sleeve), S1.1, C2.1, C4.1, and the GND-side pads of many capacitors. The net is effectively the ground net, so the SKW92A debug TX pin is hard-wired to GND.\", \"expected\": \"Spec: \\\"J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192UART_TX (SKW92A pin 26), pin3\u2192UART_RX (SKW92A pin 25)\\\". UART_TX should be an isolated signal net carrying only J7.2 and U5.26, and must not be merged with GND.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"55\\\") (name \\\"UART_TX\\\") (class \\\"Default\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U5\\\") (pin \\\"26\\\") (pinfunction \\\"UART_TXD0\\\") (pintype \\\"bidirectional\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"J7\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spec\", \"quote\": \"pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26)\"}], \"impact\": \"The SKW92A UART0 transmit pin is shorted to ground. The debug UART cannot transmit, the driver output is clamped to 0 V, and the pin's signal integrity and any logic or drive contention with the module are compromised. Because the net also carries the ground return, it may cause ground-bounce or driver damage.\", \"confidence\": 0.9}, {\"category\": \"wrong_value\", \"components\": [\"C1\"], \"pins\": [\"C1.1\", \"C1.2\"], \"nets\": [\"Display_Power_Switch\", \"UART_TX\"], \"observed\": \"C1 is 0.1uF/16V (footprint C_0805), placed across Display_Power_Switch and the ground-side net, where the other EPD bulk capacitors are 1uF. Its value differs from the 1 \u00b5F/6.3 V G1-group part the spec lists for the Display_Power_Switch decoupling position.\", \"expected\": \"Spec table: \\\"C1 (G1 group only): 1 \u00b5F/6.3 V\\\". The reference circuit's C1 position is 1 \u00b5F/6.3 V, and the value here is 0.1 \u00b5F.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(value \\\"0.1uF/16V\\\")\"}, {\"source\": \"spec\", \"quote\": \"C1 (G1 group only): 1 \u00b5F/6.3 V | C2 = 1 \u00b5F/6.3 V | Matches G1-specific value\"}, {\"source\": \"spice\", \"quote\": \"C1 0 Display_Power_Switch 0.1uF\"}], \"impact\": \"The EPD supply bulk decoupling on the panel rail is roughly ten times smaller than the reference, which can cause supply ripple and boost-converter instability or panel refresh faults.\", \"confidence\": 0.4}, {\"category\": \"footprint_mismatch\", \"components\": [\"C11\"], \"pins\": [\"C11.1\", \"C11.2\"], \"nets\": [\"unconnected-(C11-Pad1)\", \"UART_TX\"], \"observed\": \"C11 is a capacitor (Device:C, 0.1uF) but its footprint is Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder, and pin 1 sits on a dedicated unconnected net while pin 2 is on the ground net.\", \"expected\": \"A capacitor should use a capacitor footprint. A decoupling capacitor should have both pins connected to its rail.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\")\"}], \"impact\": \"The part is a dead, non-functional capacitor on the wrong footprint; it provides no decoupling and may be placed with the wrong land pattern.\", \"confidence\": 0.3}], \"summary\": \"The netlist places the SKW92A debug UART TX pin (U5.26) on a net named UART_TX that is merged with many ground pins, including the J7 header's GND pin. That is a clear short of a signal to ground. Lesser concerns are the EPD bulk capacitor C1 being 0.1 \u00b5F instead of the reference 1 \u00b5F and a capacitor with an inductor footprint and floating pin (C11).\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794540274,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3482,
+      "prompt_tokens": 46891,
+      "total_tokens": 50373,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1623,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0064301,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0064301,
+        "upstream_inference_prompt_cost": 0.0046891,
+        "upstream_inference_completions_cost": 0.001741
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

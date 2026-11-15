@@ -1,0 +1,228 @@
+{
+  "id": "stack-chan/CapacitorMagnitudeUpRandom_Value3",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/CapacitorMagnitudeUpRandom_Value3/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/CapacitorMagnitudeUpRandom_Value3/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/CapacitorMagnitudeUpRandom_Value3/spice.cir",
+    "chars": 69101,
+    "sha256": "8e2bb6b1e03fe09b5b4ad721d99352ac1f993fa703bc326af244d0c4c51a1c9c"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C2\"],\n      \"pins\": [\"C2.1\", \"C2.2\"],\n      \"nets\": [\"GND\", \"Net-(D2-K)\"],\n      \"observed\": \"C2 is valued 100m, while it is connected across the servo power rail and ground alongside C1, C3, and C4, each valued 100u. Its footprint is a 1206 capacitor.\",\n      \"expected\": \"C2 should be 100u, matching the specified four-capacitor 100 \u00b5F servo-rail bank.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"C2\\\") (value \\\"100m\\\") (footprint \\\"Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"C2\\\") (pin \\\"1\\\")) ... (node (ref \\\"C2\\\") (pin \\\"2\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"C1\u2013C4 | 100 \u00b5F \u00d7 4 | Bulk capacitance on the servo power rail\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C2 0 Net-_D2-K_ 100m\"\n        }\n      ],\n      \"impact\": \"C2 is specified as 100 millifarads rather than 100 microfarads, a 1000-fold value difference. That value is implausible for the stated 1206 part and does not match the intended bulk-capacitor bank; the board may be assembled with the wrong capacitance or the part may be unavailable in the specified footprint.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"C2 is listed as 100m instead of the specified 100u, despite being part of the four-capacitor servo-rail bank. This is a clear value mismatch and is corroborated by the SPICE deck.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "C2"
+          ],
+          "pins": [
+            "C2.1",
+            "C2.2"
+          ],
+          "nets": [
+            "GND",
+            "Net-(D2-K)"
+          ],
+          "observed": "C2 is valued 100m, while it is connected across the servo power rail and ground alongside C1, C3, and C4, each valued 100u. Its footprint is a 1206 capacitor.",
+          "expected": "C2 should be 100u, matching the specified four-capacitor 100 \u00b5F servo-rail bank.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C2\") (value \"100m\") (footprint \"Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"C2\") (pin \"1\")) ... (node (ref \"C2\") (pin \"2\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "C1\u2013C4 | 100 \u00b5F \u00d7 4 | Bulk capacitance on the servo power rail"
+            },
+            {
+              "source": "spice",
+              "quote": "C2 0 Net-_D2-K_ 100m"
+            }
+          ],
+          "impact": "C2 is specified as 100 millifarads rather than 100 microfarads, a 1000-fold value difference. That value is implausible for the stated 1206 part and does not match the intended bulk-capacitor bank; the board may be assembled with the wrong capacitance or the part may be unavailable in the specified footprint.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "C2 is listed as 100m instead of the specified 100u, despite being part of the four-capacitor servo-rail bank. This is a clear value mismatch and is corroborated by the SPICE deck."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Investigating circuit anomalies**\n\nI need to inspect some circuit anomalies. I noticed an obvious discrepancy: the capacitor value C2 shows 100m instead of the expected 100u, likely a mistaken interpretation of 100 millifarad. The netlist in KiCad is confusing. Also, I should consider the polarity of C3; while generally unpolarized, it could be polarized based on specs. I'm contemplating potential issues with the resistor topology and connections, particularly between R13 and R14, and how they interact in serial mode.**Analyzing assembly configurations**\n\nIt seems likely that the assembly mode requires different configurations. I need to consider that the shared serial path may cause PWM resistor lines to connect as branches if R9-12 are absent. There could be drive conflicts with R3/R4 installed, especially if firmware pins are unused. I\u2019m looking closely at the MAX3485's setup for TTL-to-serial communication. The connection strategy is quite unusual; A/B ports tie into a single line, which might lead to half-duplex communication. I need to explore the net connections further to clarify.**Examining capacitor C3 connections**\n\nI\u2019m looking at C3, and I've noticed that pin 2 is connected to ground while pin 1 connects to the rail. This orientation doesn\u2019t pose any issues because it is unpolarized, unlike the other capacitors. That makes me feel a bit relieved, as it seems like a straightforward connection. Still, I'll want to double-check everything to ensure there are no hidden complications. It\u2019s great to have clarity on this component!"
+  },
+  "usage": {
+    "prompt_tokens": 22514,
+    "completion_tokens": 1398,
+    "reasoning_tokens": 907,
+    "cached_tokens": 0,
+    "total_tokens": 23912,
+    "cost_usd": 0.003513175,
+    "cost_details": {
+      "upstream_inference_cost": 0.003513175,
+      "upstream_inference_prompt_cost": 0.002814175,
+      "upstream_inference_completions_cost": 0.000699
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:15:42.284447+00:00",
+    "ended_at": "2026-11-13T15:16:01.490739+00:00",
+    "latency_s": 19.207
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:15:42.438Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 7361,
+    "moderation_latency": null,
+    "generation_time": 19075,
+    "tokens_prompt": 17591,
+    "tokens_completion": 934,
+    "native_tokens_prompt": 22514,
+    "native_tokens_completion": 1398,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 907,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003513175,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794582942-6Lf2xljBBT2SyOmUuLwY",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794582942-jDAYmTbdI3PVgv7wlVz0",
+    "upstream_id": "resp_0d64df9969f2194f016af7299ff22087d19676615bd12df618",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0d64df9969f2194f016af7299ff22087d19676615bd12df618",
+        "is_byok": false,
+        "latency": 1922,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003513175,
+    "cache_discount": -0.000562775,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794582942-jDAYmTbdI3PVgv7wlVz0",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C2\"],\n      \"pins\": [\"C2.1\", \"C2.2\"],\n      \"nets\": [\"GND\", \"Net-(D2-K)\"],\n      \"observed\": \"C2 is valued 100m, while it is connected across the servo power rail and ground alongside C1, C3, and C4, each valued 100u. Its footprint is a 1206 capacitor.\",\n      \"expected\": \"C2 should be 100u, matching the specified four-capacitor 100 \u00b5F servo-rail bank.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"C2\\\") (value \\\"100m\\\") (footprint \\\"Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"C2\\\") (pin \\\"1\\\")) ... (node (ref \\\"C2\\\") (pin \\\"2\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"C1\u2013C4 | 100 \u00b5F \u00d7 4 | Bulk capacitance on the servo power rail\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"C2 0 Net-_D2-K_ 100m\"\n        }\n      ],\n      \"impact\": \"C2 is specified as 100 millifarads rather than 100 microfarads, a 1000-fold value difference. That value is implausible for the stated 1206 part and does not match the intended bulk-capacitor bank; the board may be assembled with the wrong capacitance or the part may be unavailable in the specified footprint.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"C2 is listed as 100m instead of the specified 100u, despite being part of the four-capacitor servo-rail bank. This is a clear value mismatch and is corroborated by the SPICE deck.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Investigating circuit anomalies**\n\nI need to inspect some circuit anomalies. I noticed an obvious discrepancy: the capacitor value C2 shows 100m instead of the expected 100u, likely a mistaken interpretation of 100 millifarad. The netlist in KiCad is confusing. Also, I should consider the polarity of C3; while generally unpolarized, it could be polarized based on specs. I'm contemplating potential issues with the resistor topology and connections, particularly between R13 and R14, and how they interact in serial mode.**Analyzing assembly configurations**\n\nIt seems likely that the assembly mode requires different configurations. I need to consider that the shared serial path may cause PWM resistor lines to connect as branches if R9-12 are absent. There could be drive conflicts with R3/R4 installed, especially if firmware pins are unused. I\u2019m looking closely at the MAX3485's setup for TTL-to-serial communication. The connection strategy is quite unusual; A/B ports tie into a single line, which might lead to half-duplex communication. I need to explore the net connections further to clarify.**Examining capacitor C3 connections**\n\nI\u2019m looking at C3, and I've noticed that pin 2 is connected to ground while pin 1 connects to the rail. This orientation doesn\u2019t pose any issues because it is unpolarized, unlike the other capacitors. That makes me feel a bit relieved, as it seems like a straightforward connection. Still, I'll want to double-check everything to ensure there are no hidden complications. It\u2019s great to have clarity on this component!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Investigating circuit anomalies**\n\nI need to inspect some circuit anomalies. I noticed an obvious discrepancy: the capacitor value C2 shows 100m instead of the expected 100u, likely a mistaken interpretation of 100 millifarad. The netlist in KiCad is confusing. Also, I should consider the polarity of C3; while generally unpolarized, it could be polarized based on specs. I'm contemplating potential issues with the resistor topology and connections, particularly between R13 and R14, and how they interact in serial mode.**Analyzing assembly configurations**\n\nIt seems likely that the assembly mode requires different configurations. I need to consider that the shared serial path may cause PWM resistor lines to connect as branches if R9-12 are absent. There could be drive conflicts with R3/R4 installed, especially if firmware pins are unused. I\u2019m looking closely at the MAX3485's setup for TTL-to-serial communication. The connection strategy is quite unusual; A/B ports tie into a single line, which might lead to half-duplex communication. I need to explore the net connections further to clarify.**Examining capacitor C3 connections**\n\nI\u2019m looking at C3, and I've noticed that pin 2 is connected to ground while pin 1 connects to the rail. This orientation doesn\u2019t pose any issues because it is unpolarized, unlike the other capacitors. That makes me feel a bit relieved, as it seems like a straightforward connection. Still, I'll want to double-check everything to ensure there are no hidden complications. It\u2019s great to have clarity on this component!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9ymts3Wx8LQFZNoE1EVEJ24t5iLeAGv4v71WTyx4tCffboNlDB_z3YfRewQZkkVL-oSw8sue4-G2eD8D3QkTBvs_hg_1uIz-92TocvlkKQXVAxQfKaUEeVWKW49X8U4A3v9xm2sGU5e9Pk6rod5hM0oe6bTfrCFnrcTtdwbMAR5N0Sgohr6TcaftwspMZECLXccKpTSbK7HsUxWIhRpzxMjLpKeb9EzLhsvDp5T1S8ECLzp5bp2HvmrHjxqc7CvQ1xcw_v47MyaHHz_yJGJefkfvQtw9YG4dVM7ZgP4TAYrreBih2BscUAEIC15jn8zg_YNdw1Zkq4R6peD8l1L7iigwQ7TuynM5qHrwKwLUQnnP64tCVneQx7iV1s09wwjj4DAq1x5i7PefDJYvr2z2aJuT5w19NCxivVo8Y5ZZSUh9cUzByjAv-h4DAPAcnyGcThQRiY_XuUtaZVsc4pZ-l8zvaLhbXLwZC5MG3sej9EG5XnkYum-cGvLo5mxKGGZuZlYFrnCR7dRPAo1_c8DpNpc01wHcrxqEWqrpoxtX78Cdxtjw14mtMO-LTaOPhLAg_RvKgvsFvKlEBst5Tl0HoZ_VrTcWSGPJHXyYdwBPSsMbSTmGc7Rr2PG-YexEzMFpJO6tWGxf59KeyO-s_7nSIGgeLiXxFL26pdWzQkxVJDYzMqRmpoVFbn0sxYnjqpZlQsdc_9z_u33NSbpVpYmo7SL6Xgn-dFaJdDYY6fk_tdWZAc8OpC53XsvxvQGdHoQ2bAZELuebT351obcqH4sIDfnncbD_HfscfUI2DL5V0IK277qpK_n5Ej5a9exLCxN5jenzWP6OUYa5Xr-MtNEC9dz1GLIrKKF0Zk9GKpw_SMrQDtvOBSroOozGxSUSVii63HJz4fGXZln5MB9HouU9cJdckNYRhJ4kl8UGx6bk5v3Kg4H5eyfg4PVBB2XMq5rQG6Qc_TE72XRvcubagf5jG9-qnHtIWmvZNXCjIKmlVzSSBnw0JgvwVnG0ddlWShbIdBmXqEovJkgFH-Ye32rPg5XT0JeNL8kQxVkB2W68qVUQCO625Wiz3WWMM5VG9K1K7VHxrWKRzGxMxEmhYqCd-NRm3N9Grc_5h3aoGnVOnFbSE7ychTu6UMZFdlt61hwjaiLXM0jkZ-5Ok2ZmjAi_pT4kxd6CSDWE9RFM4OLe0QFWiXdMBeQVVjc_mefyuLdGiiVEPPFd6z6Vy80uZBN6U9xrLAUQ-pf8PyuaJJouCHvehfyQPFSt3nACT7r74GMGi7dBgWmmo9fuOHzm-o4qdUrmzdhhFN1nGE9XlGrz92qw86noS4DMEfiOpr1gZjJ9mbsAEKdtDNDb1s8Z7yPBAlT3iOllweYp_AozElZGMQJr3WCoLgTYl0mn_JS8vvexGTJupnDje3PqLEiXRQ3WzIyiKAcyEgTKB9Q4nO7l3HqrNYtFY7FtXGUQvDcom-UhYACuZvMfY7TcIqIl8HFYnJDZorM7I98NtXB5HozmXiAQ6diJB2PoXKN2NWclj3GBuDBv02hb1oC4Ga4uPp1OJsDFfE0Yf-WXo4GfP5MXfb_IxMYAM7fSMd2SFGx1qovQ7son6EtG5Ngc-gVza4i1M4vUw0mfWPRb7wMnzkBbzyBwkNdQyYSzcDFegXtOdV6ioxt0tN1KIls5GSFZtXH2SUeBf3qNdf7XSfLdsp3bRVmY9pGASBenfgF0uJpb_G0UXVXAQBdLETOmvaYPcJhLulqHledlS10ZAnwZ30ffGb_FKRBFvIU5ElZfKpdnPPokMRJBwyMT4nTvaCSK_keJ6a4z7YWiHv2Z7t1DJxiJBCFFRY_SJda3A_xIfXC7aC0IXkmTuZSVIAGzsTjhcSNTGEihZcXKFbNF9fQKKYcqNRThzsEaS1zvjlQ-QP9ZCEhwC5pHTqD0Gn192mRybUIH2UfqvDwCphqan1XfxM4LzuZo0zQ9fxpY_sxLK6gRLTZrGxtIR3LbZDK4EeOWJFD1mmlfklxncRVql57Jw9aYH91Gy9x7kfQ0cAM3iEyMrWO5qi0VOkf0PtADLAZkhlnW9ZGhBvumdT09AkNLQP1gZCBtbYcpn5ZgSFvOlkqceRkVq7X-Y0xSzRdXKos9Xak7DA9pckm_YrRjaliMqAs8qBCrvuBLzS8MmvdOYNK4pZkIglaeh0sp7e9aSztu4QRx3XWFNoU1oeRak_u8b0wnrkDvCBdsfF7grQkJoyeHOQLR3PsdSX60-1tHPGfgls6fzDsPvGuxnGTQiY4aKoD6UE5pOyB6yJs1MfUynDXhAQTh1ddMASywq88xgLfALs5jPoXdyF9aTeUG5eXWAXqmYYKsT72RW7kFWvn2lE1RalnWPf30TKvTlaJsyWZNAx4963BfY10XYlkmGE27s5gZdPF2Mkiy1k1iOcvCYgZ7Utjr3q-HxpG03HGo_u6Qigxc8pdkBkuE482ZsMuYKeYi_hEu8JcpSXrJmPeVVDm4DZpYmTn2vK35Lx0FCM_0hQlMR1J99kZNoSrhqPbIEe1WoA5F0hKiI3hRyESBKpBWLG16WyfgLYk2xnVlgcgd4wwL2Q36RcJ7ffdsFRrWQXktKSHwDF6Pv62T5bbnN1abxhE_toAsQS6x8iEgJzUU_HbG2NbDxz2TI0VOgOfNhXMYTjxk9lM9dB-9cEEu4EAJ3g-SbVa0Kv_KAvmt0anRGReerPgM0_Rbk_gOFqi14OQkzdL895E0iF_mrXiP6ZaSI1pjo-0PDEYjeexXcerdt70-DZUnpCOGprBiub0a76G_1ps-6dAc1SgMSnleoqnpfH7nNZWFx4z_Uh211ytfaJYvI-aQ2NC9ryXdn5cgw1-DY1438S0QCkqhLGuuXpiEdKKoxGjHKPMd2pEpNjUjNW-ZZ9OdYuquigPoirwsUDQ07yodoZElNrLYfuXPDzM_TY1etYFBehITKAAHhebEh6LZULQjCYE9kJLCzyS07tWhNMqD39etqFkQpThGay_6b3iy71L7NK2uACnJ0Z2m8U-X8RVXB2NH4Ypwhc7Ijl278zbBrIoCHI9zeQwGIvhFZhUY8FSYwN-xTPRa6UwAbtfHqf9BuR1ZO07d_7X4s50y7zuiqydeTo8Wg31K7r2visR85rmR3jajIrryzgdXpeZK0nz0IERfu6FhSf60wti25PxhDKJ4IUJJggkrISnbEbyEccAPgIK8SbBhAG2EaQr6z1sZNTBflfQGBHMDphnh0Y8T4LC5JLdKZ6Qunb-IssfDs8P8JSCEvVQI3JdBameB-g8_lkKx-qxmfH6eRYzMrLTlqcgijfmQnyjo-mZm4HNKq9Pd3BfVq5ZDUTHt-Po58fDUPacob6ecYkj1VPd3w28gR3gQWq9PcCWTwtHesF-o13jpLeEMe1oMfkXtTRAWxSxcN_gPAjoy3Mo1tPRZDhn3OP5mTXnJolqvqa0ibpv9hX34WCGlReJ-nYqnEPFqQqBO7uBOn4ITOr24EdbmQGG1A9uU-F6HzO2a_JGXXuU9R8PrnlVwt2miVBxgCcAXjJzf-AHyHja1F-wY_KEPFDUpVP4GxcjjVCQZx_KrUexcxBezwmqoZ97thDokEFq_0eVMCrlcBVZ6D6v2KKhEew1clv646Xwc8fig8Z_FiO3gNwaaIvViIa00Wh-xMwzFr_0Tp_ZFkYTgEU4jjvOGBZdIfZxa29EREBp3o5NwYOlr2Ur08nZVV47G1TcedXLdmXQQR4s3h6q9FxANIhJrkYLyu8j-vOJJPX6IWeoTB0M0AayYsYNRDCCNNfbgEj9ZdiJZ3xp4Yhh16qgLVkmMEmsCAK6TppLuBrMPBP07VqXXZX1RjT0lzI-XD6dp-X3suo1lm51aJmjlvzgvyex4Hl2vkBjcb7G9grlOygKS4x2Rl1Wg5jrLk7B-5ti9RomaZEcg-dELXXiv50OEwDUacdaTqgUB6G_mDW5OJo8MgQWgO1uGjqbat-42kO2W9OBPb9STAesqcHAKLKyEVFF3uIvj_W9i_AIZPClqL9k5KKxZZu56WmTeUN5nmqS5Pk0jxtpCvTbHXnUUAwTOleXxAoA7el-Z8v27wORaQJUaXCy4sRMo4LCaMZNXFdFW-jvG27Mliwzy2Gu2STY3dJCTHu7UEpSN8qfvWenNd_VHbbHx82EW2_F_ZG5jEsIZX7wlQgHR69AtZYp4zlj340QYg-QPsFy7_qDv2A8ZSp5rj1FvBtsjQRoDu0Dn6y1K6ulCYVf6u-ti83vWzjaR3Ww8KwuAfu-eCo4Ipkq7KOsl5KQhhXurtRPQRgWXoTDTfDTaLkIG0BnGdpPPo78pkgSJE3RChwb5ps5qP8g8Jv4DlncrwHVGnMm4_Y0bk726_gYmtZucAW-Tt-0H17GkK6cW1kEqqepH5W5qrHGAq4bQjb17zcuBTYFfLSXqflTkcyC_FD2PER0Ptl8Lktq3qXfcpnoDSmJuQnh2xyyiSuZQMo1rH0sBM3pbh8StPUoQitzZE5bElQWhEghxcgwyPqu2HGJ60cX-Jve5rya9Go4JuK-u1i7uAWdjoWqHU15NEYxP-9ias8i94_knFNQBEpbTshP5PbnUolDIFRGMwPEv8QV69_tE_NoauT2nAwt6MbxB1i0GBui-prsuBO254DQq4x3Wg7aBExCIr4VIxrWgwYdN0bk-utXGmd9XfGzwbYdOmW4UA7ZCO7PzLQwlOXTzza2dPc6wUrZcVsgQt6ZyVNykV1ewRh_DGtKTtU7sAQZdWzZS3ysbeN3dWT5V_pi9xEWgb1a_UJmqly78-2wkGa67YtdCk_mHgEBQNufjpEClHlZZYMVaE7dyG7muJphQ1N0IfU3-dN0gOdfVCfiYJvju4-UWTlZTSuyOmxVpfTkZfhd_vvsyhJMtRELzSg7IJplsYWCGRj7Ms-ZLrA68cWNcUFP5RUwrG0gl-ql5JV3OTHNS4JFqy2mc1P4Anpl9HZ_kkLCtLs7hwah-K3ggekaBgaI-LhEYEywIe-1bYAtIGway1ZGp-uql4YRfhnQYqeVcxkMatvVR1-skUqN6WbBkBMqA9lt_HUXh9enh5_ny3BBKzbBzy6NWx-iL-ygefmq7QwAyfu8GoAF0OooAclxrlQkIbFAdXcQybC1krwkX-V8ANtupcAMpi7525Ll5k_kEyGhNZRkMh_gqvIxrZcShPIFN09mFaemD5m3fesB7ktauevzHB2kTb1ccU9cTf8026Bw0lplFk0UfaWWtiNNAmmLG13nannnNHKgj5XRadnNlys3b2MaoSvEsRQBbHqUzboGjnouWw6T8QsRej8L2b3u7HdcNbh0bpRFdwg_6gySsUhmlobLgoRacJSosZuvvObWP3LuDlQeSH0RN4fHxSu2CEzAsGZ-QJlHEsQNdt25S029CkGK1L7yDXkDvEyJBYDT-tIUXcetfSy-zctXDP8R5j9klEsLZ4WI_hrA163V9X7bwEiaH7uExG-mNdh9Wm13wP5Nl9HGS6sM7ZSojTNlMFmxDwnDVjuTVeOxbArTcQ2F2yY_w9fzGhdsLGa9QzqnfiCArTFFddJSu_rQvvmHM4If1OVduuERVJfZ12Aen90SPCeb5p_VH7zMuXgjbDyErDhV0B38vB59UwO2ZZmA6mEFrDHKJ-GmMb7LX5K2qs4fcR6Tg1RjsyYLzEpQDrVuC8HzVoIl8qPIOpVs_GSz_kI0JWsjFqKr7kbbUm58ZyKR6ILC5aViJnRbzJ3mKbwFjbJ2E-NreFd_I8cwSCwPzfIJNOP72hDjN5wQti3P14X80ctksOzehZQvmvtRsmYYv1wcjYaGoinkRwosQzi4Rrtw8acXsp46OztxMpXKkWxbHYJPLUfZYgnACnkYr7ZV9m_8xS8FC6PA7j_qcfnQ3KmC6YDE1f1q06-Dw7hzkX-w-05Tq9fg2e_irlyQ0JWihWPvSUpZoRhGZlS7CI4daU6fVXQ2-h0gxvbQM1a7hw0wYt4-ekQNUxsYNmR9CpVIl30R1ArpUhZy4nwqohe5-cHXH4klf-x5rZG4nRf1FhgzFj7ukcJh6n0Uen5Aa_XNWWNIy7Ddjpn4Sw6ZTxtfe7_n2qYlSJhYv8pvC3GOUGVKTKXhPcXpd59hn-Bq_UPQAn0x9P5xfQk2KjlYt1bU2I88d089spZafSLS1o0jtFQbFzCpsP-uv8pWIK02eSnlY4MJir-0WdXLpD2jq9kq7uxh6o9eqxA52DZ3vYo9dqZ1hYxKfz-jN_SqL6S6LepcsZH0N94AJvuQCpjGvRmijBhfYsogmZSDggCZYZOKSHxglrg5fRIJ5ybSVNe15FfhftgZhHGe5ci4r2ydK0BD8UbsPV8O-C3uKL1ZjF76DqzkvycFg5p64DZFEEcpugKNVKDIsB5iSQqQbaZoeJEJFcKJURGqpd5IRE4jCoAe6NFZpx126-aVimYyFVl6l_YW4Q9Ei8tp4dREtRosP-s0m2Txy5QiwfMuXd4sgPrZ9iySrbFvKNwJEiQ0G2QUvu-ssvjvSnon-z-U8irj-K7gVc37eNE8kngP7jCF1MM5cbSA3siBMCF-TPivKyhLKr-h1tNf3-lV6v4ojCso1TAhrWkFMTfgC_CMWt99qxIbyHEvD6gF3qqhvwvydTY1qauDif3fMtdhSWc-Jt36E1M7WqE5qJK4jHUxlftnoLQt41GjJZ1ckxBkiTGDuEaSuqss-zh42vLq3BcV3Vy6Fsabr8EFsmCZxUgIzeqbUQ4R7csebdTp4H6GRApUVGu_3tMnBVLuR_BT97pYV8yRtlHAjpOZBUtNHKCQXoeVEOgngdGQ8QMZVTeyCCsYl2C1QEiWc9z3JjjzMUosC4o53t9VKutpiPDDe8XsL80m83onMBC06DoU3GWJM_aAuoiK_tsWAjn3bkvNotpA5mEIlUiYJcGtadEfTDJMBLXchOG2ahtikKSXeQW84-xyKY3PKCOGnLgeRiKr_PEsbcDk1lLJlB3haakyRWyEehcmpezGiCKFy9Fow-JbyuERxWRhnpLBgAsG4Q6J2ttFpUTAIS8Au5cswfnkhVnag4QEX4fLZ7pYZzOFvKJ6J7v7hPCf53q2y6A5yfvInjzBcb9IerdKyaEahgyf0rWOWffZR2fZ7P9Ok1aoyCMhAFPFZ6FcZGoS5WSNg824dMZwI9MdwJt5oD3W6scVPPS5_du6wZ0uEqU2mBNMeCTSeT8ePmR8rtcaj28N6NbA4dKySIU1TK_Yl_wE0u23tRAE2xr69gA_qY53BpeVFfCt45-DRfPB_WnQtr8kipVvHoUzDR72fMtZR5VdFzthskxxufzkWkFaMArQvhK8kSaivEncAasx0vxIkwKtNw04jGTer7lPHUbMGf4QXpdCtiImwpiLeBVVy5Gcx9s9Tl0Xgsv1VkujN7kYsXHNC8WHQ6mAtKLm2H5lFQuBQDIFz8ZfsaSGxnFBPxm9sNUh6HP856A2zXOzTooKfu-_eCqT63GfvmOCvHBiLO8g-yTsW15KHGpTn1ySSgviVnMMM6Xshsq1gANhRAEiXTuLODgpPwLaPvCz5Wh_pLlouOzSCEWS33Or9x_plXrLj9CRD6zobB0ssVNR63FvO3qsttm4A-TUvEH8K7Jih.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d64df9969f2194f016af729a0a3c887d196176f5d4e8d3c2d",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating capacitor values**\n\nI'm considering the impact of potentially marking a capacitor value as \"100mF,\" which seems impossible or misplaced \u2014 if it literally means 100 millifarads, the component might not fit or be assembled correctly. I notice that in KiCad, value strings don't specify SI units clearly, and it typically interprets \"100m\" as 0.1 farad. So I've worked out that pins are probably C2.1 and C2.2 connected to GND, but I expected a 100\u00b5 capacitor instead.",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9ymv8atO2vAcAZLBEGUPfggZI-KuN4a2lQv43PEpfYfZ_iXUD3JVi9O5OUH93a2suWTwM7ACS4hI7z6MQZH6a-ak2Sg-M1x8WBsDer_op9iRnn6Tyu5K6xuWiGRnvGtEV6Q22t6D5mOyZWoSD5d7eK3Y6wiEz2wDK1vxLh22vFP5P9F1jzoeO-gQBqJWpuFKqniOGHSDGuRfbbD4luOnNkNETlnL1OwHJcMUHpjUnuDv92z7s0pCf4aFeFl1oyhPXQouZNhNJQFoJiQF7m8fnmoWhVy8kOqNq0FGt73UrRwqO7CClzK1cyb3U42xJEDvSv_g2nxqKj8MM8K6U1mGZ-zuQA5ixS5hb63MNYnO3JxvbZzv8JlhCfM19_4U-KDnSeSg2wafSzRNzc52jgF-vEFrhL7gEV9F00u8DOqwuBx9PehqtS5Lbwo7XDjaglg_TAJdnzXKyjWswgt5ORUEhgrSUYcs4CLd6N3xR8x7KDlq4_ZR1BctYA2ujY5EnrVgWqijVFxaG2EuogWE-fpQojzT9vH1Wz45fGSZCtHHjdlnilWKSpxf-8yyCmHAu5aCtr94kPd_q4yxnnS5IeQ7Bk2fTgIug79-FB_w463-z5_5OVReh58p9o3_Q0X7YK1wWF0JOGD2QSp8sjEphAWA_GBxDBLEzOdyrDnzAw3baymzFy0PSz8XiuQXI6G1Q7y3etWc4BfWm0TsNdk6yYGUwFtU1CSZc416CVd9BuArSBU-FLQ-tUdX4U7tEI1nUr88jqeMhbbpjSN_JWPlX6kPo8NxLPQM0IoXohitZLXFKed_emf-YpdeNotNxUPLpAXIxscyIvGgAVKaaE73GyiXa16HisYlJVkb9J11anURL1MHEQj_bGu6ihPL1m1K81w0tQYSeqkUs2PSdzxMFGt-EgLCf5-fCklXEzBhLjx0hUGprCgo9pkiK5s3iI9BZjim4zV1QbNK_RoRP1ZpC1h5CUUu4d_hNKPUKPBpz8UjGPmTP3ySbE4OQxIcpHPNU7qcVk2Gc1qdAZz8dQuukA_C6A0c3P1IL1LbPXGuE5bUUrUGCATFj86xfoFOyat17kaawDliAbI7UCrR9oRl2pnCk70zrKo3WDNDfCFFcsKejMpartFAMZqFCn41RGeLHz4k-S7oM2paGvODOLq7zPvtlVD4Be3f1FIXa5XtSstK_GWps46lo5EdC5Uw-NdX0XvxI-08OP64jRHzGsR4Av1qS5py9fcuqt6ftunlj3uBuMOXysogQQqm4eUiFiqZFcA1nhZVEKletisuSMx4Ortr9ItsZA4o0eK1q-JRv61WCR8H67yaCO_TPdwhK2KOU3Vu4X2H1GZ3ODj2jxYFOTKdUsDgr3UNHXq2gFVKK35p6Jyt-EfETQTcyuU1NaetT-7FWD0rMlaWqjECvWk3acAHtIdl0vU5J_dJrC-wY_Byyg5TZb_RdA14Dvx1aWNcsNu_EGNsQZTIx3BVn4VjHfUsdtVvVAAfrUkAgWaxSS_J37t8WytIauzqf1eK_9v8cmTlsLFUXs4I6-vnFeGf8lB8RzXpshi-_hp6_cc5GiCUf-9JTLWMfI90uZVqfZ2cxOFRlAd2vlgifMvB5amedJjA6C_PtM7RMBJymciUMknHVu7hyfG7XAywf8PmfRL2dEuJlIMwrKeERrmy4ecmVJS4pZcEg6GVP3EMTh4HyHKcsPa5f8P_qJlXHfv57UYgvpCFzOpUFWF1K0onCiju3jiZa0hAk7UPokWESivoB4lNf_DhLyH_w6V9SVijACy_X8fyhv06_m4yPyZOfO17AM9PBZ8-JIr2wrEXnZuzsjEyd3KWoLax1eD5A8YYoR9ta2Yhd8IHb7AwCyvBgsVVTPWx2cJVTpgdQ30GJFMbiNLrLN_GYu_UNJIipI0uCbkBaKKbpITj6d4MYsY4O-PDej8npWGNCAoelLdY7b926iB5gLk_BM_FvSlFA-rVNnNBTnjfEWy6bbWO5JZNo2GnrSxwRR2Wtx1DDu5CZBS-HxAUmSIn7hbSfT03HUfh2lHd3QBdXTUwMD6pZQovh7pk3rJA4gEsF-ZmWHquHoQGGbUotaf0EZIVCw4tDrmOlXo8p7l7n6UFDWHeMjvOGnVwZiWpiPyfajZn1bp8Xx2nvW37ZJ5VB-k58TOPq6a-h2j2ShaMdFiWzUsoxy4Wjz_l65KQgV_qt_vlGkPxKV8D5zyDQZNXBMM36smAvyExYJyJEJabU8uZTWqrg4WDQv__v9zlBQ-9FTZywe2on2Hy4_6mbLsHk8qFoy7xwQSMiC7CG_nWuFjYLmEjdcl2_jV3qfXCAvwUy00CZbOPhyGqNRvGm8xQXkx_oeieH6BZwuoc_J77MFMdohaS-WJO5UYV1H938T8V17IPXXODs78TyRgsFCI8VxTEc4TDdN2rKdx5CJlsrwEEHnXGa_AHofiMe52Bd2yZ3C02miNE0uu3wm0acQ7deFMuLyIRrhDHCWa8gMQOuOIwMucnY1KVw_Bn0ydI6PzhevR5Ybo3Bol-IkgnoNuGrISrBOjed6x3_4hpTE9dcMccWokMrlRr5oY_IAQHWwk20v_-Va1lzlBz6QUpy30vEsYvN1hDdloBi-IV8OzZNb9n1nuNkq0VMBIjRWMHjnBiZkeI8ea-mehcdnubS9GtYWveyFyVFZ8uAi0XNeItSk1Hog-Rjz5EkoloG5vvVLTdGYXdR5E-O92CjmbSOjVS4MUW7jk1uHmbBWgS7AD_G1Hte0Fe-Sm8D7UKgfx8KlidJnS55ilt4ciF6eBK4eb4BXTq-2cIQxj4-VbE1Ek-8J3ebM0tct0R1w5qhVi25TQOkebU4q02PtxatBuacCvHoRf1ODVe83vD96mVk5e5wjqntUe_D0m1IT2nQhM0c1jmovemcJNND_rZbXZS-mvFB9LxLGt43UlBPOB1mFrKCDrzWF_qQq_ucdPv3RdJ5moEqCMFq5V7Euzqs46Tfu6j-lnQHtOY7YT_uTZ6KxN5le6tA9g00bhBr__4cL5g0iw6dOsg8wjyjTnlFRC4p7amCCxUihoc6ZmUYBxg7ysfhHGL6gUk-idOfu-eEHD5kNWmWTbuvWzdAewWDoEcyT-rOpiDe1CJi26t9of4vPG8fxVXRNr13xYk9V4VsWfv4RorqC5nXMif9N0blY1n08ai_gfB6QwDC28YN6MEDE9CngB0PrXbImNHgXVw-eKTbpB0nuG1loGIvPk548bPQe8ZABrzfJY2Gq_UZglEJuCfaX65j9PdLT2NC4GilC0tUqXr3ongqi6-TDIZr6g6xCy6wAGrDAOzkY8KAYOlOFaRVtVd4R8ARRMVDpUHeB7gnsMOYTRLxoYxNQQuy48MbNxWJR8lTAWOe5eWlPVYjU4CILbJki5c1qkZPXu3PVAB9Z9eeF2wZ3jcsa8NxYKt0c_co3erRL5abTxXQZGtZpuKmwMhi360ABnUATsyOQhTivt8fQz_95wYUPoIJIe6TErXSh1iZ4yPptxeVOX5C3a_OUmkBKEaf3CO31YQy_ZzpABfORPBtvDKmUwVZaF3wQLGyHpTO1ZHVWMo7Is1LRN2B0aqeTdzKzjbazH5LXxN4Jd_b3upCfLFECBuMSO4lD8Lprtvs3S08MX24PSVo9IK-FG9jcJBTrhd0fLlDWtLqEWD51_pqjJev-1gBYseA_XuavHe-jc0pCSgm56MzqWpBVf9nPWUovbLhg1S43SMP0gVJLKyJDhLO4gLvWVQyiv5Q8m2PN-f9zoofdVQf7ZulUgsZ3S61I4e7hMm_5-bjp7_ijQFCYJCo2YgRZ6nEX9K-b5ATRY4bzBKl2BQ2KldT92FDk0ZGaU-YMyepWbKl9QvGdtKSjltOqgbKUCQv90b9auR4Skq1o0FxZ3CPDrqxdR8zlVCcJbmPnY21M7nb5fgNA98D9jrVjoMcITkE4we8fQYNcjGxg2QmDFZ1Xg3VyESVovYpMwqlT5omaDAioNtBNlSoD7cKmn9IJUkQQu5FOAox4EnP-HEgQoFrhzwUe-IBfs2MuAYw_6jiEmQOQDhcNFt48AcVQksK1rsdEkPjqgNBDHjArT02UrrApGNy1_fKCPuKhd68cGWp6XJk2bF2aho3hZ28C-_8Nvf2w0UZsjbqRf3oCrmpuFKhmv7NRiq0sQfoUBx0Qw1up3EAo1pIO6uDYamKG3TFO3afJN-OUsaswfnOCnc4kb4DZO6Pq0Nb1havuyv5a4jym8qwsbAq-8rKjknHyl6XQyk1bdf1BNRuQ2zdWuFEj9YHSkORv_KmqPWsnmg8UU6raz32Kr0uoD0r-wIzMiXUmYIeDgvz6lMpy4lYpdIGTb17QhDtbQO3oR4PdWc1A9LrWV6qI4npTyzMPhzTxKfx2gw6oCKc9v7uTzWzAYx59CaioORmOPOMOoARgltlJvfxcW2SQUKtP_12sdLlUeHvIfNp7IJOIZym0FFBhUHgDuNPZjJPbfex8_wyl5tBYAawKre0WT4udKl79XHWY4DXfCAI8xDCwVAmQf0EqALN46tQLq7LlVVou382Q7JDZDGHCBEZGlPUXRJvO0lpz9rM0b-62eoK8Kf66mkzK3zvuvKRAGf4e_3l1r1L-c5oiYlLr-MRl2XIui0ZBNY2NfXZtY8V1pXMphFq2BlIBSKEieAcC7tFhigwmPmgbUdlVwRJXh6A83MfB6Vk-4DIPdUYF1WgqKT5iCN6anmzuCg-uLPaJzLlLw-AQdMaHNFBXRgJcqQEKDguXYanUDf3Hh00yZoZ-FV26UH9W8zIrnhDW8E0f07sph4H2ScQtDgK_TR3r2iISkAmi64kvflqanWj3jp2BAnMlIfcvOItiUSF_2ELCoyonbPRKZTiwugbr9ueWtyo9JYE5pzzeLmbHr0HEMaxnxxcVJPN2tT4m8cxxtK1Ju1Fc0yrtTr9bXYnjDaaBm-HRRJ7CmZyKJEVYdN1yEf6kPGb-8wpLUTl6PAV1HRMb3p7ypedKSFpfuSPTscKlTZuIYttmu9P9CSxGI0wBbEOuGSvA9f0cOKdSzHn4EJycEFRI2XTSdotTrPV9Vxa2S1K8RBI_5_1zyZPBDatDXhtCUHnvXxt90GNWy2oJ2xY8jwwCQqLS9pBHdQCzmmN4A5bI0p1iK_mfWJweTCqlu6RkfFgZk-TiJ_GYMVcmWQ43PKLyGDFrJhQWnDeG8OC3sI6JreIzO_oEA1HDyCBmZ__akTbzMrykbGdKiZEbpl1zp2LGkceVkxCGQ3QWfRYhAJhxzkSjnMAu21QShitNwyBpTyubOcPAVJH11EmthPUoZs8R5OBdNHNx7FYiCvY3G134wKSs48_Z26BEGvSB1gtHgFmgXFcu5AFSc6-u-RIW-7rOfd34vw8myGI5bwSFNC2pAf1L-yl5cQJuw4yKWpLuxevC3Aw0hIRJ1sYcLbpA81rBf9aPvcwzILN1F1_UsenAWMU7HokKWboHMKK6dUCGA59nCaYMi7inH96ohVH8CLKsGiEJsBp-RyNhAvM6Ql5svdvlbFWH5TSafrCFEyU-sKF2nbJclYAqPlV9QlI4T9XYU5lVWekFSaTCYb1RXAuDS8J_55JPhmeuaV8YsiUhZsoU7ZPaonxiWR-9XrlyEkgbnuFyzIA1aajHHMc7bNKNd4A0_YtlFHlxh5ffls4D4kFW3p5N3ngdZwahCsEeYcl13vYXD-6zti2HKcq_P8VrUGUCA7OU1vX26Os-EJItJXpQYUkH7RM30lGlQfSiC6GpI3eCLM9KZgo23LfZeGlEGjh-ECvN7imjJ1oLE_93b5YAx0Aoke96I5LHCDjK5rN1nqE9k6TUY3yJWd08pXS7_tcCCCh5m25UL0DJSPlJ8k0qGr34rE_Ny2YTwsOo_R48V2TXubk4vbYKdDGjoCBYIL4umv8_sKpBHRILxzgCtK3RyDvPJDaE-3wxRpiQvV_5U-zKt-YHFunE8OQ3RVVe1LHsUulSBroRGArntrSGayrrOcjnlNzTh0sHaoLaD8LaMu.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d64df9969f2194f016af729ad248487d1b0ae381323be75ad",
+              "index": 3
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794582942,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 1398,
+      "prompt_tokens": 22514,
+      "total_tokens": 23912,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 907,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 22511,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003513175,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003513175,
+        "upstream_inference_prompt_cost": 0.002814175,
+        "upstream_inference_completions_cost": 0.000699
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

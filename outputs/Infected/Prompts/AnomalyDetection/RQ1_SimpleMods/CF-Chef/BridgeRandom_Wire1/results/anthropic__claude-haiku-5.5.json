@@ -1,0 +1,240 @@
+{
+  "id": "CF-Chef/BridgeRandom_Wire1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/CF-Chef/BridgeRandom_Wire1/spice.cir",
+    "chars": 122509,
+    "sha256": "ca8a424b8e780160d603f3fcd56e0475fd2c3c24e9ce838f43b208bff49440aa"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.3,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"D3\", \"U1\", \"R2\", \"R5\", \"C7\"],\n      \"pins\": [\"D3.1\", \"D3.3\", \"U1.8\", \"U1.31\", \"FAN_1_TACH\"],\n      \"nets\": [\"Net-(D3-A)\", \"FAN_1_TACH\"],\n      \"observed\": \"D3 anode (pin 1) sits on Net-(D3-A), the same net as the ESP32 EN/CHIP_PU pin (U1.8), the reset RC (R2/R5 pull-ups and C7 to GND) and GPIO21/U0TXD (U1.31). D3 cathode (pin 3) is on FAN_1_TACH, which goes to fan header J8 pin 3. The fan tachometer line is therefore coupled to the chip enable through a diode.\",\n      \"expected\": \"The specification describes the fan tach inputs as TVS-protected only, with no link to the EN/reset network. The tach path should not share a node with the chip enable, since a tach line pulled low would drag EN low and reset the MCU.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"15\\\") (name \\\"Net-(D3-A)\\\") ... (node (ref \\\"D3\\\") (pin \\\"1\\\") (pinfunction \\\"A\\\") ... (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"12\\\") (name \\\"FAN_1_TACH\\\") ... (node (ref \\\"D3\\\") (pin \\\"3\\\") (pinfunction \\\"K\\\") ... (node (ref \\\"J8\\\") (pin \\\"3\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"Monitors **2 fan tachometers** (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls.\"}\n      ],\n      \"impact\": \"A low-going fan tach pulse could pull the ESP32 EN pin low through D3, causing spurious resets, and the tach signal would not reach a usable MCU input cleanly.\",\n      \"confidence\": 0.3\n    },\n    {\n      \"category\": \"extra_component\",\n      \"components\": [\"J5\"],\n      \"pins\": [\"J5.1\", \"J5.2\", \"U1.13\"],\n      \"nets\": [\"/Microcontroller/HEATER\", \"GND\"],\n      \"observed\": \"A 2-pin screw terminal J5 is connected directly across the GPIO1 heater-drive net and GND. It is a second output connector on the raw ESP32 GPIO, bypassing the TPS1H200 high-side switch and its protection.\",\n      \"expected\": \"The specification names only J6 as the heater connector, driven through U6 OUT. The heater path should go through the high-side switch, with no undocumented connector on the MCU GPIO net.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"4\\\") (name \\\"/Microcontroller/HEATER\\\") (class \\\"Default\\\") ... (node (ref \\\"J5\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") ... (node (ref \\\"U1\\\") (pin \\\"13\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1\"}\n      ],\n      \"impact\": \"If a heater or load is connected to J5, the GPIO1 pin would source the load current directly, risking damage to the MCU pin and defeating the switch's over-current protection.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"The core power, thermocouple SPI and heater-switch wiring matches the specification. Two undocumented items in the Microcontroller sheet look suspicious: a fan-tach diode (D3) coupled to the ESP32 EN net, and an extra screw terminal (J5) wired directly onto the GPIO1 heater drive. Both are low-to-moderate confidence.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.3,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "D3",
+            "U1",
+            "R2",
+            "R5",
+            "C7"
+          ],
+          "pins": [
+            "D3.1",
+            "D3.3",
+            "U1.8",
+            "U1.31",
+            "FAN_1_TACH"
+          ],
+          "nets": [
+            "Net-(D3-A)",
+            "FAN_1_TACH"
+          ],
+          "observed": "D3 anode (pin 1) sits on Net-(D3-A), the same net as the ESP32 EN/CHIP_PU pin (U1.8), the reset RC (R2/R5 pull-ups and C7 to GND) and GPIO21/U0TXD (U1.31). D3 cathode (pin 3) is on FAN_1_TACH, which goes to fan header J8 pin 3. The fan tachometer line is therefore coupled to the chip enable through a diode.",
+          "expected": "The specification describes the fan tach inputs as TVS-protected only, with no link to the EN/reset network. The tach path should not share a node with the chip enable, since a tach line pulled low would drag EN low and reset the MCU.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"15\") (name \"Net-(D3-A)\") ... (node (ref \"D3\") (pin \"1\") (pinfunction \"A\") ... (node (ref \"U1\") (pin \"8\") (pinfunction \"EN/CHIP_PU\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"12\") (name \"FAN_1_TACH\") ... (node (ref \"D3\") (pin \"3\") (pinfunction \"K\") ... (node (ref \"J8\") (pin \"3\")"
+            },
+            {
+              "source": "spec",
+              "quote": "Monitors **2 fan tachometers** (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls."
+            }
+          ],
+          "impact": "A low-going fan tach pulse could pull the ESP32 EN pin low through D3, causing spurious resets, and the tach signal would not reach a usable MCU input cleanly.",
+          "confidence": 0.3
+        },
+        {
+          "category": "extra_component",
+          "components": [
+            "J5"
+          ],
+          "pins": [
+            "J5.1",
+            "J5.2",
+            "U1.13"
+          ],
+          "nets": [
+            "/Microcontroller/HEATER",
+            "GND"
+          ],
+          "observed": "A 2-pin screw terminal J5 is connected directly across the GPIO1 heater-drive net and GND. It is a second output connector on the raw ESP32 GPIO, bypassing the TPS1H200 high-side switch and its protection.",
+          "expected": "The specification names only J6 as the heater connector, driven through U6 OUT. The heater path should go through the high-side switch, with no undocumented connector on the MCU GPIO net.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"4\") (name \"/Microcontroller/HEATER\") (class \"Default\") ... (node (ref \"J5\") (pin \"2\") (pinfunction \"Pin_2\") ... (node (ref \"U1\") (pin \"13\")"
+            },
+            {
+              "source": "spec",
+              "quote": "Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1"
+            }
+          ],
+          "impact": "If a heater or load is connected to J5, the GPIO1 pin would source the load current directly, risking damage to the MCU pin and defeating the switch's over-current protection.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "The core power, thermocouple SPI and heater-switch wiring matches the specification. Two undocumented items in the Microcontroller sheet look suspicious: a fan-tach diode (D3) coupled to the ESP32 EN net, and an extra screw terminal (J5) wired directly onto the GPIO1 heater drive. Both are low-to-moderate confidence."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 55969,
+    "completion_tokens": 9792,
+    "reasoning_tokens": 8377,
+    "cached_tokens": 0,
+    "total_tokens": 65761,
+    "cost_usd": 0.0104929,
+    "cost_details": {
+      "upstream_inference_cost": 0.0104929,
+      "upstream_inference_prompt_cost": 0.0055969,
+      "upstream_inference_completions_cost": 0.004896
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T02:57:48.797062+00:00",
+    "ended_at": "2026-11-13T02:58:34.032238+00:00",
+    "latency_s": 45.234
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T02:57:49.124Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 39551,
+    "moderation_latency": null,
+    "generation_time": 44574,
+    "tokens_prompt": 31165,
+    "tokens_completion": 809,
+    "native_tokens_prompt": 55969,
+    "native_tokens_completion": 9792,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 8377,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0104929,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794538669-h5FBuWIVmrkyAs2SXeND",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794538669-f57uWXMHLxB7fYqdbUsw",
+    "upstream_id": "msg_011CgzBE173Nmtbgvu9wUxQe",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzBE173Nmtbgvu9wUxQe",
+        "is_byok": false,
+        "latency": 433,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0104929,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794538669-f57uWXMHLxB7fYqdbUsw",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.3,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"D3\", \"U1\", \"R2\", \"R5\", \"C7\"],\n      \"pins\": [\"D3.1\", \"D3.3\", \"U1.8\", \"U1.31\", \"FAN_1_TACH\"],\n      \"nets\": [\"Net-(D3-A)\", \"FAN_1_TACH\"],\n      \"observed\": \"D3 anode (pin 1) sits on Net-(D3-A), the same net as the ESP32 EN/CHIP_PU pin (U1.8), the reset RC (R2/R5 pull-ups and C7 to GND) and GPIO21/U0TXD (U1.31). D3 cathode (pin 3) is on FAN_1_TACH, which goes to fan header J8 pin 3. The fan tachometer line is therefore coupled to the chip enable through a diode.\",\n      \"expected\": \"The specification describes the fan tach inputs as TVS-protected only, with no link to the EN/reset network. The tach path should not share a node with the chip enable, since a tach line pulled low would drag EN low and reset the MCU.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"15\\\") (name \\\"Net-(D3-A)\\\") ... (node (ref \\\"D3\\\") (pin \\\"1\\\") (pinfunction \\\"A\\\") ... (node (ref \\\"U1\\\") (pin \\\"8\\\") (pinfunction \\\"EN/CHIP_PU\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"12\\\") (name \\\"FAN_1_TACH\\\") ... (node (ref \\\"D3\\\") (pin \\\"3\\\") (pinfunction \\\"K\\\") ... (node (ref \\\"J8\\\") (pin \\\"3\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"Monitors **2 fan tachometers** (`NUM_FANS = 2`) with TVS-diode-protected inputs, and raises a run fault if a fan stalls.\"}\n      ],\n      \"impact\": \"A low-going fan tach pulse could pull the ESP32 EN pin low through D3, causing spurious resets, and the tach signal would not reach a usable MCU input cleanly.\",\n      \"confidence\": 0.3\n    },\n    {\n      \"category\": \"extra_component\",\n      \"components\": [\"J5\"],\n      \"pins\": [\"J5.1\", \"J5.2\", \"U1.13\"],\n      \"nets\": [\"/Microcontroller/HEATER\", \"GND\"],\n      \"observed\": \"A 2-pin screw terminal J5 is connected directly across the GPIO1 heater-drive net and GND. It is a second output connector on the raw ESP32 GPIO, bypassing the TPS1H200 high-side switch and its protection.\",\n      \"expected\": \"The specification names only J6 as the heater connector, driven through U6 OUT. The heater path should go through the high-side switch, with no undocumented connector on the MCU GPIO net.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"4\\\") (name \\\"/Microcontroller/HEATER\\\") (class \\\"Default\\\") ... (node (ref \\\"J5\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") ... (node (ref \\\"U1\\\") (pin \\\"13\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1\"}\n      ],\n      \"impact\": \"If a heater or load is connected to J5, the GPIO1 pin would source the load current directly, risking damage to the MCU pin and defeating the switch's over-current protection.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"The core power, thermocouple SPI and heater-switch wiring matches the specification. Two undocumented items in the Microcontroller sheet look suspicious: a fan-tach diode (D3) coupled to the ESP32 EN net, and an extra screw terminal (J5) wired directly onto the GPIO1 heater drive. Both are low-to-moderate confidence.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794538669,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 9792,
+      "prompt_tokens": 55969,
+      "total_tokens": 65761,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 8377,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0104929,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0104929,
+        "upstream_inference_prompt_cost": 0.0055969,
+        "upstream_inference_completions_cost": 0.004896
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

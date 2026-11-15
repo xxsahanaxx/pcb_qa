@@ -6,25 +6,25 @@ Localisation = one finding with the expected category that names the fault (for 
 
 | Model | Results | Not answered | Detection | Beyond baseline | Category | **Localisation** | Top-1 | False alarms | Cost |
 |---|---|---|---|---|---|---|---|---|---|
-| anthropic/claude-haiku-5.5 | 36 | 0 | 71% | 60% | 46% | **46%** | 46% | 100% (1) | $0.168 |
-| deepseek/deepseek-v4.1-flash | 36 | 12 | 63% | 40% | 40% | **37%** | 31% | 100% (1) | $1.671 |
-| openai/gpt-6-luna | 38 | 0 | 100% | 31% | 28% | **25%** | 22% | 50% (2) | $0.126 |
-| qwen/qwen3.8-flash | 36 | 0 | 94% | 94% | 40% | **40%** | 40% | 0% (1) | $0.533 |
+| anthropic/claude-haiku-5.5 | 79 | 0 | 87% | 82% | 48% | **46%** | 39% | 100% (2) | $8.450 |
+| deepseek/deepseek-v4.1-flash | 79 | 22 | 71% | 61% | 36% | **32%** | 23% | 50% (2) | $4.710 |
+| openai/gpt-6-luna | 81 | 0 | 99% | 59% | 28% | **23%** | 19% | 67% (3) | $1.190 |
+| qwen/qwen3.8-flash | 79 | 1 | 96% | 91% | 35% | **32%** | 27% | 50% (2) | $2.388 |
 
 ## By scenario (localisation)
 
 | Model | BridgeRandom | CapacitorMagnitudeDownRandom | CapacitorMagnitudeUpRandom | CapacitorToResistorRandom | CapacitorToleranceDownRandom | CapacitorToleranceUpRandom | GndShortRandom | PolarityFlipRandom | ResistorMagnitudeDownRandom | ResistorMagnitudeUpRandom | ResistorToCapacitorRandom | ResistorToleranceDownRandom | ResistorToleranceUpRandom | VccShortRandom |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| anthropic/claude-haiku-5.5 | 2/3 | 2/2 | 2/2 | 0/2 | 0/2 | 0/2 | 2/3 | 1/1 | 3/3 | 3/3 | 1/3 | 0/3 | 0/3 | 0/3 |
-| deepseek/deepseek-v4.1-flash | 3/3 | 2/2 | 0/2 | 0/2 | 0/2 | 0/2 | 3/3 | 1/1 | 2/3 | 1/3 | 1/3 | 0/3 | 0/3 | 0/3 |
-| openai/gpt-6-luna | 1/3 | 1/2 | 0/2 | 0/2 | 0/2 | 0/2 | 3/4 | 0/1 | 1/3 | 1/3 | 1/3 | 0/3 | 0/3 | 1/3 |
-| qwen/qwen3.8-flash | 2/3 | 1/2 | 0/2 | 0/2 | 0/2 | 0/2 | 1/3 | 1/1 | 3/3 | 2/3 | 2/3 | 0/3 | 0/3 | 2/3 |
+| anthropic/claude-haiku-5.5 | 4/6 | 5/5 | 4/5 | 0/5 | 0/5 | 1/5 | 4/6 | 2/4 | 6/6 | 6/6 | 1/6 | 0/6 | 1/6 | 1/6 |
+| deepseek/deepseek-v4.1-flash | 5/6 | 4/5 | 1/5 | 0/5 | 0/5 | 0/5 | 6/6 | 1/4 | 3/6 | 4/6 | 1/6 | 0/6 | 0/6 | 0/6 |
+| openai/gpt-6-luna | 2/6 | 3/5 | 0/5 | 0/5 | 0/5 | 0/5 | 5/7 | 0/4 | 3/6 | 3/6 | 1/6 | 0/6 | 0/6 | 1/6 |
+| qwen/qwen3.8-flash | 4/6 | 3/5 | 1/5 | 0/5 | 0/5 | 0/5 | 2/6 | 1/4 | 5/6 | 4/6 | 2/6 | 0/6 | 0/6 | 3/6 |
 
 ## By board (localisation)
 
-| Model | CF-Chef | fan_controller |
-|---|---|---|
-| anthropic/claude-haiku-5.5 | – | 16/35 |
-| deepseek/deepseek-v4.1-flash | – | 13/35 |
-| openai/gpt-6-luna | 1/1 | 8/35 |
-| qwen/qwen3.8-flash | – | 14/35 |
+| Model | AcornRobotElectronics | CF-Chef | fan_controller |
+|---|---|---|---|
+| anthropic/claude-haiku-5.5 | 19/42 | – | 16/35 |
+| deepseek/deepseek-v4.1-flash | 12/42 | – | 13/35 |
+| openai/gpt-6-luna | 9/42 | 1/1 | 8/35 |
+| qwen/qwen3.8-flash | 11/42 | – | 14/35 |

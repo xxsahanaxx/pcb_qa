@@ -1,0 +1,357 @@
+{
+  "id": "HadesFCS/BridgeRandom_Wire3",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/BridgeRandom_Wire3/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/BridgeRandom_Wire3/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/HadesFCS/BridgeRandom_Wire3/spice.cir",
+    "chars": 317491,
+    "sha256": "1acb6906a01440e4b6dd593937de3c5bac55b9a2d7740f3918f8b054226d02c2"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"FCC1\", \"NAVC1\", \"REG2\"],\n      \"pins\": [\"FCC1.11\", \"FCC1.27\", \"FCC1.50\", \"FCC1.75\", \"FCC1.100\", \"NAVC1.19\", \"NAVC1.32\", \"NAVC1.48\", \"NAVC1.64\"],\n      \"nets\": [\"+3.3V\", \"+3V3\", \"unconnected-(FCC1-VDD-Pad11)\", \"unconnected-(FCC1-VDD-Pad27)\", \"unconnected-(FCC1-VDD-Pad50)\", \"unconnected-(FCC1-VDD-Pad75)\", \"unconnected-(FCC1-VDD-Pad100)\", \"unconnected-(NAVC1-VDD-Pad19)\", \"unconnected-(NAVC1-VDD-Pad32)\", \"unconnected-(NAVC1-VDD-Pad48)\", \"unconnected-(NAVC1-VDD-Pad64)\"],\n      \"observed\": \"All VDD pins on both MCUs are unconnected. The LDO output is on +3.3V, while +3V3 is a separate net; neither rail connects to the MCU VDD pins.\",\n      \"expected\": \"The MCU VDD pins should be connected to the regulated 3.3 V supply, as required for the specified MCU operation.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"3\\\") (name \\\"+5V\\\") ... (node (ref \\\"REG2\\\") (pin \\\"6\\\") (pinfunction \\\"IN\\\")))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"1\\\") (name \\\"+3.3V\\\") ... (node (ref \\\"REG2\\\") (pin \\\"1\\\") (pinfunction \\\"OUT\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"2\\\") (name \\\"+3V3\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"1\\\") (pinfunction \\\"VBAT\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"215\\\") (name \\\"unconnected-(FCC1-VDD-Pad11)\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"275\\\") (name \\\"unconnected-(NAVC1-VDD-Pad19)\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"3.3V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"}\n      ],\n      \"impact\": \"The FCC and NAVC have no schematic supply connection on their VDD pins, so the MCUs cannot operate as intended; the two nominally 3.3 V nets are also not joined.\",\n      \"confidence\": 1.0\n    },\n    {\n      \"category\": \"other\",\n      \"components\": [\"FCC1\", \"UART3_FCC1\"],\n      \"pins\": [\"FCC1.48\", \"FCC1.73\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"],\n      \"nets\": [\"UART3_TX_FCC\", \"UART3_RX_FCC\"],\n      \"observed\": \"Both FCC UART3 connector signals are connected to STM32H753 VCAP pins: pin 48 is on UART3_TX_FCC and pin 73 is on UART3_RX_FCC.\",\n      \"expected\": \"UART signals should use MCU UART-capable GPIO pins; VCAP pins should have their required core-regulator capacitors and must not be used as signal I/O.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"143\\\") (name \\\"UART3_RX_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"145\\\") (name \\\"UART3_TX_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\"))\"}\n      ],\n      \"impact\": \"UART3 is not connected to usable UART GPIO, and connecting the MCU's core-regulator output to an external connector risks disrupting or damaging the MCU's core supply.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"other\",\n      \"components\": [\"FCC1\", \"HSE1\", \"C32\", \"C33\", \"R23\"],\n      \"pins\": [\"FCC1.5\", \"FCC1.37\", \"FCC1.12\", \"FCC1.13\", \"HSE1.1\", \"HSE1.3\"],\n      \"nets\": [\"HSE_IN_FCC\", \"HSE_OUT_FCC\", \"Net-(C33-Pad1)\", \"Net-(FCC1-PH0-Pad12)\", \"VREF+_FCC\"],\n      \"observed\": \"The 25 MHz crystal network is connected to FCC1 pins PE6 and PE7, while PH0 and PH1\u2014the MCU's oscillator pins\u2014are not connected to the crystal. PH1 is instead on VREF+_FCC.\",\n      \"expected\": \"The external high-speed crystal should be connected between the MCU's oscillator input and output pins, PH0 and PH1.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"31\\\") (name \\\"HSE_IN_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"5\\\") (pinfunction \\\"PE6\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"33\\\") (name \\\"HSE_OUT_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"37\\\") (pinfunction \\\"PE7\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"72\\\") (name \\\"Net-(FCC1-PH0-Pad12)\\\") (node (ref \\\"FCC1\\\") (pin \\\"12\\\") (pinfunction \\\"PH0\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"164\\\") (name \\\"VREF+_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"13\\\") (pinfunction \\\"PH1\\\"))\"},\n        {\"source\": \"spec\", \"quote\": \"HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3\"}\n      ],\n      \"impact\": \"The FCC's external high-speed clock is not wired to its oscillator pins, so the MCU cannot use the intended 25 MHz crystal clock.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"Anomalies are present: both MCUs' VDD pins are unconnected, FCC UART3 is routed to VCAP pins, and the FCC crystal is routed to GPIO pins rather than its oscillator pins. Each defect independently prevents intended operation of the affected circuitry.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "open_connection",
+          "components": [
+            "FCC1",
+            "NAVC1",
+            "REG2"
+          ],
+          "pins": [
+            "FCC1.11",
+            "FCC1.27",
+            "FCC1.50",
+            "FCC1.75",
+            "FCC1.100",
+            "NAVC1.19",
+            "NAVC1.32",
+            "NAVC1.48",
+            "NAVC1.64"
+          ],
+          "nets": [
+            "+3.3V",
+            "+3V3",
+            "unconnected-(FCC1-VDD-Pad11)",
+            "unconnected-(FCC1-VDD-Pad27)",
+            "unconnected-(FCC1-VDD-Pad50)",
+            "unconnected-(FCC1-VDD-Pad75)",
+            "unconnected-(FCC1-VDD-Pad100)",
+            "unconnected-(NAVC1-VDD-Pad19)",
+            "unconnected-(NAVC1-VDD-Pad32)",
+            "unconnected-(NAVC1-VDD-Pad48)",
+            "unconnected-(NAVC1-VDD-Pad64)"
+          ],
+          "observed": "All VDD pins on both MCUs are unconnected. The LDO output is on +3.3V, while +3V3 is a separate net; neither rail connects to the MCU VDD pins.",
+          "expected": "The MCU VDD pins should be connected to the regulated 3.3 V supply, as required for the specified MCU operation.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"3\") (name \"+5V\") ... (node (ref \"REG2\") (pin \"6\") (pinfunction \"IN\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"1\") (name \"+3.3V\") ... (node (ref \"REG2\") (pin \"1\") (pinfunction \"OUT\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"2\") (name \"+3V3\") ... (node (ref \"NAVC1\") (pin \"1\") (pinfunction \"VBAT\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"215\") (name \"unconnected-(FCC1-VDD-Pad11)\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"275\") (name \"unconnected-(NAVC1-VDD-Pad19)\")"
+            },
+            {
+              "source": "spec",
+              "quote": "3.3V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs"
+            }
+          ],
+          "impact": "The FCC and NAVC have no schematic supply connection on their VDD pins, so the MCUs cannot operate as intended; the two nominally 3.3 V nets are also not joined.",
+          "confidence": 1.0
+        },
+        {
+          "category": "other",
+          "components": [
+            "FCC1",
+            "UART3_FCC1"
+          ],
+          "pins": [
+            "FCC1.48",
+            "FCC1.73",
+            "UART3_FCC1.3",
+            "UART3_FCC1.4"
+          ],
+          "nets": [
+            "UART3_TX_FCC",
+            "UART3_RX_FCC"
+          ],
+          "observed": "Both FCC UART3 connector signals are connected to STM32H753 VCAP pins: pin 48 is on UART3_TX_FCC and pin 73 is on UART3_RX_FCC.",
+          "expected": "UART signals should use MCU UART-capable GPIO pins; VCAP pins should have their required core-regulator capacitors and must not be used as signal I/O.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"143\") (name \"UART3_RX_FCC\") (node (ref \"FCC1\") (pin \"73\") (pinfunction \"VCAP\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"145\") (name \"UART3_TX_FCC\") (node (ref \"FCC1\") (pin \"48\") (pinfunction \"VCAP\"))"
+            }
+          ],
+          "impact": "UART3 is not connected to usable UART GPIO, and connecting the MCU's core-regulator output to an external connector risks disrupting or damaging the MCU's core supply.",
+          "confidence": 0.99
+        },
+        {
+          "category": "other",
+          "components": [
+            "FCC1",
+            "HSE1",
+            "C32",
+            "C33",
+            "R23"
+          ],
+          "pins": [
+            "FCC1.5",
+            "FCC1.37",
+            "FCC1.12",
+            "FCC1.13",
+            "HSE1.1",
+            "HSE1.3"
+          ],
+          "nets": [
+            "HSE_IN_FCC",
+            "HSE_OUT_FCC",
+            "Net-(C33-Pad1)",
+            "Net-(FCC1-PH0-Pad12)",
+            "VREF+_FCC"
+          ],
+          "observed": "The 25 MHz crystal network is connected to FCC1 pins PE6 and PE7, while PH0 and PH1\u2014the MCU's oscillator pins\u2014are not connected to the crystal. PH1 is instead on VREF+_FCC.",
+          "expected": "The external high-speed crystal should be connected between the MCU's oscillator input and output pins, PH0 and PH1.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"31\") (name \"HSE_IN_FCC\") (node (ref \"FCC1\") (pin \"5\") (pinfunction \"PE6\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"33\") (name \"HSE_OUT_FCC\") (node (ref \"FCC1\") (pin \"37\") (pinfunction \"PE7\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"72\") (name \"Net-(FCC1-PH0-Pad12)\") (node (ref \"FCC1\") (pin \"12\") (pinfunction \"PH0\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"164\") (name \"VREF+_FCC\") (node (ref \"FCC1\") (pin \"13\") (pinfunction \"PH1\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3"
+            }
+          ],
+          "impact": "The FCC's external high-speed clock is not wired to its oscillator pins, so the MCU cannot use the intended 25 MHz crystal clock.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "Anomalies are present: both MCUs' VDD pins are unconnected, FCC UART3 is routed to VCAP pins, and the FCC crystal is routed to GPIO pins rather than its oscillator pins. Each defect independently prevents intended operation of the affected circuitry."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 106496,
+    "completion_tokens": 3689,
+    "reasoning_tokens": 2175,
+    "cached_tokens": 0,
+    "total_tokens": 110185,
+    "cost_usd": 0.015156425,
+    "cost_details": {
+      "upstream_inference_cost": 0.015156425,
+      "upstream_inference_prompt_cost": 0.013311925,
+      "upstream_inference_completions_cost": 0.0018445
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T14:52:57.131168+00:00",
+    "ended_at": "2026-11-13T14:53:30.512832+00:00",
+    "latency_s": 33.381
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T14:52:57.206Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 18037,
+    "moderation_latency": null,
+    "generation_time": 33255,
+    "tokens_prompt": 80781,
+    "tokens_completion": 1672,
+    "native_tokens_prompt": 106496,
+    "native_tokens_completion": 3689,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 2175,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.015156425,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794581577-M435DGZq3TgnG0AfcmwW",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794581577-qfXuS9LA7kZ1svjMi5s7",
+    "upstream_id": "resp_0d17730edaf2186d016af72449617487d1939c2c5d53694986",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0d17730edaf2186d016af72449617487d1939c2c5d53694986",
+        "is_byok": false,
+        "latency": 550,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.015156425,
+    "cache_discount": -0.002662325,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794581577-qfXuS9LA7kZ1svjMi5s7",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"FCC1\", \"NAVC1\", \"REG2\"],\n      \"pins\": [\"FCC1.11\", \"FCC1.27\", \"FCC1.50\", \"FCC1.75\", \"FCC1.100\", \"NAVC1.19\", \"NAVC1.32\", \"NAVC1.48\", \"NAVC1.64\"],\n      \"nets\": [\"+3.3V\", \"+3V3\", \"unconnected-(FCC1-VDD-Pad11)\", \"unconnected-(FCC1-VDD-Pad27)\", \"unconnected-(FCC1-VDD-Pad50)\", \"unconnected-(FCC1-VDD-Pad75)\", \"unconnected-(FCC1-VDD-Pad100)\", \"unconnected-(NAVC1-VDD-Pad19)\", \"unconnected-(NAVC1-VDD-Pad32)\", \"unconnected-(NAVC1-VDD-Pad48)\", \"unconnected-(NAVC1-VDD-Pad64)\"],\n      \"observed\": \"All VDD pins on both MCUs are unconnected. The LDO output is on +3.3V, while +3V3 is a separate net; neither rail connects to the MCU VDD pins.\",\n      \"expected\": \"The MCU VDD pins should be connected to the regulated 3.3 V supply, as required for the specified MCU operation.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"3\\\") (name \\\"+5V\\\") ... (node (ref \\\"REG2\\\") (pin \\\"6\\\") (pinfunction \\\"IN\\\")))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"1\\\") (name \\\"+3.3V\\\") ... (node (ref \\\"REG2\\\") (pin \\\"1\\\") (pinfunction \\\"OUT\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"2\\\") (name \\\"+3V3\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"1\\\") (pinfunction \\\"VBAT\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"215\\\") (name \\\"unconnected-(FCC1-VDD-Pad11)\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"275\\\") (name \\\"unconnected-(NAVC1-VDD-Pad19)\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"3.3V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"}\n      ],\n      \"impact\": \"The FCC and NAVC have no schematic supply connection on their VDD pins, so the MCUs cannot operate as intended; the two nominally 3.3 V nets are also not joined.\",\n      \"confidence\": 1.0\n    },\n    {\n      \"category\": \"other\",\n      \"components\": [\"FCC1\", \"UART3_FCC1\"],\n      \"pins\": [\"FCC1.48\", \"FCC1.73\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"],\n      \"nets\": [\"UART3_TX_FCC\", \"UART3_RX_FCC\"],\n      \"observed\": \"Both FCC UART3 connector signals are connected to STM32H753 VCAP pins: pin 48 is on UART3_TX_FCC and pin 73 is on UART3_RX_FCC.\",\n      \"expected\": \"UART signals should use MCU UART-capable GPIO pins; VCAP pins should have their required core-regulator capacitors and must not be used as signal I/O.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"143\\\") (name \\\"UART3_RX_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"145\\\") (name \\\"UART3_TX_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\"))\"}\n      ],\n      \"impact\": \"UART3 is not connected to usable UART GPIO, and connecting the MCU's core-regulator output to an external connector risks disrupting or damaging the MCU's core supply.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"other\",\n      \"components\": [\"FCC1\", \"HSE1\", \"C32\", \"C33\", \"R23\"],\n      \"pins\": [\"FCC1.5\", \"FCC1.37\", \"FCC1.12\", \"FCC1.13\", \"HSE1.1\", \"HSE1.3\"],\n      \"nets\": [\"HSE_IN_FCC\", \"HSE_OUT_FCC\", \"Net-(C33-Pad1)\", \"Net-(FCC1-PH0-Pad12)\", \"VREF+_FCC\"],\n      \"observed\": \"The 25 MHz crystal network is connected to FCC1 pins PE6 and PE7, while PH0 and PH1\u2014the MCU's oscillator pins\u2014are not connected to the crystal. PH1 is instead on VREF+_FCC.\",\n      \"expected\": \"The external high-speed crystal should be connected between the MCU's oscillator input and output pins, PH0 and PH1.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"31\\\") (name \\\"HSE_IN_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"5\\\") (pinfunction \\\"PE6\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"33\\\") (name \\\"HSE_OUT_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"37\\\") (pinfunction \\\"PE7\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"72\\\") (name \\\"Net-(FCC1-PH0-Pad12)\\\") (node (ref \\\"FCC1\\\") (pin \\\"12\\\") (pinfunction \\\"PH0\\\"))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"164\\\") (name \\\"VREF+_FCC\\\") (node (ref \\\"FCC1\\\") (pin \\\"13\\\") (pinfunction \\\"PH1\\\"))\"},\n        {\"source\": \"spec\", \"quote\": \"HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3\"}\n      ],\n      \"impact\": \"The FCC's external high-speed clock is not wired to its oscillator pins, so the MCU cannot use the intended 25 MHz crystal clock.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"Anomalies are present: both MCUs' VDD pins are unconnected, FCC UART3 is routed to VCAP pins, and the FCC crystal is routed to GPIO pins rather than its oscillator pins. Each defect independently prevents intended operation of the affected circuitry.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yRPS8yEL1bvJnKinQvxi86QTaRrwJx0hI-iybqftkGfoCMF-rSL4OUTb4I9etcmzgGtcY_eW4csLDq2h8teFjxdQt_TXATci4enZtGseLX1Hhs7WxsOnayteQwrna05KzMZy3lR0Ircw_QaNUE2ut524gSW1Tzv8_rb6984c60C5pRVTm9lnMWo992VsCxPGi_5qg8qmVR1oU_GD62sEAtvytlOljqnroQFW5KffscIEJxsilNJBAGPc2cfhfPO6HWMla3MQfpxIoOKUFAQ-vG3JR2mCCufPMb45xtjAGqcmYgSmZJe_YP8fFqLelVk6HyfyZ-UphsTGD5QkqyroJem1ZYRUHzQayoHjK3Y8TyR9FVI8Oy33V5-A06Q4NIV5BFk7P7HeXc3mZpdgycIWFbLBwhxS3T3ivVV_JQgJHz2RBfzWc1V3TUSoALAUBbRwMyjekMdzOflr4ssxvc202ls3sSJSliL6SL8eiTCAvgTbgTwGB3yWOuTsousr42YXM6IWhW1s7g9HP4ciPXs9fC6WSlfK40NfSIEGhwJN4fX2jDDtkAsRemzc944r9g5UiMCBgtMsit6nWbAV2pj5l-RtS5mIPyfXJ7kCl1rv5vtHtnPrYzGtEJnh1Q94BZUipEZEHsS9rRqtd_xVJcid2K9_GugYyv2oa9L8uK0wZsQn7PKyIAW04saj4bJVZoFVeWzaI4nvTYKJQIzFBt6Nq6A-aRo7xUSBz9tSBx_vgeIhngTMnn2ROBO1wv265ulvrMm8CL89m1kQ_se8Qsvxo7M6FMgc_CUmIR9_vaKoid4LtfLQGph2CIVPYR3JdWrGsHz_ARghiN44LzcvUiyO5OIAOgb1bsjLI9--6XKoVDLM7kPaiKIppb8qGX9Ksfasc0nMhbCqBEa4FWiDbdaYgcDnPKi8hXM1E9Dridm39oEhH-5TqrKVxWlG3apjuDYNO6IujOKabvJWiVTONjykhW4dj_Oe2KE7IzeKB66K6X9YFXP1xHFuWnX2u8U-uqvRiOKdEE1tQfjZ00_LoEX_tEQtFDWJLaq9eoeiZp0BYa-3_znr081oj4fAsQ4KVeSYrVdG-B-IszkPE6xpz-ESQ8kdznkxBpaKHpAWaDSC1C9eUnW30FEigSZo8qkuZoDVKamcqo9d2OLxUYdGxUg2gxrno0oqdJC4wOSUcr3Xv9gqS6Enr12JzMLEv6WcYP32J8Nba25l8BWFSv8X0wQm78w5iLuo_06opNNm5gG-WNlYtdvKyJ2ZRAoR_1lFFMgRc5GE8RvXhr-yLSrxxjye9rAPPK-SF9XgvzXrE1uRT8o7y23HGG7D1aQcWqzqkAzQtHE1BSTf8_d97GyjFIJVzyX0XoPLNCo24_8wSiWrQ9FGP6fQv401K3VgIqKKWjQ-l9PM0nB2PjDFdzJRvI-mbIEMhyVe9n9jJJd8rtj6zKl3msNB9Pdbpuyg6xedhQ-37bFGgcGa1tjztSvMWJFquRtwO41wu4_F4RakNP6FNJuhBp9mEyiVe7m6yAS3oAAWba9Y2iCoh2LwarDCl6xaSvt-OMNXijqKPsX4BX4iKI7TJxYOMskSgg5WLy_AfZXSZAJEq-q-srya9LoPsgxm3TIKpqQT-Ax2TYefLWiNZ2MqvaZPLhLD58mjynV1wtQzBtbo8dsPzo5IMSieH48c_UvGSym9o6pmIXALiraUfwchIrypNHjGrhIWDX5KhLsPzYcmGVlyasVIKd4ThScp1_5GL9I1-Yy5Vvsat9PwqQ5NUMgQSp3A2y4LnXeq9IaklJpItNQttcno6n5FQTFodWKc4-VrVI8gKJL-1A_5uf081xFdIc3doU2z4HxSBN5xxr8XXTtAM8og5BHRIWMRGfKyUAy6PqDY08M1p-gvyKjNESMTMDkCcbAD_zfqXzjRVW7ynykynnXjRALxm5F6teL7mzMy8acE_GfjZ1viVaaNrUzfDPAeO5MCzcZlXr7ccu4A_0wIYq4nuc9qR-LOfj88FB65aRwnfYEsqxqqKr980c-TJvoGt3Igtspo2KzCNMpDbXsiKrRLAs7jlxPv3M3diCVjAWMTZg3ROWchG7V3DZv3xTIssY_UJIBoCPIvKiXvKlUhpKvz5lf5WexPTNQgxjbTAR0161A20eK5S76X_bWvkU6mPWRrCglAwiKBpJYTH_2JcWLBpoTJKVcKSNP_l5qiYGRPWVACL5wSTnHVQ-tve33DCRgpcxvMm8HYxcy6G4EWeRFDdcra25Og2AOyvcGVRZCfJ1Vf685CtsTGL1qmQpVKsLA7rlBY5_ZLL6jzp1n1RwCXTusvM0ygk4AcpdD7-4EBBHemPO7K8VsyY4jLD-i49rnwNQbpovB98Ln-hi-f4wd5PHAjYU1irikvTkyjqd_G2xR-M1VOjnwPQ9DbFvBPsJkBoKNLkZCrOwn5Wa5_BKRnc5yPfQwT3iIkXTO9s6cYFIlAAv1E34KuLeSmt8cAf1wJLpYjiKoyhacECuE08B6coQ8k5U_ebSk8FmTRU_SbxnUTpqdM3XBqQGf-bK4cRluUkqMEjuNudI-E4WgZ9jdjtXMpxgzEi2yYL_p8jRu5_QvcnlijuTO_n7FOsKdyKV7oYD15ss5pYZ12ZlyLhXfhoZCNTUpF6Z9uUq2M1grW2DaKVeB18kjnNXb90ril8vKz8rVaK_74jvm57zCBLTU1SKoENmFJVf20gsjoNKo5ZD1xBjGJJeCRxK8CJRD1CY4bJvkBbelFnlkx3WI8D29qS0cLfH_nn6QLyQ_nUvq9bKFeg8CpSdqMtvyipRIa8Xa1dP-ievGers8pnftVW0YaBXBi4VRP4RS5iZsRbBszBOKZzPLYtWu_8JJD_MEfVm-vZeoF7KNZHqHsq0fIt33rxwt04X-IUfRebhJM1ALRTgY9bGwSm-1oPoi1ata76YBviyML8tgkAiqM3rB8ds57zJGUNsi-DSa1td2HsAUE30clv_rHMgAXXlT19dxG2fmGxpo7CVSGQ1-Kx-rp_Wi2vgAc8LRUglHNh0QrYnsCO45r4cun9FDTudiefOgl1JUN1IbuEc-dG3t3T6bxKX1gZFebVS9Ze-D-OJhi5didBpOheIVYtHNJXVYO8pf_eh2R_mi9rQY3ipn_ahS46r1jzDwmFYyGG2SbWKmuKKx4njyI3LJcyRn9L5KzOuRhyCflNmKEYD2QCgaIlO82zdjRhD03EsXqyV8W_Qvi597ibe83hp_OYfdxfnAVktZhhy3H_YrjFlbHVYOCxRZscbB3cxLZ8Ly-pfVBrtnIiA3QdITwIdydUeK1UiqrYeWgabXHZMm3FOCZFKw8jNGmDumCB0UaBqwcYlxeQkGHvJGtHUeaLxYTBoXJunEPja0O8Z2YEZdbMWBrVDaaw-KsneDlaQofC5CUNUKnk1k3D0FBaZ2HCA0mmUdQ2lF2FzMMR77KW8PZm5BqdQ6KrW7o0Reas-FrycC_c2H5twoxTKwYXanlcEAln3X_F2PRW7tnuMTYfkDfrs7Hqy_-ymmVGohH6gzrUeKi_xty6uqKZDpnYpugcPCXHPNfj8OLW4dtZlJ1YxUyGBQypXY4LR24DaPeRsmky5GuLmGC4FfZmfYxAf5wpG13tpDYwO4Nrs85TE6zFE3W9C-Wiy-JiD_tsrgzul6DMG8IZf8krZYmXTjiB32egDdF1FCKQ5IiE4ygpfMqolR1D9USruQnalVPA4Ow7WI6bkeBqjs1956mdA5ArB-KYBwLl6khD31O-y6UxUoUUyMFochDksy6W78P666YCNlfpzrphBhT6M9yn3t_sic6zo3yukRK4xSLN7O0xx9RtFDqdvpi5BdMm9ZqHQNuGW-d9FbFJ3n_zL3vT9U_548Nl2KHRyEYZgB4aHtCjfKLjaa1uusGu3jlTybmJlxOU64bl52L3WQ0mCuB4KEKRPQVXKgUkYu4Fcby3h3_GSqzaUrYXNiuSSZFtohxFeHWidUdNRJOXcuPX_vQtUAYEbbPPU2trhqKfmr4HR6O5NJhc_7NxkVT4eG2_pt2MIHrxNN4gSj_npNdv_Qtz2yj2LOJz-5nbhUaQuEyH2G4KbJTJK4_WwD1kX2UPohlRTipdkXVwk7foe8_c-lZzQioyUwQFzDXiq4GRBLW-8ZnEvjhs7CJkiVYoZwCKemWVuXyJGE0xUL6UvEfdjH6q7vApmUo4ctJDNL-_J2rpW0Jfs9zMa35vD-Ef08phVswZf4cpN-5qEgjFnXJwLPhfdxkeRB5dxtliateg_CYuW23bzdAQvtEhGLZBlyidgHO_6VzDICPkGlGuIjVhOfIu6MeG1dVg9eWzjPq4nEgCcRcKIQTR_udyXiKgYEk_U0uEpca2JChu5MhHEUrPPbtAngDVhlqa1DcgaLPez_zn87_FHBoeGl0NPBjnXIDfVabVOYpbOF1_GJPqV1BC3FSSwUZ99Xk7vJEyGrxwzTonak7MRBJt8MMUJE6WIdDRrCunR8Q4XiGTsZlOZW_xR1VDcHNuYWPoK-LFKh7O4JS9PohD9FK2HaUVTQuyWipPacrczAGPVPVYYYWVkLVcRD3U7Vkod_3SbRPhGOz34zkFCYzGIzx00_wstItotwgjkuRKuBTYfcOH1B8v6xpvbDuyClGSqeO2WoekuWnJuE4vG_wSv8IiZJi8SalnHYs45erKYkn8LnhBCEZBXvzcyB8ZBMnu38ktcsqkigMR4UJO1_yMu6f_KB1ZQlaZOnzIXE41BGX_AHnntUo6znymlIpcaoOcJSZKK5vx5BDQsI-Gv4k736GxRmqO3ed9FLkoc_VIzjVPrAotv0YdnYSmHuAtdOyZQt3XjKvvi0krwZqQq39iWvxDfVloGh3NzsUyzM-pRH-S_rulTWLxGw2g5laesMzoOSif93N4a8bEsDnehdy_Tw9z4g5JkxlQsNRW_y7_EpJoIfxlLOnH1WY8polBwJtMzcca07LXdqsq1OE9Akb1HPNboO5UViKe3xg19MJalp7xFV-mYsUkHcsM0nAHNbOBTQLpZP2Oxp4gtYYcYWpdlo7dP4_sicKGh8hNQsB_tZGuYS67aOZWPtLOWGjRUOyo9vG49DoCUhFwDHfTP3mH9rZeGkNy0JBTU7kyuMIKJTJm12KBYmU7U6zQwB3_RRpCgkJwE8rFwng_1qbjQFwL0tia7myyTuzzRc6laurmBWwLwgBJQR4YbNTB2JsK7SgMMidw07vhCW5zSBkR2y8ltdiQ_1Xw1wdAql5xwkHM1E9fzjVL0dLku38TOnUGT4LFRuvFP5CvG7f9Tef7NdpUoQ_pS33jBnG7VWk30vw_u1C8IUnnVP2NkKKZD4KtAlU_NXC0BaAQ30qtzs3GelxJE_Al93cYdUB7AGW8Q0N34UrgtORDee1EA5xjtT8INaWi-CRXJ9nbZf0a4kDYMiCPG2-oyReLoFU0v9-9Q8dUIEl3ncu3AQ-eiZqqGlCDR2OWjJn-ZttBPed3x3bypk5bhXPvNkh4G6DA-xi8SBwqiKWi99jH5MYiAOG5CkfckHCHR96PC0BcvvnYa5sI-Ra1TK9GcYTgCMkF6LKVkeK8j6vaSzSTzgwnTzxaZ4Gz1v2oJBIf3HUCyx6ndWE2mXpFLPhg84K4EAbbN4nDJLgLMrCVhdhRSNwi4Zyd2o095XkRdEd-XvMsjdMG1lAoykp4bYtkNSDL7Y_2saCfodE4Cr1-bzMqUArR5bn6aIgx_fAtDaCN04jj--ol-ezpJjDqT6IHXw88Iwi9k1Hzw5EEkV9jdz3fWFsjq1SxRsAMp7exDQO3qB_igyJIT0YYWG-UxPe_cezHrr5MogBw10ZPSQ0f2gXJiW53080mDzqIP31xzpb5NX3amnkm8atYh6KEeG5vbqT2jhiNPWI01i4x3ycFMMgm39kVIOS9oVkUtxHAYq8xwqQuegaEDnjOR8piEJf6RK0rgNaXvnusFdHKynCnYn2ikLmTTFWfuahks8R1ch8DShD2qDTd6QrVLidUtmDrULoZQYH2PVRF9tDj1SW7ntJh852MV8KMDB7DPAGs6NAz5LQqdKeBUxqlXyL4KI0QW28Nujd-_tSDbgHrMq7Ksld_nWxFU2_q7rBpRcqJbMsVV_bEeq48Mb5rJU38ZZgWd-lPJ50qrUTawP9kFvb6th05TcKT8WEjIWWUuPzmzq5iWSPN2LyaiVtzdXghGjSsOmIf845-JzYMv3NM3xFkCAb1jHlWHq1mUym0cVN3K4nZSAfuE0Js8Dlsq5y_zV1gjtqNg7vlPRfnLRbdPP3OpY2d-APKRdpgog7nF_caWHz4pjTIr_Id_WmV0yUZnZOrJb-SwNKrK4aPhZ20h6XP0dTJkC74mOsCPbfM8aHxn7WmjKMjfZbwY3EyLG98y06DSDZd1N1NtnfvoflK_hCebt2CxysczIivydMVOqWrheUGRIPRe8JS1jPh5XVoJHSuRr_jRcxqjNfRUHyzxRBR7SEpBC-U41IhpFxcRUKiXUsYcGxzYcgmYYkXw7vAAb75Qn9klnx35zk-6So75sjYm0ty5KJNAecg83fmMVhBUn8idxAtFiFTmQcLfBoB8A96lILhqIaLF9yzOMr5CnDKG5tlBhufNw8Npp9NSpcIwZN9-E61f8aP9a_TVxPfpK55r8n3OjoI15Ylc4HS-mn3cE9T-uwWRIPwIYhVN6nIcSMwJFbOCNt5r4zikzcKvnqG1-oOyL919zVxkQqYUmCzseEHQJ8A6P84aH8AN4vAfxAlTxHF67zYDQUQO8J_wadKfzeOlkt2cCuV4S8vJkestCRkXeo8iDGm42d30QgIX1D-cTYNlBlqucNPbyO0JVVt0hKlxd71TONUXipB2JW3QaaerIII0dj252hN-IghqDAYpy3t4iko7m85JxPj28ve-qnKJKZTBKbPYY1xCMnBBt3ZttHAYDT-4lOuEWDb4pwUtkmdHXTky46aAKMpHU05mnV49vtR9chAJoT4QgTiKTRvMSqP65LF0qpXHr5_FcDPDHUi2e_R4V_Aa1rXk3gEG6-Lftfc4iVo80cA93aUKBTG22O_Tlus1MxWMMDjmYWZ0tsXP4t79hOPrMRe84NjmKY9asNAW5ZtgDSy8TxU-h8iHMnzdp-0OFSuFS1a06JozPabpkIhkv9-ike6zH4W0zbJ2eG9_ZLDdt1eMJw49mg-wUIIJsaJPdfobrZRotDzmebZead9VCwiuRjX-oqJQ3lB5dIYe_CWumqBb_bZfb05y7YwMiFy-1BjYgFzNheXLEJqQKWDT5_vrvrcjdQU_GciEg3LE4dR2Itq4rCAhv6TwRYrINJA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d17730edaf2186d016af7244a660487d1bf8db81ad006a570",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yRZXr0x_vIv0FXqn402yISelu-mcr16LUBOmY2UBynbg39fnc5XnLJgVjDdIpQNgF9ksPFraMjCj6VdDlcCGPkuxjnbhNxMGNW91SNDtDc4OiD9ZV_03mj-C6gxG-C3KbQQQIMcAX91NLYAB_SRSsLQKsNsRA_tYLHXdo9-0DEO_DHy8yBOiVHIOh-orH_m7TzZ1DgN_0XWPL_yNCcX87mPjaViuB2Ps1u3pk_3aZI7iM4Hxaj2VlCqh7kVrLnItJTYpFDRpXH7WeVHJECrd0e0N2BlNEYaYoUKGANAGGQZ6sE6XTuWM-XPhLtVyEQ1sR3vSufgbepIthD6zMPuX7EpV5cjDDJErNa69TqBTZ_iWlZ3xA9n4-gtkd3xFLQ9hn_b2udlCb3PWPassKgK9HfQTZb-iKe55PvaiqxZBJLibTN7rAIDsmozVd_oVW284XLs5TUtDIGhYV--ft0v8EeKY_q9UQfWqOkNyazhaXY9WJQatUNQmYHlM373xxQbzNe4L1wKx9Y4QU94Edrh9NzJIpy3a7L0X4bpMk01hWjR8wrwVkKBlNJfT-YgmSD6mBGVKmyeAZSia00NXGJwQDPfvRWgtMqDE9LL7miEZ6gqDYQ-1cCxF0n2cgy_XQs83lB_M3V-FrDsg1vxKcNaF9HvQ9Hf2Jlr8EvM3I6shYFhviZZBCeXdEc78n4m6hTmyj7HF-y9BpG7SiZdzUpKfqIUd9DhNuaWpVWe8r9-2KqISOkPrZRHN9dra6rG4XEcHYezUDGv9QR-A4_SevHtgzDbQd-4VQPbLt2rDweAo6VRigRcwOnpeNr3vFMk1VAojROeoj0KGmhZMBC2p7vlpRcD2JQXJuYPwL_4hlBovggJxVNU1Mr5T_9qZ6v9jOtXwPkqCPPBCcCJRkff3XLWOv-4AmIQnR9sHEVL8WvNg2dL_A9LzD8mZsR7Ahpq_bYcBpNJdleIAryOrTtYl-JIX0SGCFTbF_wK6srrhRs25bRB6G8SQmp-R--62x5JAFxes4aCBe40KOsoIbVEc-zZ9leZyYNZR03EhBGq1AnlkRcsjcJQt-cezAPd1k7fxeZfWiCsUKiF33Uqh4d4IKFLgqrmqaSlKYas6PqGTvHqqzbxJ6ItdtuZc2J0GPpdgMGLa88TvG1vVyOJ23amQNGYMBEb9bIshydR8usJ8Iq1M8aYfr8H3jKQ4Ok1CXs_vC90w6bscnMpGnWEFxYEEIkdopbfKWKc5VX24dm5TBGaRwln8Ge_Ha3Y-o05Y9LNzxu7c1Ukat--GT3j_BnYurlKHmAF9iLcU8uWG5aA9nw4wYkIN8nyapHkJ86f-ofFxQfsOFdUlbyYC6_gewlsaHUQg3TwRGq1lXuZi3ow0lm6BSb2QVBmP1pMADaR5wU6iRFKD0Ku0O8dU8fotciyLVvvIHLLatRURU-i3sa-NtOF8roC3KnWbLVkPa02eDDRDYgoywsHVs3pUb8GNq7OPtUFnf76LZAM-orcjt_xEAaTM41YX8eF9GdgrSwDphJ2U1qkx5tlnQkDfiPyujycN7fnoJB4uEMDrt8edHVej0numOovOkbAkSZNuY2SB7_d-5U8dK1Ae90F2tAPKt0pYJSXelfhF4IoOVAY-xLw8duvjRCXFjMz8q9Xzws7GnM3pwT99yMF7pGo3kUaZbs55RELdlFCYA2ObLHynYkV0o2DYAdOhi0M46NuZ5byf2cRogRHCSN7xZ2b49vwaq5g6tw6nBD09BVDAadevYPvVBkDGtj2pl_AYsnaTinWsKukvLFiEIJius_bZsPeEJzyV9afxT_gBuPrmxev3lgIJApCBtKk1IDk-8bhl1UGhH-eyYXun1pTjRbXadKzo9S7jJ_ga1bO6kXdY0XdtHRlHnYJ7LC3JF7y6mwDdqs0qT-219Da0X3etD11Qm569-jgMVaeKZLU-pgRFvGYcKdlqxoli-AP5dkfT_u6O6NLHj5Y6sg1Y6R2p62Ny8V7rvPsRlm76dxO-06tjgYgBdAeLuLq7-Ik0TgrGtf3FSlO2Z5tqgXXsf0b5fJzXNifz9wpimk1MlbHXcpI8jLdOLJOOeLG2h4_SQFOYVLCtgdExJafJIl3OM8pQBle9AnojSiqJ-t1U88tTW4y947toXkURH8vL34-jrfgZ1mect5GFZjJL4yzePTaBunDQVL6SeLPRDJsGDgzb2mMS_EzKn17fMwbZqmR1yvx0dcYPBfbsKw46PeA7jkslDfGyILZwg08Q_6I3q5hR2-ChiFVGYQTYswRMKagmKlga3SExfxgWAe0bp8gpUu_71HUPSN-2bW6lhTGs9_w_13tLW7z_iKqDDr1RO89S8bWw0GuS6WXpcfNBFJeJMcSVMRRlnzJJ7QjSaMnphyz74rA_fIoCOxRStGvn9Ig_RyQm8W86SXc9g8MO32cmOV2QnTtaSc18Is6BZZMNGbm8FgJ884G1sPW8Zvjzt8be0UmGYiAkZcJ8H0gQVVnQ8_sZOZ0vYVCcr7tQke3VhnDhqGi-xlzOW5pfGYqrPFUBF-RtX9XxOLHY-J6DHnQ8KpZqBpIZTUi8whNxV181VfacG4fDgxk_NR5UgeuTxO7u92jaOImY_HEB-wrgjwvj2us8qGH0yctdStfO_eynvgW-8IdbMqokAolfH1qhWHQQRQoRinC77xMX6zU9woy-C5M0cTwVz5ediHr8ukqt7_xESMduBf9fwOdpAOzOeir07ee9_4AivL5jqZEtab4Era61WvzMAOZAlRUhfxqUE52G3myKO1O3h0WzgNHG2pwSylY1zCfnYupy2K7CkmqH31agRGoatnXbwN_MdS21t4Sovz2TYm_YwR1aCVlNYLtBzgLj4Ulh9DI9xBPRdJVJl8y8Hj6581ZyUf9TeKEwidsdWPlHOwnB7Zn8OfhhQPr8Q1RL7tcMbEbGSfDh2nOnbr9Vqt2QdjITEdtr_BlHMlckydNiwt8rh-8Pno3-cxKpmvkET4VCpCuXtwrVgdzWZW5hIZQYjnszaNE_DJEEtXUnwdwA3ex6lQ-0_EWBNa6JZXEB6kNH2XYTbRoDM07-_z_IZA4TBhHUyOQYGXyYqddHLuqCMeSJTHECJjSWcY4_vKd1EK2MpJOOSWD3LI3wk8njSQJ57e-tVCBANhTUvM9-DbWozWWsAGvZogGc1LcHmsoTIk7CqGrwdDNR2I8d2iQLcOUfwX5qmvnCy1QL6Xhd3WYw7kbdU4pZITSTcK90lGcHJo6jNsBIOPGuZHdAtPLv-JYEmjqnmxhMvp8f3q8h3abwqaTqv6kD5ExYyqsLubQdBMuTsv4-Z2JTio7geDIoSU5h78jglGk1sjNX0jzmE0Bzu_F5Cv1HSClHKDzTzc9Gyrurw2aFbk-cBk6KArC26zaeirASB0kiFN4BbLcFlOiT-pJBIDuH4hyQDkrzNrPfBk10igjZVNRt6MH0PhBMdW5jo97oHf-sAE-bBpr7ex-UoBguIYL4oukL-2mfhc55r_aHgAlmWJi6RuruFRncYmyblPpnflbbLD1Rmdnkf3EBDpiKkkcmAlFXzQ0lKcoGrl9Z88Qd3U68L1pa0symy-8OTK3DJcElFadEEgswrNW5fZR63Mmzb1sWmeI0Pl1yGHCVII396ErUKo710_zUU7gg5_SvCB-j4ZwI4Z2knVg1QGVN60UyMNtzEXLj6b6XAvlDmIg5d4k3SiPBc8Sww4f6UT8PmQksZBIUbCRJQmSL4gxUUly2GgtE11UjU-J7eAd5uPDoUIauHP81rx9pn4P4n45Ij9TsUa4JgaLoIHG62nvlBJ6CmnwU8LYN80FjHlGybdlTPiKciX4-ahMTGuUqzl14ucOz11qBin6659rcG3ulF5PxmIFLmq-ib2GDXuO0lBnMDtmS04luDykrIqgnBGWIq353nKF93nl7PW9C906YD2duAM9i6KZHhUN-HINcbCmNhFtlvMDzplDwd9ZAvieebWMGyR8CPSgpY-_KD8dbsmzSGURVtO6h9GFka-EhqD94fL9_es4UGW6PAzV8bLFX56zvgAP2uekaKVUHErrIQtDFSfvfC_4KR3beBLQp-Cw73m5rqUfLuVDINW5dNCoVEJx2yEKYZNDmdw-WCA3SXwXPX5I3XMvt29PUsd5KbKiQ3rmY_hwG6FlOhYoBR5zv1xwjoZKikBglz4-MxfnAoQlX7A00F_CLr7VgzcGE1nTxShFpUetdE7LD0DDvPb-PzkJSWaXbW7TUW5y6Xta8hEG-uR0KV5sJ6A0KdZf9-02IWPPbsbHH4QCcSuOAZmFvtKBeBCGjoq6CxkLqc1ZF-_E52Mq46Bip3f9j5aSVP1jPw0yM5pGGNxHz6ASYQ1AtoG0VJqbVy33OboWYcjdP7uMmwdjV_1f64H-aDt6iNLCmb72l2VQjSoyLXY9ZcTQ6ndUvW9ygPDvesdI92DjA7bSp-1uqr8Xc-WBW-Jzo4fMqi8NSPClqYROiLM5eKoEW0G7sNkxmcafFWxebNjhXTLW6MmMdEOB5t1vcFgxPdqXwV1Gce7Ws57wGhTfVlkKB3hrNhIcOZwsmJCCtDfHEXGiLdeDzdoQJYfUTqpMIqOrYGFhWfV7tMfR9Slc9Gc-m95rC7tFf_QyZX1dm2i56VfXSiPt-_tQDqSQsvrAkXswcjKLZ_XmirKVVBk6wt4qMuLjagiYgTfWUAUEaqth6XFCGiTVzeeI2o1jSCWY1wTppQFiSL0m8K3KOdN68WwzBRmFPlMg0DBRg49oIh-VoJ8JqIE3aj7qgNAcJtUHveuuRkpk4j-P35wQ9VFH33aopl0wLbipSLcMOFu0i41YQLvaHgnT0M7RKJNCjb5wVXno2Ys953aTg8XtOFh04EVN2OjAe9VUfmgW8KDUW74Ppy9ojjk9UsdokDlB_J5ZAmxYt3O_ZsH8fKXBiYZ0SosgQy5QNsgda2Mgj7I8afwqTWZ-j0-XCUS0m7gths0XD5S157xCjRHKlVKJQL7wpzwCwiMT7cdl3EGc-15UNfkaPunfQG9l38D4qfWZvz2Eo3-e752_p6OHuoJJQzjIMQZOt-vXGkWVHAJtRFINZ6L9apk9FLTZxNIKZCDYndym93anotK-qDAcGAKaTPPaq0eZsmAEQyMtFNLEpxnMlVQSYVsbpCFuhWwA7c9E_JasO7vJ-3n5YAaKBNKqmlTBwedePHSd6zCqV5tiTqOrE1X-yDdbXJ5Gs0xM7RwHz0SFfItZCL4EW5NpWdUOCuIWN3PSE1qGxPGfHS0kJCi907PJBHkmgZZzDEFIYHM1RzLXL0DX5cURHAgAOlIFxYgcIAG8wX6YTVwbxtfwpBPo5AU4mqkOej0Dfz12e9g7jF9bS0PkF3cojwVllbRSID44saXRMblDuJ_5nkRxJ_wgT8_PYFfrxBrcc7zUDIMRgMBIJ36g-J97HCx9cH-IJyMIYKmceiWnzD9gMRO-5srsQu3P8qTr_c9u3ADP1d0kNr8EEdRBFWLdAXiUeOL-mr0vXNAKIWDqUZ304sKaL20Em--jhKdKvmXbikoNd66yAM3HGf4scCDbWaB28lU4O0TEwkNV7IrJq4yh99TUvpKSdLANcf-8WpY9eiOYBxX7aoaNqY7D1qMXFj0xe4MyV4PQlUz2tTRLXlfMztwJc_Fp44gKRpzJEZ91jmfMyRm9g4WVIdTwoJ1M-FjCeJYlRu2v5XitZBZVe5A5FVywrmCfMajoRLbuvZ4bTdSbCWYQ2xH95fT2sDWjvXcge6BSOC68MtYJbMXIZmjfBrMMQvv3G31nEcqsqlCt6M0siFxuRg_bOm5dryL9cqvrS-Fc9ockT8zSHwaunB0gg3JTxdcaQwMAdp0DNT0qRQGyH-Rr_XzXmQz1ChK3JIivPmpu4Z50GcXGQmR3r2BXtRJiYpiN4h_Ne5mqChObEOXEieEa0l1wa1hGBSyUujlU8QSBhCBBAb9X_4ewCA7yBs2Z5QmODQIejE9v0eQZhEGOW3_aJdSqe15RJ8GR1Qtj90yVCSVCJqt4hZbkRqjzE9ZKDm8wh_yAfVsUz7jojv1MmsTQaUdKsD-Xk0fN2apiuBhUk-tBJRMPy-7Dx4M_Ari8AsOaqLM7qCfQJFMoWmXyhkZpLxL9sEegrpBLynlfqbGISh6DzDPjU_ExiaPCUWqrthSf1SLWDAnk6jUfAYMOho2DZ3L-w2gqeFBnT3tsd8Nv5zEitValt8IxGz8jGEa0rHpqLCJeUwx23tM7_U7AVMP_VwaAWb7RAuiOe5Mr9v9t_CGP6ei7iU-uPS7IM8mWmzrTRuw3oLm1cl6OuW8m9Bufu_Vxx0y7mnQWwIEcaAl2UEbkA8de2KA2-cz6PM89YIYMs27MZLgjnTLkh78fAQHbLwwSMcFt7GiTUadYenJTmPkuKhtW_Z6lKH0i4-Vw0jgef4rf2Y0U8LphQSCBvpIoB6B01lXYkUR8Ar6xpb47mPJD_TssKluOmYPYnDHt_k2086wMGLNEAP5uFkoIe7d1mOAj49eWEZ6Skw0C6SezAy4IAroaCjgArQEPwlO00Iy6x71CkzCnUYd2LiX6N7KeoGz0Dzsp0tswhCT2k9qk834EWEIlGM1x4vgecJuVOAzAk0abz7d6IPSTe1UIifaPeUK_uRCNsSTA4xW3p16qIBaplOLvfKhYFqW1J0xqX9PDCWiVBiUYvhI8kXY-VcrFhGgkg93crOVi5k-ZiMDncY1ZvdhWrTzAS_8BW3H8BozRHOPBAOtodh08bGYMrpH4TUsPmKv2-r22ypTv4BAj092DzplJTnbsVhj8qlSSbFYSC2gw_m3skSOJOCpM0M4RVwqo460NxXBaEYFsO64bbdt5RRLNymGIIXRxux0Q3XBBd8wclhCn00PnSdWfDVe7M-3zyoF_27m9cnEKEYdHXE-rRs_DnZPhtaKVxYdFHcRB2fEQIoIMqJlsVDjSqY8WMAZor_bUlbaccqyM32yUtF3SD6aKT95-QNkJp0i2XFYjyPUtKhpsqnEUbF0OOkz6S92M0lbTs4hfruGxmwiWzKJCtLUbswH4Uc4WormR8u-F28-DOsCbV1VHW3E2i-DrC33Tx-XjXHHxWz42zvaEMWyqo4strHHC7R5KN7-ey1_O2Zoma6QtBsYHZedoWku9D3K1lc3f9uLERF0ScDeRFUqBFo326vcgj96Ilwut3raVn6QDDsm7nIRl7NnZJR4rYLcAaM66uaPwD2auWApMdkstpC9ZioFHWYedzzw4auBv0Unstd_33QrnY7GRAL7DpXVYunomX7vIyjtz0WSZAf5FLduP_mNOAHbZ31RIdp3P-yudV9pjoQq82f9Jp7xkoVllAGNdm0zYzgNlP-6uVb1GuGx0ylYb8tKgVVBxzTjdOidjNdUptGt8R3PzAA-BV7tsvpQzQmN5yKVgwmoUg1A3bCiuZGqd7B39WIIiT9hqUXgKXF_VIKsgjIFJvZM=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d17730edaf2186d016af7244f9fe487d1a67e1f703f2d741d",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing power and connections**\n\nI\u2019m looking at the powered parts except sensors, noticing that the sensor supply is on a +3.3V line from the LDO. The MCU rail is unpowered, which could create an anomaly if the power net is split or open. I need to ensure the KiCad labels distinguish between +3V3 and +3.3V, as there are no VDD pins on either rail. There\u2019s also an issue with UART3 pins being tied to the VCAP output instead of their respective GPIO pins, which seems to be an accidental assignment.**Identifying connectivity issues**\n\nIt seems that C13 is an unconnected pad, which is suspicious as it may have been intended for a VCAP capacitor but isn\u2019t connected. The VCAP pins (48, 73) are tied to UART outputs instead of capacitors, which is a critical anomaly. I should categorize this as a bridged net issue since pins that should be signal/control are improperly connected to power outputs. I'll report on errors and highlight that the FCC VDD is all disconnected, suggesting an open connection problem with distinct rails unconnected.**Investigating oscillator issues**\n\nI\u2019m considering the oscillator issue and whether it fits into the \"other/open\" category. It seems the crystal is attached to the wrong pins, affecting the HSE pin functionality. The MCU datasheet shows that PH0 and PH1 are associated with the oscillator, but the netlist confirms that the crystal is actually connected to HSE1 pin 1 (PE6) and pin 3 (PE7) through R23. I should note that the HSE crystal model appears to be generic.",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yRh1noOZX7ovd-Vu42RTc8vHTJ6T0kPVK2GqREsSY2LxI2x92a8jF6nydDZHeLmypd5_ZBuSExyYnOZC088gRrp8Mh3qln7p4MFX820dCTImQ8plZmtwosN5zLeO9U85EDiIzrmq1h_79YZMHbtbWJ8ssA0WP9hZwH-DQExDOD9qcP3s_A-gh3PjHm4lk__ybAMxWqY7RvPCDikDFexeuWvP6t5jHZTDyouSBwAEN7AoJj5tOoFUpgLMfEQ2hFVATdZDSGvw5-21hBQcshyOJBhELTE1iRof9eGDKVTuSHCaHzo1r7IP_DcYLOC8EQTt7jF433nKy0LY5JrdLXFm-Xvkjipn2qKTvlmUh5ivmU0l218Iu2YrGRQ0c68cfm5fWe42ZfuZohcrE34VENffZYZSALXaIKuTwndP0IT5NfqGhRmJvJKdczUEqqGybr-i5fhIB5rsAGBtJjdM6TBO1dG7ChGiIIzEgvES11CFeCMRytI1Ca7MNmNuzobqEWJ5V-grV08zANOEpYxB1zRmtKk17rU8NbJi6Dlie3g7_s7vP5lwAWP0j4wol89oPGWmalb_fe6pjIspKJ8JtwS815itJAl5bt_Ow_pac1RfjopOpMsGgDBbPB8lZAs3E5mM6WJYgzj3jxUFdBfbKXzgctRFw5MyCkwm7NqpxzS5EivVg_QWFhiuhjHa4RNyLCwEpfNYHL1Gd8TrxL9Anb6CnVH7Q0kSs9MzUCHpXg2qYifuH8R7calD5iicUmY7BSZXF3pZnjffXpGq1kyrHxxhCFKimbHVmdxWBxJxXJup27c2LtU7iUO5gKup7Ato0ApeGwx8_b0vSWaf6h8Pigo9gZM5su7lN24K5nQc50Qyk90rl8p151tvWZIx0SLqKMIwFoSi-WHAWHICupkQHi_0dnwTq6mgMSYUxVWFIpktd8sLoatF8kZzAf-9qPyJEs7rqdaeIuSyJb3GeN8FHhoHDbaDRIxS01XGnBDdIZ2WzyecTsNK3c9NLOa685CYmWEi9tCPIfhsi_Ieon1Ew2b7YWbG9k4pMIs0y44AG6nUo8MrtRltlNAMzW0LooDoIHQ_x9pLr8ns5PsWk_n1is4QateBAb01KbtOTPKr6ORwsyZdcKVCKGUc2q_ux8xifIh4UFl5mN1oxw294TH7dY0LK8wisUVxDWmjRz44ROXbbwqCtcT6qtBfAPyWxw5HphJfGpeyblUcmQzRIGdIWn-fnr4PKQLj-RARnCVsdbV8qZp0gasjNuvviJRu2JeVLG82lqYT58Yd3ceM1TBpe3kUlGzNTrD-1boEOta-qK3xa8T8bgecyNp914_1ywalPVS3kaO-6PtWz_C6VWOvI159Ws7xF2orf2lNTkmCfHAUXsusu43ADSVXtM6E2r2HKAAvoHP2rsSSaHAclegDaCA72fRKv45rLatzuwGN5zMTkKAjN77GqI5g51crwaSaeHynpsrUifOpuforzL_aMD2fE4JUOCYFShRhi0MFiQ3q7PLHwST-OzblaURh5sLSuFUh0K6ONo1de1wtKamveoR5bG-Q7y6IgbmF0ejsHTnl48Xu3v1ZuzvVxnlafTqI1S5h7jec0ihNt1rPMewcfnxLUWjimqoD4fbpXTpvpeCtH1MzSwlxOohdWmYjTopGWBDiLeBDZJEqvEbxuzTcIFoOeftl7i0oawb4s3J5G09WhLQlC4ij1vukjW8szP9ONi4kwulFeaqJC5eR84fymdX2Mcqjuir0tSoy5gTspMwZvSKpbGA_3fQjauoyyvI2kfoAPhEszlZs6lgSVwETjZfgILN-sc7Npf_voPs1-yYRceuGIkd3TQCaykPrg68zFeEF0xuwFvAZMiJyWheyIz1JLuxHfeRu6F5RGS2zt9O6jL_u2ajrD6mgT38s4DB-qTI4JWeQRjJVYsNTeGzATUXoaVK0AWo-gHgeJEFBy-kG8FiAX8XPDx3T3BmyePv1q39mb5vtHJLl7QoqBhVhin47idDA6Tr9vqGXqpZXgBfP4g5ZCI0RVuveozD3HESFVODIR5Nm2VQLQ5aZxSa90zO3ws7rXYy4p67YkrLKBm8VFoY_vV81I65u1o5c7B5qlfmw9WDaFWMmRCoKUC4Azsa2W4Wnxe9852W1PDhbmQiFjXxZTU01lFM_7AWY2gkGFifYOZYhqIbZ7SWIe1sK_YpBZ_SQyvABWOaHoKGMQwhHm24rB5FAcp8ReryAn2GcW34J7npls3Bds92FeLZwAxA_QXOsEDqrKI-5ZAilY2ICIJw_xGplXcwpitQrkzj2KIjmonG36Ufio7GNgD61yMJ24XgtZCXziYWG-hELnWt3KaN-o_w2xZrsHZP7pxwAAIcbF7XFBakU1fGaIw3QJ3qpO2Uaeg6cuYcWh4whkr0gBh7c7f4Q9IrzYJSivjYFf05ugH1mSyV4xtY01MSyUg3-eImckfJ_d5ollimeqcMV1v092B-LLm5NjEKJVISV59v9fXigIOslYVw_E6zraEjruE27XG0siRoiHP9nouUmi46_aBl4XUZNaK32yzCwfwYvL0KsxjmKxo73TlntzWTHZyutfAxy5zU3arPFO8ueSYoFPDm2j1vQUf_RbyQrDCAjZC2jxOOvq6z1pjNEST0D9shYjCxvPnhxSCtiKe3KRuLYmfkCeAqv-cnkQYo4mjMiNJ3JreH_yUiwi4FV-YG0PS0X4sxBesQLE00_jnRAG1SM2BraIH1HPW4_FPzWS3qQl55klR09DVHxhdur1cCK00yWbvI7kGWe-eqNx6pTU2qgK-6mA8WTXfBYU6P-FpLXFl-SVHvBvZIjfAAPDKOFGz-NXdeCDg-NE8cQ-0GrRPQFJuv2vNvwCJ9SlOv_QImZ98BQN190DtOWTkk7-NxhaIWyOvkz2PGqQcx72VCTJH62pwriqXZwXikmeLWph3KPS2hwa5VDeglHWHsu5lFxdHxrjhfv4hZ1FkpWPQvsBEwAMZTR0ptC8jlypUrKC5CcSs6Jinu9lPgFb2YGYvnkt1T9Jyaetg15s9Kxvqx13pfiEuD5iSlzRzb_OKimGkU15y965njuXAcJKjwVt06t8K4KEJbgMDN-94IZZ_ycAI8p-Zxa-jBJEnuTYVKicEpFCI5IDVq8K2nbBfuKsGsP3sQdhQR8uY4dMnwcEUeWncVdCYYxV5Y9F3gDt7MeSJwsRO39Yucl0etlIRku9Jk9qKeiWG3KozJ-2P1hPYbCz8TLRgHVW1fFEhvk1QAlDed8eDCRK57ApfX_FS7dA8btE9thjMM4ullVKk-uu35M20HDkIE7yg7aVg6s2MTI7d-j-TjHQ7TvcNeJF7-5GxhJywSuZmAdRU8nWp69eDQ1v-8eb5wtaqjKh6QfkdrpSVklVMsQ3HC71Citx_mZIdka8AvD4WvGKJxRXJvlMI5CKcvtI5_XdSLhzhj_FqVNsn5ijLj295xvC67pjMpzmmaIoWmpjqGUErTeb7audU19TM9--SlARCm6rTRm9Je-IahQS9gAOMVMrgGosohBtebIfY_F-cg_M-OdostQgDyxrvBtPL0dPQL5M3NWXDzFllMg2Lb4s-9IMj4EjEtfXd3Q-QODGuK-StYFmktDv4qg4V5RZmJOmXfLDSLHmNcvJBOeF1w6Av2LC0HpHv97VW-phxXYUHZrMEmf7MAb_vj-yeUXmqTp73k6VGcxVarrILVgR7hrhnPd1YQbUmxW5oYP52HWqTbkfGRXwkla626ADs5ojVvSV0Xnw8kCLMRTaGrFWB4X6qE1YRw0Kgc2lu5Z5kz_r3yD6X3CqZzrSys_Rj5ns3ivM7wbjlpSkcpgUzknqfVeoGy_-pyXCB71eSDl0HxBMyE-Rnb6gN4qY6lbG8RRLpIzQxqJ6bs48Ub3PnWbqgtb_viy4DDaJ0CI1QTyBrkC163hdlSU6yhd4US_PMkdplrM4hJCQaNBQAajIa_yVpqbZrHyDdxc_aCfBtNpbwJ9Di16FBTf4x9pknAjWxrXI7WbA_eKdfX4STkFWOyHLSNP8jr-OaXnuIoEd-NpkOSOBuXKYzAb_0Na8ZqVqPEj-8682ESsfJHOtu7KjMOhSviudV8_SSty8J5MMSKhThjWrNRZhIpTkshKYh7tj1i6-bTNSPxaa9LUPXODOKVjnxSYdxR_db4nukgquKK5Ts0GDPM-Tnx57pB8W6qdSs6y4_DuS8Y-Q0x0GlRXnkBeXCn4GOWkglr_PRPEfzWWe1od-M6OjkfwQXlw8NirGbm0VCKKXa1GyZRtlQ3fqxB1filEVKwPSPw-kVTQzN8TtURtakIYQfmYeE_d1mIVrcNCtrEvEcbxiIJ34f3_f242ZR_MyCc3X_z8cPzal4JFRJAlZllFspYbQb_NbS6qaShiHMbb9jiU0vgkAWEi8KGBu42KVGU_7msuGxPjEv5YTTUjhmloJ4XWuTnqawt-Ql3WK2KnsjUiqQw9XTyndUt4iJvLonnrXSORuX8mXn9n4akFqJOSrx4_dDZWGTT2C0Waiihvbex9PlT9GgzX13gnyaAJtyEZWYAM1FcV6czp5qbkF2SIsyn4GYXPgB6wyFg5IIbKFvVS2FMH8UlyAikZEgFCPa9lo3D-XdAyhteB4bpIqZ31QNVkqBQAvkEzsnB6po6a8CD9bpiQ3TmmEK0SsXMc6jA8Nsd5oF17_Xd_9wggF7Y4WrCuna7849O2_7EnftFHqvGEATwIp4uIqQ3bkwLd6q4ckAY0qib5pbsuvJyezMA2duPy9qzmiqyb8pqiqV2jbkGl39KlTaaxq7MYc1s-G_uFk3YgWTNr1gKTk5z61dKORTKQ-Qo9B0v2yNrL_Q4EdHvEGtbN6P7XYaQMZduCnemn-ZVFMHzEJo0IYgpN35aeoqLvKdhUQ6hT7UNmVXjkVCt90vBaNe88nV9fBenujVIaDEjqUu9J9tgq95-QMDt-Hs4miImVB5mTmV3XPTnF8pDQS6AhHu65bxYNfNvtjXzVKTgTR6nWsgXMV0XrwpUXnqKlx_c-BeMtVvEot9ubkNnB5HaGhUPysXh5pdmWD-SeuS3P_jE3CV6Wh9N1qoQ29UWIceUxSrL3gPMjW3UN1af5R8JBRocPWrzncB1mRKbKrX73Pj_06ZHPMTQj92IgWDTGonw025uqu5WDtQolHrzmVxuuw5xQ3ZC_XanB5OSCJTNA01Jka8ZO4QHJ4IgLzcVVxk85O-EybAed_bUI24g5OeZPxJcXPferCZS3oDYjr52YtZca5aWyLGeBX9vqXe3wAMdz30ndcsuK_7LPmrCOq1O0Geghjsl2ZU8KpYASwfaCrNzJAzBzCRoDZPg1Bcy-BrvA-cjUxcccniAppdORJjOS-kZfJnkIbBlsLfL_AbQQHtEz_7FIY9phOim1wmBga7HBIFAY1gkKSP4l8alks03QPDWWVkYj-FLa--GqaeS9h60Y4HPSwFbKm_Oc4m-Nbij8dO9E-lTtlXIO0ko45bc-p9K3R_alSmSsAJNzKRjK7E817sbHIjLoi6WzcOuKbjZ_GAl4BtcEqooHf9SuBQUJSft_Ff8tPAfrSKD9ntBqJCMq0g64WFWHD9cJbRxNZ7KE35KewaSBeY1UyYteT_Sz-L9XWJ7HwPdYuSUGheKwWhScvjc1eqs0ujCu1oryd8XxYQwi9sWUBhvbGPFyWE4L5atV3akvdO5lgtOGFVp1su3N5ZQYo1QP8RNdCb_zL6LdsAZRdzJeIZQxclmJ0m8yl-LyKSxw8Z34zDSXa-I9J937qhw8SixqWWpKklmL8KyhCUhlHZq4IJ0riNyQTXXau6WMJdfQh2OpfQK9SWJB_JNY8ALI_SY-_YyOo88xy8XrWnHMhvHwH-J4t2w3GdlRiColw6aABOdfesvk7ikDnXbp0ojFGGVPHiS_oBWrn_lOXEQ684huG5baR0WahTPUT6bloXwHw65RQhAunlXl7rds-pwpk4qA1noRbLfTinvAydqT6WLKUtbLs5bVcwo3HUkFTpPzKqYGjFsnQenOxIjd3YK_Hn5yZoMg0SmCbQsyHfQEcHRu2uZB3mAFDpdU9XN-65Ac-jH0LJoKv0Q7RaDyIk_C6717EyLYsz-ECljYfW2ARpuQmkUOhroeui5pg2sdKerbj2dqvDeaVL_aRDN9sXcKswDcCw3aeMeXtN4Xo4Fqq-OvvtjeQEXkXhp41WbZ_ye69lppm60vUqKievOygc0F_FqVgjpFGCK4y0qjiNePz0Zit8W-308Xwq3Z7moONCHRw8SSy4P_PefWi-yFPqIb9XgQQ66ssdJNV00Yt3tXngfnxG5vGrxVkH_3ZYxnq-exFaXR5SFRZJ-ZucqkZ-NO41KnrqWGwYuVvdUw2y49mr-Kt04_hvL5u_NxV5CDCz4WhdDWp26peFLPVPv_fVoASh7hjBZSnAGI5thvk0jZQANp6oVDfKFyltjW0-wqWGFb0_nZkOdzqAzkkMrnIVUqkJtLGgm_wZ3I99B377XR1YMy3RIS8KREs4dy1TWVnFXs-fygX5lWvKgFFwHKcHdEawcMjBe1d8wUXISUMCg762zOX3QcqiF-LudPlt_0CG7segaTc3ZLWmWT5vAbDX9QEFjOnJvJaPFQ4CRg9AX3zUSjSkibeSIFoRPIXMVTSK5fWYypO5OeHO2xSUqhg9k0iUHYR1YnbpV3ki6xkfZ_xjdEZvHOWVj6F6CUiot1cJRy_E9mVOuOV25WP_EWyya71Eds9YAaSh-yLJTeoL6eD6-EgKJmheKvWQR1MtlmIRyXYklUWAxfNh9gPX9N5gXjWCpzl2LpMRb-nMwl6OY2v1yLtWWRi_vyzQPg-1eJKqBgAZ4Oe7Aycvw3Y10YZadFOKLDb4ZYRLXIA1DnBL-aBmklBOcOCKQtmuEj6oUI66kTRaugpLl7DMJYH4HPDGakry5iiKTpzn-C25dU6DbzPMZqaLaizblDPidaPQQiPMz1hVCR_bHCF83rFzmDu-aPluqrJQ3nqJzBmk73b_rs7e1pixgWZtOnckQyaswt-E0OLqxAQed0n8gVd1vbnpXwSuDOZze3CpBZfMlW6dnSnCVy9zTdKtg7f2A9Z7JdP54l7nLuLp8luuSCWCusMvTE5vKRhtSWQTF8FjQm_EEODq9tWaQznhA6IKufbVQhkiRL1j2xadu74Vnqmxu1Kfcf3o6mBNDbej2TnCCU3-lClWD3jAMT6JluotdeFDHuph7b8yVJ_mQwftunp1rqzcWI6jsCxPw6uZWbGgD55FM7re1g7Rh0qLw1Z5R_fl_DCk8vIz1DnMXGNODXC2NPfjjGqOfd5EEstPY_p94vU9-9bJsBfgo6i17ppKNj1Gz7Igo2UenZ_WJ3OjnwwBB45INP0IqAFmWl5ZpbCvi-f-2Ukx8-MIOP4hYZwuErY6ucKS7grVEvkkLBxaFOGTL_xfM2LBefflaOXF1FGaXQuJxa7KqWrxGk2nh8hJrhvn6hSMMprySubDfg8Z0V3xvRWy0n35gOAsWgkf8Z1ZaUY8ZTVZmh2CghDcCBSdQ_Xz_IZgcv0VyMBVCQ0aR89RjBpjr5SUjs-r0_Y1E5tOhG03agT8xb-aMGmVU73qm3eA07kyhHcK5YeEagqaIw8Az8TidAX02M-f9nq0mRcKeWdrb5IqTcXopU3OrRNQqI6GrPi1gt3ojsbDlE2tpuJJkTJ4Dv6KQe7TRhUDlvUTM5flvPqQlTHDgvtbXuOLsK04tuv544boiMJjRPIjzplK1aRI3CoReYwi3JA3gClrVoPHl5vadnCadBURgJ3LUU9uJikahhItiKqOHEsAIAL6SwF87CzvQZZj6oLh48S0BFoV_XzCBlFewzoezveS-bU3Onf2-8yjrF6jU2krL8ooMq47WRw74TnMicsOS4Kde0GZFoSWKMvzN2p70IzA2w9HSuX5z2DowkT1C8Uz-DUpIfpWA83Hf93pmlEA31Jux31VCtaB-aea9ZGWcxUKppGQu3oJlZndnFn0BsV7ITnkeTRExyXWXpn2e5O4RblTcHn0LVZkarRTDxZZ-Ktv-BuS0SSmKwEXLZsgokjz9si7j54BKswASVg==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d17730edaf2186d016af72459339c87d1b5dc366faa9fcb2c",
+              "index": 3
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating voltage rails**\n\nI\u2019m looking at potential absurdities with the +3V3 and +3V rails, considering they likely have distinct global labels in KiCad. It seems important that the net names be exact and distinct, so there's no need for me to infer ties from those labels. I\u2019m also noting that VDD being unconnected supports my assessment. It\u2019s really fascinating how clarity in labeling can affect the design!",
+              "format": "openai-responses-v1",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yRj_p2UemEqSbHa0FjTRTqUSBvZU7_-OtlzLx07j4sQJ69Ptvbg0v12fKjXf2dRyx6BPT9f25_VWxUIW8Oo4FUkz3NY6QcYAX3riWt4WLpvOvHdxvb5IlZKvFyVHqbxqsR8gzfI_NtImj7tukz37k5knwrM4ZpnrxRa13ak0ovOf7A7XxUWONxX_9kJrRykjeTaS0MtlBHYU3vsAx5IOgV0L0h4eECtMCmwXbFKZJ0bERmH-HfsX_yjFoIMMQLZbq94eP6V-rbv-UBhx_tSsjw4t1b0NYJEm3VBSnAfjEMub6pDgzRIfEP8wd53-jjKMH4Qv718kZH21D5HYi9Axbm8eY1lXfgMBnMNyJcYSUTZVN3iLWKj2JrnJyuu0D4iAjK1u2M_yBYYXNgLrRT0iijrjiofDK3qL9TI5ZQ7wmjuahPAnp1PRCpBvXLKxcRHqGjBEv9E2wEDtVhcJs2rl5Sz70tl0mQx8Z5sELT0XgBKQKs546oTk7WOFC_CqrmIU4MY6BUKRFP8osizAO5vw_c0N5K8VB_ixDW3ZqgD9ZoqsBPy1SPwnNrXq16Dhg1nOlwvnpz1XVIHxSdSburxsE-z6j_ptaR2dqo-HPTAcMVkgQWjNEIa9bE6Z7rjaQPGUha9c8BKFl85isjcNjNXaHYyXYA_LJgN8T4UpNXuIKdZhYNqV3vFBsJEJxkP-9EcY8P3pYSqIktuBNINanXY4gELAxh1TiMYFL8x5PGVP9H-NSC2NRPjGeSzMdBL1xGEBWmLTV4hKyL8Bf4gjNObPcJMPe8ojmvhFHwplDGfzUHqgnBEgHxMaJ5mS8coHaWHRIMIbuQRowXq6Sc-gfXLqdJeGVBT0nZPZiuRPzsumSIczwMIEvwafzjuhYRQo33jgnUtySxrTKO9_FkjMNEZ45FL_PJ63wzv_ezSu8_sNi_08_hwIDHMkesGP51lhRx2o51YwGQHyTOlZxdxZMqtVRx1FFc5QJkl7G__qUusq2g-NlvHzZeWizLOxM3mlEoEzWxaKEg6QmmyJYapqcBmuJl82eTGA-zFCObRolam_wKwAgekmYZZFaZsP03prG3GPFFt360PjkWinmqOgngJUio64tiVOpYJ81PDPGhhdXhSqPd6UHLVxIujONDU5i0_0JFe9PLVmlBWg750XTWaCIbuB66ozSO-FuzBP7WkQ46fdy85XeWyZ0vGKtvtPPNJC7GAvP4t_GYGE7diQliAypjd1CTFbVz9PzbpZ2LK87aALcgPRNdcrRWg0OB0XKXmNQj4x1XVVXPyniQ5EYKnIryCuPetvLDRhTk_eBHJc2r9zrgWdIDB8h8sd1cpII0OQKO42BepHIGv1MBGV-4F9hzjDkL7YF2wJtWzkpji9AU486q6ZggOAcvnsRUsVArfIx4eRwmmVzoBnM91zHFbLWgY5yearLQ3AW7t0PmK3Zu9BhNLuQTDSMovzC6_5Z3a5YDYNvrDH7yq4Vc6KO091zRHctEVqs_zSA8g3yo18ozjK4D8TAfiji4TZogyCdHzYrL2_toUrJ5pIj7Ng91UNnmput7Em-X4jLh924oJFeMR7BVAg4NoeYYsaPPn-3frnOxexQm_BRrVTHHgfM1yb4LoZETytrahM8iUCQnNqq5D5OpiDL2DF5HoxUPmveyqDV19YVHRrUfAd6bXc9Q8RmGkFwf1HiQMeKIFlDLHC_grGg2Sbms4Ta1mwqdw7k1dYPKfOCxD3yO2c7Y3oZXvQPC6pb4d4jPLY21RN9NbOPS_GmF8L48hvyCtQi5V8ZaW28Ft0mpiElCCfPMXdN078zZ_sRs_Gzumax5rh0JcwWaL39-GpoFpTrSFurwTNUzQMcZoKoBc3xg7K7iA6KXlE-rbx8ceUL-wUmVCOFKL0CA3mU9gixbrIiD1w4tfN9RGD9Ey-QInFUD0tGouPqQGByn3Z0bRliQ4WY0EhaDrkJRZnuca-7bVwB4B048Kks3GSDE1sqBNENUtCSP7rzQGGFFyWZzX63AID1_b_5-f6tNysWhMpH3FH9smYxx-JHZEFgl_yVPwEHFCOLIiCvus-SGLxtuiJPy6R55MJYkjBEPj4q9PFn3yfSpYFcbc7Avg3WrgDuRHVXPtz1jZK7LNsR7TXZtR1ToGBjhZehu9dvNCGjemIT9JR0VU2HPc5UWz04CyUPuWM-ucviyc29JeruGr2FeBqk_aFBWR4L9dhXfQJjOzPf95UU1VTQ6hAQkNFT-RecXYT5y_9OtsuWODYvCoXfxprmSmHQgHYT8X9jok_jgud-6t8WUXqicen7WjfXvKyYGOPbP_-5d7twvhW47q5Xzl8Ttw1pW-RKKOHWJbgRsE-VAKEKplCEZhn7b8wPoDrb7PepVUqiRzr9Je6xNVqQG065jI86Kcgpwhu9MG0prXAXSdgim76D9MMsuQ2TeIhJGfLJsNDrCrjDSWYypK7OiRMgrwaVbjDtTs1k_tPQW9B-LaOHZOmJQarYX8nq95-JR22penq5hQgpwSfX6YmBrayE23t2jCXH6pgS17ijMhmCXVYK-erbPQv7y0MrAo_honL0NasNmfneU_UVt4iF0id2jHhwOYbNwRybGsirOYHTsqtmwEpjiVXfgVcF2YORH5VB2gQ6ZEKvlvLTMdLXcuZiBQYFixmjQkvjtUdKbZo7rpIWRl6xi-mMK9Byis8PH2SHd757jRFv6yi-AXi77y_bpXCLIZ5iEmL-AaudWTSvqF8Lw3LITao8P_iXCO1y-1AxxWgjp3yxRVDoNOdzG8pJAIwuqOPTRXay2w4CGVv2vItz_wie3PuQLYG1tSbbCOO0sa4M5ZJmG1RJhgc7Cc_bLUn4q2ZSFCrrc1F3mnU_Ez162xf99aMMpOJrp-JMM3xWdaNc7k44Bj7Zj-XEWD2tHdDBsOBdIbadhkDu4NKSCd823O-Jdp0o4tnGzG8quXT9OMi8AYtPZkRqPNiqnnOnNZJ-P3zoolv-XVFWzpmaSvJX2bsbfKl48POpurxQ3paP1hpwPbk2cakiYlS4wapq4oIzmVBKMdQ5c9ikI0X7ViPOnnzuTHVXZ0efPFYNpZCKc3Z0mFdvk3gJwXyz-LUuK4jzGqYB5D53DRqsZQm_ObdFLBwpS8XZ2yjr53Cod670VxtBEwF2tWI13TqhuCo4L54iUqXfShO47iiqSwquryLYin7j_168LJ2420_MyMsyWDGu78yX2hCndghNyegmIrxAy_uStq138HK251tW6kZ_-LuqD01W4jU2DESTlyWa-T35d2MovljDpUC9iS86pteD9zErlgKKQZF_kwuk4a1D3VFeX1Pjfjr-c1lgEN1wCTtdW_6d-cCETf05lJImK0d26F-Kr5gsITUyG-5bWdrea0dcfMS-RBRyc0d95N1CdFUgidCDNcGgvLwJqt6uswhg41tLNDEkgJBKDNOQ6wcjSh0VHDZi04tlx3sAWtYNC65DdEKC0LlXdgAP7pQobshVDIkL4bSbD5yKSOzKX49R_KyBNHjNb8qFOyG5XvoVb2YR2esmkaQL9npp6QkcDrW1SVNHBZS1kZR5LWr2c0PnoBFQm5wpxHQj0dKvPbNtwb4d89CUrJZDAQUva3MuqTJfTVy_HvaJvDbemR9OXgOKdGX09pls1yHHtV-F-IwxL57yVdvra4NTwNjS6x6rvL0yp-TT_G4x2ykRsf2dTb4aY1h4a_Sc6YI30rIGPd4bGTgJPo7pJg8A7S0J_quiZDM_WNw6hJGffS9RUZCxlCpaU90BCBABck7kqn0qzHyq0teLq6RW5eI5pGulWEcZldzDK0ypXHQV5rEJzKiGwPaZY7JjGCTDFexwNUEpuQZUbFMzmc0Rb34IX9MrjdPjzJYEKKoW9HQqALzKQIGDpTVWlueNXNztv6ErOjyAfepLgpNZ6-OnRsQpI-jgMDAwtooJEjFyCehwG0gXLKBE3DLim9W2tGLh7Che83H2PFgU1Duc7yVW0PLagXv6WYMdgo3ICq7tpV9eLf1IkLWQQduAj-Kbw2_HU406D4PYgoy-JNjkTUCaGhC1JkVv644Za3HZ8MgQuaH8iev6WZ55fAZoBcUpYT3pyFd56_nmCWtJ3_vBfStMak8c-puMAo1u3A7Nx6JZOHoQfDVK8H_tPhQS-48M8B7Ya_7gJDDvrp2tXaJ85xgLJigx0_jqGQTicyvRQNpetSyQkVMVzWhL9rfD4KOTCRfN_C0vZRQNC1nzqY_7c417IGQ737__XiU7p6AsTyCnUdNHEbf401uELjLyuj4OeBu0-FlPY6mWtevyK9OIe1828nscHfW_kZIVyZjxwcu4zikaCZBuk3F8-29b5bl_6HkQkRpNhdIsUnes0jEwY79AdZUasy3panecc61Qf6YD8FhseuvJyZw-NPNxHDeOOyM-T2VJ_4QsDMKjB4MW7OqXREZ_CT7xrUiFN9IlFyzi4fS4JRjCdS06HDEXnkvEcYpcaEhCH3lR8aBiXbWkjA3_I_lfN6avlUbICI3ShvPTaWy7-lMY8p0ORGw5eO2A_KcODNuCB9SfJwkz92rD4bg0VBYL-DMQKtlKAyIVh3BVvIIK1NTz44lqiO5cF492I5sjqpuUQ-Z2yXnHhdFekbryAjXulKoA5WPTXXLGTJGiTgStE1jWZKWbWfkE9UEeyhKUM53pGu2GDWmhkh8lKSFoNQC6PJduuuNMU8cprZRwvyELb3llDWYR4VhO1oCbbNSgHBs3LnkN4FEjobBARNo1t9eWhWZPNH--IHGSMpDkeWtZNAFh5BURC6hxRsxCC-DwQ_pmvYw4PIKe8zu3hN8AQmmyl_qU7ujm-uqIkfSrfaVT7u1td5TC9ytrGgThd2yU4GpiqsMp3xNQ_85eIzX9OxuIjLlq4rCj28grZ2pxwdMLx6eGdK8h5yHFddvD9cL_krg8FS_xiQUZnL5AFLGq0rpw6FLZXDj_7-P1zR6hqVNWfmju9kxNHa3xLeUxfG7AMrO3fJnz3USduSTI--2I-1fODTnIBs728fokA2JxDXi7tNP8eeThasyzk1Qw5xRJ-gyqZY-6Ddfne5ScRJjQv9mIaUuuN1_dLYs0esWJk3pP5tCj4_wvpEsbZ3FDbq_jRZYyaQhHT8KtRmJcrEe6OwVuk5ssoKAL9ed1l9emyuMb8yx0Iz9wY4IJRclo5_yMmI9MZL6RKpdxFgrlDzHQ-dMI0TkV-I5VUJdBtSUpGW5EYnollNWrQAsVec7clg8OkAMHK46um_W95l1fZ4wR5YB8VVAQDwtTMRHuWo7-fQ1QQhu9JUS5v9RXu5ohZ7wR3zN5htM_H_p_s6T-Wgcxhki9RQRWhBXMnUe83DxXXHO_dpTEk0XCIEazxwVVwoJZ8elIv5vnyfPhuFOc6u7fVnVFgurGc2HsIBKWAazqb9Paqto1ZtytINr95xEHxdWdYrIOn2tPRxc5cWlE2ON9re5GIx6AY4FeiBypVq_UvN_xVBHXtaM8ayVTJmmnHRHL3JVxdcDxbrO9FvMGuvdNlaXuLTFSEzwZxpONuaptCRZC20Ohsu0KKTzpWeHIC1VgLrwFooYZDVvmZHrZeIe2P8E6laP78NnidLLzNrpDRqlMv-n6b83nUH1_vgZy0djWIQpKIeCkZEhDUPIDh8AOjOnbAMkiFutXNrwsNWD7Ty10JyuulKt0qoLG7HrIsMwvJVKWGXdM1bvj2TM7oCiu00nRGqfZsedNCACcOXwxTPyRsN8kU-ZLqlUIFG1e_dL4YQNHQsuxpJVL3c26TI47U3RpgHrZQg77yIMHBat6Uq-ikmbqKyw33NFCGgBkV0ZhCNUuHX2XlIB7j_SuLmaD6NrCU0oIThO7PNVnxCcieJQKtFcMonHv6HDViCnF0oV1euaAJUwYS0XOCVsqp_LfimEuV7oPBthrujEGNOCGzQvyVhCJZEZgQ4ZkymamnutoaI5dst78NQCzsvkQ4IEWh5TM6CT41Wq87G6N10SBRoLNOmRkfXPIFezNvTHDgAT72KPKgWXrgyqwtKPqPM74OFtJ5L9q_mDYSkCdrTMohHSkkXt2ymm-O7faLnfeTK5ufvs1W7AZn4M7Vv1XC0BVkmTb_OLysmhum-FgpdkZ4THGYzqk4wOxxVbxRMzIwSmBOpTLPw6CdwnKGiiR3KFUe7-JV8NZoVMSRAlrh-FCzD5OcxLNZaeMrK-wc-CwFxqEVwM_wi5HnditUEp9lLxHTgMSFGQHS4F5YFV72__XC4oWQGN1DYyWsUH35_PfnVw_AAvoQ9eiKRiM7W5lRPDlx8incHgP9M7AXQsKFThKM9zcUBdmElCZq5bVxYM8LW9LgIjNy1V-Qju9kwr9imzbKfE19h9UB_sMlqe9mU6EG4hXfTmY-w2QzF7N_3GI2jiw6hchJToofOCm0SkqlGVQQhZq22gKPwT4Odcpong2xdEWQJqALGF9fI7awEH9cNUQ8NxSmxe_oHfC5xlXDLQbfcVs5HKqbGN4qGvayXj02w9EnVwnxRZSjjETsUcIltZoF60LEwPAMUypcyHODV-zawqZqxEw5DryJMODyIX9aJKUsQIpkgFp8HvXWYoJyQsJ8RcmMiykeRdyg7hf7XvF_n5ZT3-nZQvXKZHoa9QG-iE6wWw6F7ei093jNlSxlrwBEe03KRueFtw_a8ROjY4hEABssK040aargmKQUZ7H3U-2iqRRj4-8WPW7IEBr-0Ap6c7mOWacv7Jc-phT2NFKfYfsZPrHSBqbF8FengYOc_fE0F3IWeHmp0ZN7G-r7fO_U0BYJYviuMWoowWRs_ENUxk0XuShomqhcgGkN-qIkJ3iUAa8FiOS94V3AseYLZ3Og75uWAPqVcFZsPQQn7lIR_Mc7df6PtGc2XYu-f8MTVhl0-E-zdwJ62dgvWpJhniwrOf6TgcAslFJgIisgxhO0WfTDgP-NDxCOlBOgR6tK9pEoyfy3Wh01wn-VqHlBIRMO4Gxx3Rvb6uHA8MwCVID9iCRqi5TdgU0G1yl2PAp5TQ9tzh9izeS6v3fs8I9LkYZkQdlZFqRX4Z4N_ZEwwOATubLnb7EyoZHrYuoVxgcwRfjPvV80iPJVmTHMXKFdO4kLSgKM51O_HUkOcadQx7aj32vpYNPHJPdEVdu1kVAz1TXNr49rO9BCXzWlv2lsJLTeiA14T5xM45wEyocXBzjfha2IaGxz7iO5FvOt-rfaUP0gb-v_9Q70OL1ANURhzAsDAX0cOQSMoT6WV4dKKkb-st6zTaThEXomBtQIzmex2blQf_-QqN3cx9RPPO5iT-DQa0QGaWWMxZoED3SuLHAfbIfvjZBIU11gGLpGVXDkPSQzhAAmWY7mUrJpeYEFErLQoox2IOD4arG3mtsEEm2FtdG3rEoiAfckXPj7MHZTQcsfQU2oXzxZIrXS7ZgStq2j63fbpH8zGJlDrjHgSbJdpeI9mRhvCKMD39ppGqk4Kv284Ge2qLnGCiMUrA3ApAxv4e6BkLEKsCG3rw1ZL5jXN5Xfq-95BTmIMNhvQAGnzpX6_pTZ7hhbYdbtVSqpqCyUXJ2A_8jeerT6PZN9FyK288P_M_5sckgN_TM97o23l3zaG3tmH8C2G7oB_wnTViI0DiUVT9x07LmhGqvCwQdoCFuyFbxLh11pLz1qu2VGVSlb30JQG0qC9kVfbIqtUIZ_-4psCMI9tDhUMButS1a3EfP4h5_u5rO82vg6VHuwgTA9prWW03Yp-dZ6gSiJ-r96Sy0Beukij6ABJSTOF6MHCoQYBdQ==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d17730edaf2186d016af724613ccc87d19ea8dc94ab8b9deb",
+              "index": 5
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9yRk1qRChfcRxm0rlf5JOgrhEq_Rnn4TX3f0JUEzSbsw0FeHzz8xaPCw2wNwYDFBXpcXxysP9y64Vd3Kopz6CQvbF8_rbjMMnspW7kYu8JdqsM3nmOk0JLrVN5LA8b3BaJEltIY_rV_sizWc-Emk1k2-DywgCIfdy7FyNPamxhiCo6DWOaMkHgheiWxb6H2O7L9kItJov-kCaAmv0L_Kl9J3BFtAcLFoiC9BPb0jjUNJKM7dC91QPzmT_AEfJTWKKMX6Cu74i4zrEvUh3Vqh2_oRnqLci2yJ-yePxn7m42HcwNpX4qOCXFV4CZK6CMAe6PZdDpEp2AjnDEolWgPoVTwB6Rjen6wkhww5N5JC2umiIosJUl7Y-SyQRy8u9FpzxTlv5gFkuF3s3DUOqoVl3UsrOAK67KrCL86N7ywwmr1b1r3oWmqpA5qYK95PiJXpwopgxv9aLnxhn4yYUV5Pvq2gJyKiXS4xHxM86X60wO_czJDQeXn6GxhZuQQcS6ft-vcplyd43MCQs_eAS8Rs-YfSN6f-NPLFcriu-Txx-9_3L45_tvZ86qs6Sa5QYk88Knz2-BKWOgJOPDMS2OcUrYiIv4CHh9Z1IEw79j6lNCsaAf7838yhYey4FG4tcT1iIgbLA4b_lFUZtEtCVjKEfFtSA-lqFg1cyvu9-aTJbMEI-_ouVxlspZ96pmELwWKKZQZoNlJgZuPgsGRc17TvqHZK65olhrXbQEC4svozjKTd8s7RpdAetXTZbE0uPBnKzQfWz2n1BhrJKZULrDMP3RoyLNQL09G9NQrruCS_9cinYJ8mKx9aDNzKoKqM214beYSz5teWvI5DWVdRXs09GsdFfrvuc3DjsOFXaR5ADr1UtZIgVsIC8bnTUMNqKeUmW5aZiFyLngXT9LwkccLXkiIhxQj6yqVxRP2YEXjbUlnoUfOitlKYGGfsyQEiipN2tWAwE6q0rSgrmfBwXivNXZbceIqCEtvm8vXGYIVsfRH8Seqbtgo4bGqc8HhV-E84e868cLe-EmCnBQvX_IQmh4KEQ8_XOFLzfhJ-9xtohntk-UyPjohaE8N329RuRwLaMw4fqmiWyI5kwCKjiZGZ7msPJF1nZ6jEPmM8kUAOV3uPTaV35sNBqpg6noJaiYUY2-71pRUa9J6KxJZKmGZHellomrsOGy8hS0-LfXLkyRVyYGGbSc-bxYWkQXvZCk2jrXxW-ontO0IxtLdtCXRzXV3BlwgMBuMhtW4bP10mag3X5S-qOgsM4HQRiMF7gkmNPAAHua7MSKOcbUtb0EfHc5_zRL-mxREzn3pI3okuCNvxkb2krll_kSeVUHaDaPIBt2b3AZJOV0MexNlWIQOpqohrtMhEy6G7oQknt1zOlEgFkSzxc1idi3UgqdTplmUxxpocge3uXd9j-lu_M_b9COXmQmnR3CPXv_p6UrjgSbLkr4mvU-VM8_LH69K3reEL4SiT3ov1PIw8YGDeGVNFL8PzxWiAN_6eyu2b5najrwZZ40ddlrBwZVQHfL4GZ7uyG0mqGwXEsW79m76-JM9rTv12maMVURCcpQdrYj4Rns4p3u-Soq55spxo8xN0OoMUFWOIKT1LWg7-olLu2MwoWgfNE04uUPOK2w1SMaeLWMWNutOlt1tUkUFnFz447zNg1oLAVOGC911I0vSOUUrp_wQZFxaa4g98j_GqDE7Z-gTo2vssV9dnyf7XxWs572XfXqAdIiD40ZIdDVZUK45qs_BdAVug0q6MW3UoEZ_Mq7JKXBdSEoHBvoCGMB0r2X1hy5M5dCY0lBRjELCGkNVmKBr_IV2S4k6sasQrP_TznusCg_FGfe6LON0I1OwoaD6an7R7C4bh6-w1RWaS_S32T8MSVPQCKlCjAxRSQQTGHZjpTuQuM3boEo4lILjcvMUu1I7oMHNYnz8nt9tQIoL4iVtOxNDigoz7E9YM-GfIobBPXqvxH42HoejEXqPpXeLjlCiTv8irV28RU1tbSJ4ipv0eWKjFSyqD0armsy9Jl9862il-x_HbfOcw9GwSTRbYECYymRAVlyDYcNdQoXout7yLItba-Ir8lduNEN1gwRkFYkx7chVBltfYwCGsvQcl7k-_BH4RHhfqcbKgrwNlSjYdYKb_yovOvwxGuHBQNnhuYt5D7SwIwl07yHiLXDBMMNzCYTK5nW8OfVuwo4Dt3Ku25FMxFRgaHaEutrS0yDr1PQ-KsZCnAnl7BnoQnaEHfSQ-ya8uUy46kn8XQ7yRPXlyydsf3pVRL9QTMxj6cH9yA7eitygMuL9uOu4BZJ-VCbHG87Q6nPhisD764vcGfd5L25ryZywvGAg6mIOhRgl8VN0CY_hZaQImLr79XwNGrEgRStkX78T5fzrmZcg0Oi0LjCPPFmJIzwGsIkBTOi4iXaJ6Tm8jOTxj4lXn3wpGmCI0N4E_VNykU-C5qICwpp_BX_-lWY3eIR0JPSKzhGO3ARynJsKj_rCHx5_ngWrJJbq5-tU517VL3zAbLWs7lOgJ6ibTjbTCbH2JBRIAQXt03nQuOBh5joH0JmNzdauG-ClqJgT4RzvqYe8JikdtG_K0VIrq3peLn0QY0E4Qig0inbKrLCtqk_MsBelRNKroI0PnIIkNPDWooiYWyIV20ocAjJ9HCheGF_MCcQsqbc-MO0cOhFCemFw0hMe0N4lKwo386Pndi43gNswkeHVipbMtfi2t3GdOXdotLxbhi2NcNvB6uTfclrVAsxilqhNNHQdHO4whPu-FZ6v4JYrQDgs6TMiaFtMYzJb2-XdzfEB9s2vYxXMek0HYFwNQJybOF_6FPNrVSV0HQSsIcjYN-jJZeeNr6PwOkFpgzK0rXwnhtF_kDXSrL9cRKp-WzDE4wmacfxDCbn_s0z2BRHApeKAa2fY5BoLm8xXit43KyMsHTqTgCEKQuy5xmLJEH42p83GfK5SWdbTYZYRykQgrvMFsOH5Zcl7AlbLlKL2ppuihq1OV-s1TcTIfB7ZkIaoyHNRyA-t31e7iTzZQeGHRXdmz6JSguGdsBUUh_HZsZXPS5ehhEXdZqW6gWgYjKaHInXBPacP7KDXM_lU1eRnl8WE3B8jUE2HCbF9gQXp_AN_Rafw=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0d17730edaf2186d016af72463c3ac87d191848ae28cd22a27",
+              "index": 6
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794581577,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3689,
+      "prompt_tokens": 106496,
+      "total_tokens": 110185,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2175,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 106493,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.015156425,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.015156425,
+        "upstream_inference_prompt_cost": 0.013311925,
+        "upstream_inference_completions_cost": 0.0018445
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

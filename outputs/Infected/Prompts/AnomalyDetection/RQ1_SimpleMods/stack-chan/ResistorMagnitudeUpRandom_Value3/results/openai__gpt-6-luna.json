@@ -1,0 +1,243 @@
+{
+  "id": "stack-chan/ResistorMagnitudeUpRandom_Value3",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/ResistorMagnitudeUpRandom_Value3/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/ResistorMagnitudeUpRandom_Value3/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/ResistorMagnitudeUpRandom_Value3/spice.cir",
+    "chars": 69103,
+    "sha256": "9283dee60d681278b6910f83abcb7b5d41ef32d70be0c7e6dc451da7a4e8fc64"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.96,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R8\"],\n      \"pins\": [\"R8.1\", \"R8.2\", \"U1.7\", \"R15.1\", \"R15.2\"],\n      \"nets\": [\"+3V3\", \"Net-(U1-B)\", \"GND\"],\n      \"observed\": \"R8 is 2.2M, connected from +3V3 to the MAX3485 B line; R15 is 2.2k from that line to GND.\",\n      \"expected\": \"R8 should be 2.2k, as specified for the MAX3485 bias/pull network.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R8\\\")\\n      (value \\\"2.2M\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R8\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R8\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\\n      (node (ref \\\"U1\\\") (pin \\\"7\\\") (pinfunction \\\"B\\\")\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"R8 +3V3 Net-_U1-B_ 2.2Meg\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"| R6, R7, R8, R15 | 2k, 20k, 2.2k, 2.2k | Bias/pull network on the MAX3485 A/B differential lines and DE/RE enable line. |\"\n        }\n      ],\n      \"impact\": \"The 1000\u00d7 larger pull-up makes R15 dominate the B-line bias, leaving B near ground rather than at the intended bias-network level. This changes the serial bus idle bias and may reduce receiver noise margin or reliability.\",\n      \"confidence\": 0.96\n    }\n  ],\n  \"summary\": \"R8 is 2.2M in both the netlist and SPICE deck, while the specification calls for 2.2k. This substantially changes the MAX3485 B-line bias network.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.96,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "R8"
+          ],
+          "pins": [
+            "R8.1",
+            "R8.2",
+            "U1.7",
+            "R15.1",
+            "R15.2"
+          ],
+          "nets": [
+            "+3V3",
+            "Net-(U1-B)",
+            "GND"
+          ],
+          "observed": "R8 is 2.2M, connected from +3V3 to the MAX3485 B line; R15 is 2.2k from that line to GND.",
+          "expected": "R8 should be 2.2k, as specified for the MAX3485 bias/pull network.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R8\")\n      (value \"2.2M\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R8\") (pin \"1\") (pintype \"passive\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R8\") (pin \"2\") (pintype \"passive\"))\n      (node (ref \"U1\") (pin \"7\") (pinfunction \"B\")"
+            },
+            {
+              "source": "spice",
+              "quote": "R8 +3V3 Net-_U1-B_ 2.2Meg"
+            },
+            {
+              "source": "spec",
+              "quote": "| R6, R7, R8, R15 | 2k, 20k, 2.2k, 2.2k | Bias/pull network on the MAX3485 A/B differential lines and DE/RE enable line. |"
+            }
+          ],
+          "impact": "The 1000\u00d7 larger pull-up makes R15 dominate the B-line bias, leaving B near ground rather than at the intended bias-network level. This changes the serial bus idle bias and may reduce receiver noise margin or reliability.",
+          "confidence": 0.96
+        }
+      ],
+      "summary": "R8 is 2.2M in both the netlist and SPICE deck, while the specification calls for 2.2k. This substantially changes the MAX3485 B-line bias network."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Investigating component discrepancies**\n\nI need to inspect a potential anomaly with C3, which seems reversed. It\u2019s a bit puzzling since the capacitors are 100u electrolytic while the footprint is likely ceramic. I'm comparing pin orientations with others to understand better. Notably, R8\u2019s value is confusing\u20142.2M instead of the specified 2.2k. It looks like a significant mismatch in values, especially since the R8 value should align with the spec table listed as 2.2k. I need to understand the impact of this discrepancy.**Analyzing resistor discrepancies**\n\nI find it odd that R8 is listed as 2.2M, which provides negligible pull-up while R15 at 2.2k holds B low, creating a differential. The spec clearly states R8 should be 2.2k, implying a potential error affecting fail-safe polarity or bus defaults. I should report this wrong value. There might also be issues with C1-C4\u2019s footprint for 100u capacitors. Lastly, I need to ensure Q1\u2019s battery path is correct and distinguish the erroneous resistor value confidently since the spec explicitly lists 2.2k."
+  },
+  "usage": {
+    "prompt_tokens": 22514,
+    "completion_tokens": 1853,
+    "reasoning_tokens": 1317,
+    "cached_tokens": 0,
+    "total_tokens": 24367,
+    "cost_usd": 0.003740675,
+    "cost_details": {
+      "upstream_inference_cost": 0.003740675,
+      "upstream_inference_prompt_cost": 0.002814175,
+      "upstream_inference_completions_cost": 0.0009265
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:34:48.577073+00:00",
+    "ended_at": "2026-11-13T15:35:08.744138+00:00",
+    "latency_s": 20.167
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:34:48.746Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 5299,
+    "moderation_latency": null,
+    "generation_time": 20020,
+    "tokens_prompt": 17592,
+    "tokens_completion": 817,
+    "native_tokens_prompt": 22514,
+    "native_tokens_completion": 1853,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1317,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003740675,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794584088-Q3DTqEqyQ2E1nNjacZ3y",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794584088-Ywf1jTeunqGuzKEZ9tlw",
+    "upstream_id": "resp_08b07c4fc2d151bd016af72e18f0a087d183b32f30ea30273f",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_08b07c4fc2d151bd016af72e18f0a087d183b32f30ea30273f",
+        "is_byok": false,
+        "latency": 815,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003740675,
+    "cache_discount": -0.000562775,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794584088-Ywf1jTeunqGuzKEZ9tlw",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.96,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R8\"],\n      \"pins\": [\"R8.1\", \"R8.2\", \"U1.7\", \"R15.1\", \"R15.2\"],\n      \"nets\": [\"+3V3\", \"Net-(U1-B)\", \"GND\"],\n      \"observed\": \"R8 is 2.2M, connected from +3V3 to the MAX3485 B line; R15 is 2.2k from that line to GND.\",\n      \"expected\": \"R8 should be 2.2k, as specified for the MAX3485 bias/pull network.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R8\\\")\\n      (value \\\"2.2M\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R8\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R8\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\\n      (node (ref \\\"U1\\\") (pin \\\"7\\\") (pinfunction \\\"B\\\")\"\n        },\n        {\n          \"source\": \"spice\",\n          \"quote\": \"R8 +3V3 Net-_U1-B_ 2.2Meg\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"| R6, R7, R8, R15 | 2k, 20k, 2.2k, 2.2k | Bias/pull network on the MAX3485 A/B differential lines and DE/RE enable line. |\"\n        }\n      ],\n      \"impact\": \"The 1000\u00d7 larger pull-up makes R15 dominate the B-line bias, leaving B near ground rather than at the intended bias-network level. This changes the serial bus idle bias and may reduce receiver noise margin or reliability.\",\n      \"confidence\": 0.96\n    }\n  ],\n  \"summary\": \"R8 is 2.2M in both the netlist and SPICE deck, while the specification calls for 2.2k. This substantially changes the MAX3485 B-line bias network.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Investigating component discrepancies**\n\nI need to inspect a potential anomaly with C3, which seems reversed. It\u2019s a bit puzzling since the capacitors are 100u electrolytic while the footprint is likely ceramic. I'm comparing pin orientations with others to understand better. Notably, R8\u2019s value is confusing\u20142.2M instead of the specified 2.2k. It looks like a significant mismatch in values, especially since the R8 value should align with the spec table listed as 2.2k. I need to understand the impact of this discrepancy.**Analyzing resistor discrepancies**\n\nI find it odd that R8 is listed as 2.2M, which provides negligible pull-up while R15 at 2.2k holds B low, creating a differential. The spec clearly states R8 should be 2.2k, implying a potential error affecting fail-safe polarity or bus defaults. I should report this wrong value. There might also be issues with C1-C4\u2019s footprint for 100u capacitors. Lastly, I need to ensure Q1\u2019s battery path is correct and distinguish the erroneous resistor value confidently since the spec explicitly lists 2.2k.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Investigating component discrepancies**\n\nI need to inspect a potential anomaly with C3, which seems reversed. It\u2019s a bit puzzling since the capacitors are 100u electrolytic while the footprint is likely ceramic. I'm comparing pin orientations with others to understand better. Notably, R8\u2019s value is confusing\u20142.2M instead of the specified 2.2k. It looks like a significant mismatch in values, especially since the R8 value should align with the spec table listed as 2.2k. I need to understand the impact of this discrepancy.**Analyzing resistor discrepancies**\n\nI find it odd that R8 is listed as 2.2M, which provides negligible pull-up while R15 at 2.2k holds B low, creating a differential. The spec clearly states R8 should be 2.2k, implying a potential error affecting fail-safe polarity or bus defaults. I should report this wrong value. There might also be issues with C1-C4\u2019s footprint for 100u capacitors. Lastly, I need to ensure Q1\u2019s battery path is correct and distinguish the erroneous resistor value confidently since the spec explicitly lists 2.2k.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y4ieNdAdDpUWx-zMZWG_uBPEf5S3UnaXphKtp-DTuBHREe2BhPqXduv7jJqqgh2Hpb2GI3g2rvt51VhSZAl3zmrrDJejhxHDTmLHC6vI2rQIVDSKs7yjj3IMuMC1CggXAZUnerjmL5xG_2hQB9SWEFj3696uqlgtqOuhuMK9fXIKPm8SSZPVEkGqcn1SuDJMdsTwKUFpIODD2a84kA26-I4iECIuDtuITJWhpTLRNIu9bXIUp3pmwZW_7vvNMuRKjYQ87seJJJV8MDNX8jVScDN4UVYCA2l5EIdNiLGXOTDzrObteiFBt-RwfUU6KSeP7SX45aj0Bzl0qP2nnahjzcYE1giUmyOVYuhIaoVX80pcVdgvOezMVAPPS0OduFk_sbEhuudQowdgBV7ldl3Gc-tG7uJFJY8BQ4UW8W1ZK-3XPqTk459dxz8j6ZXVMKeyxaj3uho4xUuhYCSsjD1Uy3sm2hLmicPdjfFkM4pYLMYQ7Hmct8VRuiCOEIs-ZGdFhAEtHiS2SzvoWMAfZJ8NxD9QgO-I57ebiSPw6lqn6E9rGQCofB4z_m7xOiVzmVBLvIvbZzoMFXhyTnkwpMpAh8Lp4fuFavFvoL4HNUrx4DlGJKmWc0e8w2MMn3C4jOEUHvGYsbEboetZW7uzSEu1EPUfGKE7d6SC1gompcsH27MZV1_kRgEjpHchPswAFUdIa3KtHoCNtxdJNPcYecp2qfTqt98yMb25SXgxGxglv8r9lrzVo1WdO8KDsi0LHP1oonOstApEiPgvI-Pn8aa3R3VjW2VcgZB53jl854LgcgB1PXkG87v1SpB5qvanCJ5wY14D70jan8prk64SzbCFAsA5tI43REVsVGlcw3V7i2dOOcZM4TalZOhaZ_MdRLzvvnu2t2YUMMr3OElcto3ZDq_ZMdGkUQ3b1IpYxH5rLyyW9MKbLTbQ8WlC6LLHWz_fJQYRXNAwT6CfjAI0jOdbFX6RqwGAWW6ZM9s6j3XOEGFN2vquvJnxo-dm4hszzGuE_ch52q0XQIL2x5maiQOCzRhkrDym9QdAaaLuweb64B9gEx3KzncjphQHSFd_5zdLHfMbmoN7-D-DjTP12lO3NJTCsWuCyGkB6ER65kp1U17d5vgw4ysNI2tB0wOKdxqfjGhaIiMhf_C8g6K-3FC4_7qjqqz0xhMZpd87M0v3IqtB6O09GeGCSLAoJt60wgL1tDre6-9X5vDY5IsUq_iqyCEpyopuebT8siZdcFjklH5gRurlR6FTJ0Sepd1g0XmEIcBza2YbXmOUSBcRGH8qsezJcVnCGm3rU2UjnoLGGMAt-fLktLn9CYQLHFQKcEvdGcqoHRScti1N146YyLRd6MWkcPoXfXF3f-lkuybjCvFHkvEM8Emjbs31gXB89cNbAM_EQnC61nz1LDe8JP5o2AqPD6EsCVYEpRSQrqsHY54MmsnJ5qEUQG6TH7FKNHzZk3dP6XeDB232Ef3_u8DsbROj8IXGXu2DFZQ6WVSul3NZ1kxehxHQ7BkO3FvEVuDvS6ZdaVC2mj9nqgiolciKxGigDXuMJvWABudeAJcPRS76oFB5Tf3896qKWsvNF2l3zbvsgTQTYaRaDqQDRSYjtfoDSvJkPcYpxmEB4JHCBvMhHt4Re6bn8AKZmuviVl2ZpGszEJkjAkE72uwtpyvQrkJmIa8Zx8kcmRZwy6JuqLDPnOHb_1g1GzBp812Z-Xws0as6qbByw9hinvV3jD39g9eWrf0NK2Y-rkvqGsRC-5VkRdlt6Gb0m-_btzF7n-rGEzEGvGnEhXWcStx9xpJLl7MMYnkdgxmxQfv8HAKhfUFmpaves2UEML2f8LHxPgwAxkHOD_77LPKF5HYCEjxk-SbkPUJ-KNi5w2VrMG8AQmQX0UK20XBYul66RLEByOT0CpavvbbytmSQ9D9_uhzf27FLa8RWzC3g4HrwW4LTCRxzLjdXxDzR9Xe0WS-t6ywe41qfBwZpNije5uNa2PRTMbGD03bRXmaDk7LNTFVxHE2gkTX7iT5DdIJIQsDOb04dWDGxLO94G2jZqwUxi1_n4h1D91sAXoBTHXm4uIUKsv7hr1_GbZeDagpROsqDDRndXjUnNpaEb_e3Ab2BVTET0T_Y3jHs4zOa52f1mn8B8dyS13MaQphbGiD7Pob3NpuyySRiZcUGRo8Rw2A6W9lk4wF2BZlN04bk0hVwH2mk3AwbezQgROms_NMqs104WmpIMC1DZ50hDGIVSThAgcIQlcn-dlWwVGY1rxjXc-QsWhROD8TogV7nPNFfv5E5UTeqKcqmbibUcWk3mgXAnsqOL4adhAtmIsiBKPlQtfCbu4QLW2ylNlCpmpd-yWoXGxR_QMOXz3L9az4pBALW4vLDJF4XlisfC9hs60jFKRibzN3vZwcFKssTl0pHoI-CbUlwIEyzEaHalgi2dA4Mixsb-V1rUDGDlkczCY-HzCloI7vbXrfIS1AvH-LHfNEfq4RrGLOp42sOiDYTSxSTM07XMn6YJmiASMkPOEBirvdpH4CftLQQ1o8C-cue4K2TF8LxLcxr0NfRveLtRmLxhRnJcAOhgdaLullB-V2ebS44Vj0E-oL6k5d1ww4NW5CdVl8tDOAik1_jNpUgrJZNL-7J6ppS27WIROUsqeG9mKLfPAjoSvdCostJPXgPHmvRovgb_npuDXfV1npdPd-XiUPvpx4sFmP20Mtk46429Xgg0vvDg_N7JPrCsc6w5956AFWTEfMPrvzSGpoT1ZkVA4MDt4MXl9EvfpEHQ3e5xabRLDI4ytjtlicYY4dkGg6lf9vbp32BwWtrjBJk17ydhVIh6BgK4Hqd4pcWEBMHcBoib4wZSN2Ryfxb8TOWjEefrP-KdRWLQnkyN1SP9hEUehX43FFPdkV0ViZm3K34fiFndMP3D4SEkUElPNA_c438lZNJgxZ9Y61g1gb5s5DpqPnAFfSFcmfDIpZv43jaLqOgd4jle3eYzokMgljbeIAq8coJcvLtZUQDB-l93wh2Ab9mKwyDhgpITALLIF4n66a-ZoshdqKbvFuuTNcuNcfcmKMxwl4GxQcvUX6bh2OkQ3iBpK9hrjeT7_ESpdCMzgRciShKcSoQB3sWmsNcVamRsQuvNqNFKLJNEOW67l0nN5Tyj0JHZQuY0Q7VarqUvAOWgYGcZfEijIGogMtC1bglh34DOxWXF_GfWLQ4D8LH1zx4PsAfIIDeMNI0SBzuyzfCG_yfb8Afd4THKPmM8Ssi50eZdpbR9GNZHlycu_mazfVE9xsyVcnK09NL9ZsG0sMaQMvlpLRdHNhs0RzQAnnfmG70HRDijWiH2bQzYuvCMY-7yZE__vLC8Js7-T0nLjfdYQgCnZZST37LD2VBvzHrgnGZzMSWiVg6BX1JD-whNgHPdfsXGJko3WG4YEC5mKVk7Z4CPAZZv24Q2jtZh4PkZ-YcJUwiIoAEbsCKhfB0ZInHdE6ITh3QB_GzZzDLtZXp-spF8dbfWFLd7NzRnsQeQdcgDE7MV-D-qxYmv9md946De29cqiPtwtn7NZAvLveW8XWNN1oyyxm_a-Toa8GtjnHxi3tTdmYm0Rqf4bsspuc9lVOuDTWs4vC1pD4JmLELZIjA9sp_--jMVPBVJvP_oGkBXdUhm1voZ0dajiknGIbS6J-EtgbPJ5cKRBaMMpJnpjOR2sVNatEZP8aP3ICNlt-7eWvFa10BF1ZWXmw4w4PKES0krDPPfIeTtHeTjFuZbCPdg9gsv8GJU4Klxmzjp8exlFxMkj7wtRlSaLIPMVo8Krlhogif_vNf1hHCExvqCkX1D8tvZwl3tGVhczIloK9_h1VzY9C0vZI4t1Kv5S0Xes3dRNtjR4cy7eoj-JcBNlvAYA9L77GqUbgo9Ru80LeZKjaqZ-2hyRBqQKp7olqUGB1hh7m73kny9x-rqPop_MajyJiMM3JgWtgWpJnWeEnrvgrtdCXkVvXV7qcEc7qBMHCp3_yrcJarUblYlxd7U7flzaOx1dG6NkqUIQl9YrNjWXhS5Mm5CWKHaIrmLIhKaKNUnl3b_5qrJ-66Ngld0puJAADz0DNPhO8xdpR7HLXcCrorkVaXV3PdW9TXmnNO7SVK3VAxlq39B2YTFyIj7NPED52kC_iw5pJtTYQLZpHe_aDlsUuvv9PIeslBMkng6rk466GXlUQIrM9kKgZQOibUszsV6LpH9JN77jfJDcRtxAwS0tJsLqnelycjDptIyLKTGDdkGfPtLLE_1zkQYeNDkbNKI4bBLA9EN1S12hpr2-c15JHv8FQBZXJDYLlwuDmaw_BkBtjf8DL1OPVkIF2xmV0XIVWafHvi2SBmjgMeIiQdgVccWpLnFMT_oUvTT27n7lHYvKuqRPJF0lMrn8k8OpBEi2eTatzm9rDc4CG-db6nwt_f9XenTM0Z_6begfaHteoPB8hsLGyawaLbqejtvwMmya9gf2D9XU8ulDqEaCG88kdiu3x0fGVobdRXmV28n9eVHBdOhNXbGwmAUzQWlh2XAUPmtQP_SGW2KsjV8oGMoLqVBzIRBI8GGHtinrWcvaRnfOXqrkN5_qZanKH1PwujfA3ATqGkTCzZTGmtXFoxjylMvRA2cy-fQkYhCwhaAzC5mrpZfNkEnXKK6tJjI692LjYqiASPuR8pmhMoEom3skL3Otg4nKBDPieFoenEDIY7qsLKPfs8m29H3W3ooVgew6GXmVJbAPC7AX7qnU5Lqcf3ZySJY_TfMewHWjIbM0aFxaP0B0gG1L2lMIRBVj1BKczje9tD3hNJE5gNgytyoY-h760JyryNKKMQOCe4vKV3MTS6BF9V6TA1JZuxUortPUEZUnKtY3a3EfnyZABjdlT4omjzNAnxzkUm5ZrAWoSs0MwpzRyZgkiMXrmAbK7zZZI4fkhueZPsrtvVe2xEF6al-FAjCiqNaQY_kehyH-WgH0ekR9TQn7hXsAX9WUnkBArEBw6h1-jwpOWDg2lnyRelTkYB9J6A1LzN7E_77GmDqe1eEBuQk8iI1rmX1Lx1VTCmCpAlkt65BrmhFgh18ayT4WK8D6bE0RGfL4V0B-1fyRA5XwrFhwdyazYjjsIHY_tc07dkqkJ_18Y-4zbSrXANbI1YvZvWpF_e3omMrqK_ifAQKtMuKYdxJXHTGaohq_i44SgAj9ZA1tp8qVlIaDUVoRE9TtZnExsSNWMS5XRK01ChzJg5FQzcRZMvZHSUCYDmAYV-wrFUf8cEocRFb4Xkr3nAZYbjLga8urhGJNceZYvRA3HvdgJ0SDjfb-gShHnrxP9EwjRRofllL2hq2Ha0kQEwwK-iiU53w_iXm2bIfdKBafVbzao6q9mzO9C2nf3uFCgz2XiJWJ9lYUeXdn85JkL4XTW-6Bid5WBflCt1qy0QyI9ZYFrHvxCY8aN2v8CC-uSuDbAjhoKnhLfzAd5ZP0UN-j4WOF0Lbud7YuGM2t9Ef0AxFHNSSdGpkIswylH4FXT5x-ghna4r53AZCua12MX0kaWGgw_GJVvvcC08_K_Ai3UO7e7Q7wZAN8pVaX06IHBn9POLQA60HELT4OcICicl7eJtFJ-_zd2NkLBTrXXMzpUQ1zpGvcTGSt5FdrZxo_JCvvNahiZisBHiiZmBAPmS-JEgiAXiiLl7u3JgBMZwbIHfkIqC_6FsyewXRjtKHB0r4vVAhuncF0ZnUPFGEtIUdhSmTbPW_tyoaLKLr_up6Hbl1x7L8Q9ksM1sNpM0wG4C2QLlNUea04QLSDSfPytpThi6fqcWEGqLkSPahgnEOGkoISS_cmTsEREZbq-y24HRiKobmWio9oXWvjQusCm6E5i2mn7ggNhpwvhoWO8TPxMdg3ovziLBy_cdVHLaY6NjnzILg13yRJRdMbn8IU_HeVvmpI3oaqclxTOkjBCzNdWu7JKa01xs0bss3kdvGStYPVbmGyuO_lwulntEUietTHxXkA_sH2KzbRYzTMErdnWHjyFtVIh58FuOGbnPr8NXCt5HG-jRL3eUfSZ-69vgFtjDHFyeLwSj5fV4YF_uMYDalwjZkWUCad1F4qu0cx3Sk5pMLh6Au1Y--eki4MFqQLtrHMWyld95hYuQ2LsBndUKJN9uui-H7Qf0KgYfR4kLkyC0lN6ZPHnJOfj9JT4XhZTp2LFKWwmVyxoWoGQVJgPggPJMzPPKr2IieDoOfhe0BCw_N5l8zBOoih5brP3SAkwi-x0PLjgvWrdjIml1glIkP3qr_Eh7-tYpS8ryFw_WUcGH0C9y9vSniTvyy7hLSZEIL6EQ8nKMtLrmZA6dAiRuPmwI50jebOgv4lqJeuT-GarWjtKZ0T6yJsQshpFprkV_iJvGPopSD_OWVnSzWcfhYrKu_DgFpNE-LCJqRPiK9dIh0_qXH1fzU3cV-vK38PnGfMvNbzTCN5GhNtSfOF10gxkvw50S4QifX5O4_H8LgxLj6jkKg_kqkAkIW1VzypUKgQIjLdFAsO5I0uC6FW42p78O_CgE0wGD4n4XI98-4k-DKq3PkVHhIlgTZ6wvimNvjdfc5FOb_Ww0ONeTcQSEEWmB5i2ogEJc4KD6kCFZ_joKc_wExluu5CUCsNmkHRjxjxEXky1mkV0A2v4_U1be_2MY7SsLnK5IPYwWQHH9f_txbmb7oSSV0cbWJEb58tPvVU4ItX40nFb6q2da_8r5uoGwPlHxDeDDqscUVlohJ5oU-Gh0o79u_go_PJp0pNQcLpE7M-bb3HbMtqTO2_eXgViZbE0FVm2Zu2LYc0g4wLQVV3UrCWPBpB_G3-w1IdrlH8DuvzIAk3lB3Ui3xGr5EAqXIr-WLHloFJoxbNhWLLisNzvz34SUuXnQRUvItbjI3wFfydYSLFwADylxKNogi5urVx9Z3SYwWxz3sFzNLZ8g2P2lHV8.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_08b07c4fc2d151bd016af72e199bd087d1ad654ea8c87e630a",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y4lcochVQYGQM5N-UBd5rNyB3wO5-_lq7B9x8boQj7aF0bWV5gF0wzRBEBctLYjNhj5PTwzTTZcX-grn7Us1xkOnvG-zjVUgdnIaBsjSnaoHFy6O7jHXN25DWj1Toq8dF7-c_ab3H4oagE4bW-PfwEGXoiQDB2TxfWDcWyJ6stYTWCMkoTCTJJiMw8-_FA6c_Vg0cZaCmvNpXhp17keAi3cbxPbnNk4Me-2Rd-XHx8YSEyDqBFDByz2FV5-CXgEHVkywcw3iNMNtRHZ863VAUGRTq88yTmxk1vHFj5iOS05d1f8ikwJQVXPtqxyco710AAbI8xaSJdjAzvtSYwWBauqLZm_3ueCa4bxFqBQeydq3rhMZXMIastZXbvtyjCbxL5hi8idQ88y2PiJUtC6vKCEZXrr_RdhvLZHCK4Q5wfCdYTP3jBctIhkOEQkD1EM0pDmbfmnsj6ch-YrhfiSoS8Gl2koAiGgwKz06EL2bJeAZbJSwKvMh6EGxFVcyb3kdjmEZUfCuuGZ0rceDVfuURdXq4l6bzaqzc1-6nOyfwXPML8SGJadMxKXAj252RHBQze8siPcl7eV0jspU5F9rt9Wsi0VV5AiC6rdc3eFaz7pO2PNbEc5fIphLhFgHEBLv4u259Dsd2zzhvf7_IAE3MydjJYSlVlA5UXrmPeOFRCZ7F_y-gMe2gvxUnPw8Pkq1ATqblGUzINlTMBzBILCjiFoRrYG6WlgpEKCJeqwFX5Rl6SrP2Ow0SpjXrpbaZsnDpexz3DXq-CmOwMh7KqbOwXLiDjf_4sMEcaoSA9kOv6BlXsnJFzhqJU3N9oEwyXpnYvK4V639CqC6B2aBXJtyckhGvANUWWkhI4pK_sAReJvM3PvTFLddDyKZxv5DfKjCVAD4g5OkMOiTTIiwtzcTBB5SWxT09Qk0XTMcjhoIvz0SU-Cvg-kyXfbRfZI_1QgvKjMJ09dKVFiHGPuzYcwkxQFpE8Ra8lRKLqdMZJZCsFATQRAEKCtdQj5J46Fw_pBKf4Q51ZuRgY0vUzqAgUDFJFehWkvr1uhioUAXenjNNxUc1PFBYwYkQJfB8KuB6CbwqAaK1PvYJDrv3zFiDST7AhLsu5FJANv_fBjU4apydOJV-DLp98Npqc-7wifQF9vpx5cieMIsRbZjMCDF6pXsmThZN-E-wIOI97mPBJfYxzrP6XEBFHQa4ia3Dfg3Loa-6H273q9uOm51ZdZ4X2AYQRRNvSSdVGBl-7FAw3jB75ZeT_gY0LdScULzc9eLgGos01_iECBkQOLWaYq9S1S0VxrfspRzNNuiEzvzzbhQTO9hOXphfwGJ8jFpc21eoBV-j5bURJp6Ph1XGY6TLTm933u66Dy0JrOoQKw2azHsLBFWkhe5aK7GiW_4qlOlWaizOo4z6JC8vRF0sf1OH1kKOmS_d5vdZC6vZh61bjuNVd2JW63of6hUATifpx4KinaC_cNsqO92PM4OlFL3QfZKycwoJWXWhR5bPTm00TNfqFPNIMQVMGMX0YkKHiM_WdEKUQP5VXc6J-XzuCgukb1WdKxwzKVezZmQosy8ntX6jJBQlVTFvhATwU9Mh37ugtp7KRGKnPSEQlvPCLEXKKTqCv9YYgrVIls5bjzxjQ8PETHxHSiiVIG2TrxQ0PMwSjVDjRBMpEB3-9ULfdbmD4d6XuYBLn9d10QXzj31xNB7AhmfygMINZXXPhgC_ZYuKRmpd-xw_SbHkCvTqEaTiHkVJ1F0jE4fJ_ddJ7k6rszyTcsM-px-HS0AXxinhWnA9DWKHvIjaMp4UnpymqCWmPk1MOLNE1bkkMRrZczbvtwTPe32LkQcUo_0JtQzvcaLS-AFIwN7Cu0AGZv6asfOYdpvzgEenabdPA6PcjtJxb-Cd7qQLJi-kwEwbGmpwux0iEBTFwdHSrKnl0_ft7j5YIcD3-jTsoJizDcVZooCYaqx91yqyubl3nd12QAW3AKdR6x24CDZJJQaUZxPdALcJEKUPxlyyshfnPIwb4lOjpTyc4kxcejiMpme2ECCnRyJPhHUP5lyWkqEhNOP9oAvGR1-cH7ZREtm3iXqNs_YBezXjr40xFK_saMo52VhuD7TwTrW0T-pU4AwxgVYR4dBCqhEqXySQiwn5c3BSrbgElReKNSjrNkgzm53u8kNw_lT0JMr9k2aBPov1553TJVBz_qNyZgg4QHAUiWCJUlQRN6RvvWlm1S-dIZ-czfjeFTX1h7ZNgZwCw6IiJJEqTH7YZuZz0ijN0Mz58iEPOwm-ehEJ0zgh4zBlOxi19gM38LxAfCAPzrUuzvTgipL73rjTGO1dLBACtZKOg3CA9If4zNB_LBz1XQJLQb_aY0QUY80QeDENmc-wG_eMC6Iggi_uOaJNyStsZnLRWBjlWty0s-EN4gm6vnOIhkfbA3bxuV7sHLpVj7C1gbjxmt8IUJ_Mg-uciUvK-nJnpRhldjjnPVVY89c3aPRgclx0M2uC4W3sZTOSXDueyJonu98W6b0bik_4yU5tGZu0IcOS_pIlBU1DZFfe_cCROe9YCUHf920ceb2bYYfk1IaDwVXsgzuw4SHhsB1kXC9UYCoglJJamu9q-TMHEAxMbTjIdBibiJXl-z16_rPx5J5jp-jrDCRTOzT71d9Rgk0nUCzUGythsiCb56G0VEKIgLXCsxLiLalHyLkQgUi78RUtWb_Z_lflly9K-kZrQ6AjoDDfd7ocI1iHVmyczHsqpTJFXAG6Ux-OvkTOcsrF2hu-1H4yUDumqFcpZRbPS2nAFezmuJY4fIxLNrZvY6HLoafBfmIOHa831a0O8xrKVNoViYaK6Zzekx-5E8GT8fv-DmCDytQEQcHsBfZ9OhVuTPrUpw0wboIA2IOR6I2y1KBrsKd311mcrubpAGxTu2OMtONC7X-8lqgCmKuYPwFS58x4cKecSIBSKOT7K2cOvCyOBAX9omwVGtIo_dEFYfR3cts2U_NSm6lohwkbyZuJS7efsiVQHxg05isvAGRfu5cmYZVssXSZURQ02CTDyzF9AwB_ak1zO-iffgauAqkVhPbAa04K9CvO4r4NRD0P2ywatBh2am0hpu7iPYZ_YcMsghYv9mH2N5rXTgJjHKZGAXD81O7EVCC9UkwejpkEvdMeYHn68Oik1MWBXJCelJEnbvTvuNWnFLihSgN2cVoJqC3ETMUaZaZFAjiB8BS39ZUCvL3HCfj6pKmmKLx_UBmF4UByBQ5KtqplMasLnDRxX2V_CtFUkoMHzCpChw4o9ey44xOAF_IIHzwyuVor6p5Q6TGjXQ2kF3bpu2JSO8dxDGDeo3Bb1GBCV-ygKdjOumUX1pxfJNl2yUpMn7dpaRzsoXWITwn56CcRRCy97-TzKJD0HU2g8LXoEjPs1_LkutzeVBhmipksdcahJSqGBGED-pcTdDolc768NXYw8dM1goZWa3jLnz0HVarnAQoHlgXvbiNNgnU6IYtqe07qVxtQgauA_EawVqYYKzn87AQNb7gfnoi__pG-9qpjn2h0IavKEOjYDHfIDkFzs-EhYvd8uzxpLTvfSkwzH-umkuhms0GZBzlNr-cJ5G-Gm5JU8PuOuXWDCFvmKVqf6c9-SomhGWolzoyN6mhj00KTX5ScZICZCzmMrQs1BUx-oF7AcsyFRRHWm_4NHi__u3_AivUkUzy3H2aunkActDVOrtEOprrfMKB4a1h9WcFI8rXmb5-3EbjrNSlHIU9F3LDLnUIG6jHezyJas1d2FcXTvuF0-NM3I2lcRrWB1QEFCXfqusRlto5IADgQDl2Cg1aN02XUxxegXyFn4qpyQ7tWWjGVbp8v27NxqJokPL2ouOT_lF_cTRQ3MkcUzKZvNoJk5qoI5-AmbSlKo8QIlYHs-XXmeCcxTzJowcZ0qHjT3VsZb_BR3-x3CLbhWHDU0QcB5K_8IgUKNVO3dldXw8scIs1hGu5TRCj09wev4avDctfEUFg86Tjt0HEHT5TKbXb5M-Bo5ZGSaVQFFZcUeO07VdZJ4KcVGYu2sMe8nXoY3I2XIHxurFk5a4Un8Cl42L_1WRX8V3r7u26gQMDik91UcMvisuwFiZRdTkfKipyB9YBizIgCYWowVz_rPHydZQaY6xVQ3l9u5kNdeKDj_0z5WXjOSw9gfDEzakyLFqod0jh2nXUorMVKe8emX0Kvf3y6IFJz4GtyNQrnhPBee2LZdvSd7nfOGqK3XYfFr6LcF2WDYJEl0e6g9DW6xGq_CCZVI_hIxDt7naQx2r4AomyxikmRXs4YP7uqXDj_CozSnCCXXYu0dyINxZ-JaTAuTsFFbHO2BHF8le_H5YFwB33OM44I_-sO2a0oWJ0B0DUeK_lTF_4oXz3pTF3OtIhs2JfWX4-slq8RbNzxgiqt3cY-6bdAJRI_Nk3OsaMOaeg1rO99U3Eeg6qQhpyLGlEdcnNZC4hFCRHjHH4LzIYbyyn0Zx9eFOf5Nqt9dQYB6SoHncoBly66id5fxJZUpQFIuUXHLmBXydJwtb6JfRFOknOBNp1qxb0m1vIn8gL_9n0eFW1XcXiGJgPYttcNEw-C4xNGKo88VJ7Nwx-nLWCDfAEeeEbK799rvzns9ieAENPrYT2RdUj9k69z5m21k-6dEpdIqypBrk4to_m1LCS-Vkn6LVLAnQELNrNP3ZBN3NrGKBqKPGHtq8oGTGZDgI3KXbD8Y2rrk_v_LT_3CQmWa4vFYCyBHfBl62xgHUGw6iuB6lU3QNqSrslAYusKtVhiGmX1NPyNohbfKDd0-y3BZwHPhrSKsZpcnihW53O91MlLNVQ0l21tkUCtRUgBNT6RYwisoJ_ak4jVivMbAIQZcvZeyWzFbrwoiNxVVe8W1KC0c-r-NBt-71SwypaoXvrYIURbtr5MXv2jIv97BQ-AAX3JBvAdSdWkdB2JyrPiayWD4XNQ_HgAaGuK8Sy3h0g4Ij3BKWf-BUAx77ceCe8iZfLxrv0T134nT7fVq6OFCtHJkyq5tgomdfvea5iMZcSAhcdKqVqKyWGrg4PtS5L2plxVvuks_MOxdhSVbRlsSqxYR9E9vNHB_ziPgFvYXmPPPaqsDsdbH4XMvnZxAbJq1qCYlPa5w5j2E0NFJ8VI9xW65RXrxwRYqlQV5Kgt0r3qai5ObIiIALICGC2yCAf7Ii1VEBAiVlS5IGKmF4Yjg9z2v4Te0LjL8n77wh3LCsBe11APhAR0ukXHGObG3WLhby1y78BU3-ZeU03TZFwvHO8w4e5_jWtOpg9sl1iTBO9VXsI3QqG9Gy32jQ1aq_sT9PKEv0nZF78k5m6fuwaGCpqxQqyrEaBBxawbppZeUBIQaXEpoePb236INwWcjqI2ayx-7Vi9v2esZ1OlGN5M4eVctjF5Qjtklpw0kROhY3agM12Mbhgb4Jn3okmNQDpFIgns54LYlyc2evPrNYfkhUoVSaDtQiI4WfTuw5nGXqYol3tvehriW6z6THJEP0eUhFk0jmBn4H0N2gS2c33sk6uWzr-I8M8EfRE260rRFuM0m_f7HEExHpXF0otZi6Ags08JLRvAjvyvyPa833F7xOLLlIdKfKpYUpdiFEoZ6Rs-9uMn516rGx0nvMlA3jn5X49Ie_QiTm2qUDXWd_u8JchnVqKFRN_qZpDTZB_XXkxNDGr2O2aTr8safBZubpt-tqVnQ8rxIyld1m2fGtmMDkFat_2p3uWpz4e0OoIosdLrH8E7jbo0-50Eeci36foKZa3ZT3q2JOPnEvhx9huaEeQzBJAUI9zctWkd3hH3uB7MQZUXxVMyGCfnRLKvZrs9qK_YTcooFDSFg3v7-WSlWAOTiu-0eeMsWWbmzvBWCJ5smXCWOCnh7iut0Yaf2TNjpHsCtGvEtXj3ixlwxERaRegGyBQDnj_M3NT-EaA9ePmAWX1qz5A-ldL5CrMUN_oWF3b0rYgMPOlP8kMIGlFqWHpgDzesK694WJO1XkuUBXwzlMrKxcujyV2tK_REBhcOu4wtPbswXKrftJqVwCOA0hm_z7J_RnqLYWdRTWKC1qDV-VnwvMoVnVe8WQ6Ch7y5JMJXelEgyi5YKnj9yKV4RKH0q1TxGyl0Y7kc68TXG1P4fTSIwC3goNSbSe8HC3nuM4H-941H2Mk5NPdTzer_8a-5J19VT1JFnRYJo77GstHWDQ2ML4XVdJxXmGcrP_RaaSk5bIYNFTSbFyOMcEHD-totHtxroX6tlbzSdTrUERO4wdkphRBkABwQGyD9vG0PQJjEk6QmFRL1vyB1fTxMDYevKRyGmRTXm0IvusW2CDrzrqt1EKQYfvvkB0GAaEjcLp6-eZ4MeXK2PAngMADdOs5tH-hLh19v-X2Zbl-dl73w1EHBVSE05hfRZ7SGnrHEQdQhgfDIRXdovFYQ0uEU4mEPELF6ys61HWELrih08m4KYR5oHV529hnWz807F67xt596GOLrnfqNHK1qYJB8RwssQzDsHP9r6thfSZXE-XMw7uICBz2vpXXyVFbhc03RDcbMen-7e11wIRTPow6vEhn_c1lxVgIm_EDQ1iMvpl1saVQMf8oCD9lq8wRMMea73M6T_QWCamk3U8YP6KDCY0pbLkksvdehTo2UAyRLnhhiTTuTtG6eGyiF48oUfKe5SiX2Yt8N1OebOOsoEglN0uBIeu1rzFo2qCIc-KaP92B4IXjG9Y31fL0Hf5V8P0tzr6Pu-79RG-akdFqJh49L-dGdJSkWjUeSNwJNh0e9H2OnvCmxr44n3wzfFSkxGc2k_T6rEkyzlQRCfskgabExlmUEVI6MLE3flLECiSn6ULxzxu1AmmRbnE1RiWQvd7r2DWE2qY3l9o_JVOw1zY7YMFhl24HsRffLticMIDJ5Vn_amsBFvo7LXxU-6ANAp5sjt_BolTDYBmqJjI8s5GlIriGlZ_DnCR_TksKpdSUOQdYdbz0c47zNvilGXnmj6BvmefafBsNAy6qU4F8Ri489vBJRjdayUzKOlWxG8sgDj4sXhzoKOh9ZxkHxeEIGa46X01ucs33_wYsaw10FPSrc0oJZiopMR-cG9K6xckOdYdDzPAxbUNFUUGuauPZBEtDA-t0zJVhO_pOmr_FrrOU_9kH0FU.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_08b07c4fc2d151bd016af72e2208e887d190611638fc146992",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing resistor values**\n\nI\u2019m recognizing that R8 is 2.2M, which could potentially be an intentional choice. It seems there isn't an assembly value in the schematic, which might suggest some unusual behavior affecting B voltage or reference state. The specs mention resistor values with confidence at .94. I could also look into how the capability of the serial bus might be influenced, particularly regarding bias networks and receiver thresholds, but I wouldn\u2019t claim a guaranteed failure from this.",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y4pKp9dPjR4S4wy6ZMKjrXqxdmBAeiwbQsmc9aB3JNkimVTOmbdBzr0y75b3biruhoJKXpYb4XaU_JWhze2ypTriDqNCoI_FNmd1_ojjXzByHGZ3IAH32awVAYkaXKLVXERjvm-DtPZuwq0szXd-H1C9nPjZP2BUk9P70vUzQT_lYgDm0XeapHDfYdfRaFeTNxYJgLiDBfqnAMYl0V3w_lZWnH_SUPaoqXvOjiBP3vLvsnGi9FcLISl0xGv3VG-fBUPuwbps1BuoU0tfJYxZCrimh_ihV2GOwRYJ0U6El1Lu84yGqhWddp4R8mQQE6BaBV4zUeRmjrMJ5W7LBLgufzQyLF_1TQcar5gwaRVJ4DVdcdemJ8IycKGmmo0yOwXRuzfSYEZUtb0LW0A0a6NEfOIjuYg48F-I1lW6ezhmsMqfvEQr0Uur5NExtxO4g0Oa1DtSgwiOUM1D9gvMLxJu0ULMtj18lR-XtzahhCQ3_EbLCF507rxET3YmE2M4s_U1LJlzOgNRfWeAEdWQnOpm3fJC6oJsaf9vmIbKScxYf5ELaXR9Z0VEztz8MB1XWQvnQ8q6waHGYUH9xI9mdZkFKZ4RKJUt36CqxLwRA5xk0PEnLpIgxKL6iuQvVhiNKpKN2VrhAqj-Z3lPpUYZI_Q7_qmSp8CsUNtIBudjaVxD1vo2GQReQ1sg7IkTKZXPpNNiksxxhbcQOLckKbwSBEE3SCAJs5xami7EwH6fC7sa3BWGzYaS9IFfj9Fsbcpenecv-GvhukPAlQBxJgq-0V9DJgT4P--dDn9vBo3yFPvln49c1R9Iu6pUz1qmfIOyXkS6PQITINHBpF6Ccz3gLfcbUvqYOJ70lmuv5w1gGNeqrqk7VW2QXL75RZM0-LOSJraX1XtcKujAYWyKDgiGwowIcsv0TkqhSRfgUXsorIt69z7mrTR4QA1RbLxbO5OUjmFXTeuHz9zB6n3fNom05XQRA0DZKJYQSWMl3sA4Ioak9d4mkrSxBdqhennX4OEcyO3fZ-3bDJXSPU3plDHlbSUtVsrkdQo17nINQ6kgczshkO2ksqFWBMuPeFO7ypRlAkBT-t9jUWrQUnCykp2eQatN86pJqcucOXozkkpP9C0ED4iWw5DSMwzZIXuyZOCfP7XJZc9LuOJ966homK__TqBRJKL769bbZhh0UPXGcxiNsplSaQZ23LEL5dgj5FC-hnj-qsGENuoHBDHaiEVvZp4wpOUzhf-lysSuOXeILYgLWseTXyqgCbqmBxJ9lIh_PgcgzEnYARSjuXDg1022GgjOv_t8OjY8jrN4VDpTp61upbhg_4CPxcqj9MBzxiUbvUmRKBx1JGrUcNZzf8lPgrxIcD3d-ujFN86fp42r2FepYnPQ_NmRZCEbEPr8XlERMkaWCfFmcZmo0GtKOyntWIKvAWgv6dkSefoIrjwSLjEo5AxRKj2pHHP4Dmy1WB5j3QCFWRBy0SRogdj8Rj7r9Xt8Dx-DTbA0aOBC4OT2I08j4rOoNSIEaU-o-G__R0iqdmLRLwhP5A89BBQSkG7YK1J3URl1vr7qPBZmmqwRG0XdyWq5XYhiWpYG3dnyecMkLF6qpfghd8qT6KfBwEbW1cwkIFTKzxiKd-K2ID_0CUwyrnPWnXdHSH5kQK9suCedkot1fM7XOBw27myFAviBotgUR6xd2ab85uEwpnmqbdTc5s8pVjCZ30buYAgvmkia-dJaunHWadnVcaC5fBz4vf2iJMKS4zv7VYUUNx4ZVlQBFYihwlmIy4DYkWLiDol7VPttSJgxGPAFWZ-ZdGz0v0jUBGFBfHDimrHgV_hoAMRxY-fresSpsr1oovyGdvrgEfzZxBLfu5tRQmv5Jh6Egf1p_c468c4SKCCIe-0HC4JFWcTSg-xQsiIkQPaa4f9qvLZmY6eP6z-5FaojS0rlXion8i1ZctIkc94Mm0csqrc5tZ7MRbXfQnyjyKIOtX-xtWckXP7MvVNv-sF83NgI4BrFSpugVXFmiuCN_FaDMSKpGg66tl4W1KeWuLzJPxU9iZSYUGPJVE2mWYPtU0iTSepe5N-6bprQ5WiLr7Cpxb1LYN6YNgyQzjSbbwkLmbYpLlUuVCeoqDI_7U2UT3x9r1-420Ob__mnjuuKejyIfLnKczaTnjlfNzKGXRJF8CKxBaBApy3b2pb-vHXcdLPCpOj_SbYXx8wfQx1-lGWGLImYPChEgJi9Ui30PXoOWm8kyfDOTAhvzJOep9B0wiaodYb-hkz-2j3ecShzEU5Q94BIYn4BN1Mpnq3egBOjNV-ujAkD4v7Ao9e3YBNhKw7mRgSgv5ON03KSUwUbeU5eO32AsDPMWu3EcPU8ZiKvVHuo8hEYE3tsOlD0rRwwYf0gEpQk7UHqkY2vEcbNrMNSfbxR6b2SLXm7veGCa9W9p8lqi8CchFVj2FX5g2ZIktNAi2i8UvN9k_dHnbZeMvyrbehJpQRsLh3j8dBfUrVvZNexq6KI0GfWh__exG5AicAs178LeuscOdBkrXCbQP9ODECDEWXXRXegEpx7GG-UUCGrpsZAx2v2J3omur5MFUooQHjJ0L4dQki7Bl3zUSE0KsaBDqLhLOOaxcMNrcHE4dWSFmhxDvVxuGthHPEkcIkTXaqiv2N5TumyJs4D4c7lHda4fBnAVeC3NuLRRH5eYQsPW_RDDKgoPjtN4S6J0TU-IC9_LlPIv72-QXQVWcNQoGpNZYxjLsrUuWS3mjNfFKbUBDqFbHIn2erzCnIruYkT-0gfQDOarN4qi9RolpvWuaIinWE1PASRuXzO8Tn4sRHuuOK81of0PmMposzneC2EHGA8b0x0qlgSX_aTR5cuB288XXp0zUU_4RdNZk0wYZKwaAnse-r8JeKayQAzXrcTR4j8KAV8SZ91ci38f28REvpBzsP1nMu2AbDXra-5kRNvjxRghT0MUwBHjoClhbnVZWWxbI2zBdJ_5zPqUOBZn13OXwJqyU4OQffB_cO3OjKZDpXcWdByV2lXzHd-eXvRBC9hLp0_mNbOVhbv_93CFQuDisBcaf_m_l--bGPZSF1G1adg2HCHdrTS2EWgqMcm-BnIgxGXauAHXpprHHe06FyroYIE3Zk78R_OURDLmmgntJgnm6CgOHBGBQpkCRolIULw2AxgnQ1loAwuDx9hciOF6h-6xetoYoGnTWZqyGR3d--jTCwqgBzZ1tBCHQK859LzvuROfBQP5z-UtQ3A9Iv0vGmAcfBnC76pt-I9zgCXUM5MvoPMP8K0C0tAyMnP2_HC2scJr82Ya505hURLg98fS10xiaZ4qAqLVglyKK3ruSH--YtA6EFZf19F-Bg6rf-fc_SPWJxk2Lsv-ugaHRCGXc2WL5zaEDqNz0VFsEX6y2CAwuEcRr5yjU3WJ3Hz6SJv9jIV3cZlFK46LY8N0_i65bRU-W_laAraLw1dcUWJPBDF_OcbMOnYva6nug4-VucGNTGLOeBBO-ZfAZWCEtslqDncrBF88V0_1ZrP6k-cikIoJP9RGFv-nkcjUXTu0jARb5Wod9o2hW8S8h2_Muy7EQ_TeWcp_IYt--WIWuAR0yE-st38Dnh4lRRrXworOz9WseAHSrp7y5_WVjaSri-n84QC2kD-BdLKNd-xgQ8lzFCX_BTC_kfquiqlFiBHfM0gz2HWcALaz7-oOTHrFp7o5OjSVmxiax4cUVl_bLGmRHtAQRdVunA0IVqv7qyflcK8UcVsigPnFDb6nv81ySrvIcXYM2lOh_qLaBb81Yw0VgkfkVNvaz3AXU0ogbeeXK4o4PaVBftmSZ2u4FNseB7S-5diZYn7oGuiLvLz0PE4t2l8vS5U2rUXNe0xyhRU_MHsxVFCMGc2WHLgKiPoNmMMMy9eNTVbHcGr8Qy9q1LUkWiqMAtrDovQQYaJHeG8F01fYprYpifPjyTi4wCT10lDgohRh_9kHSylS5WllkIflr_0_blqka3KdIOduHnaPWvorF_q2nf_fPyF0DmBOI8_TAKfcwKBlALrFd52d9JIoFZzzD-VQ-sUffswB66L3al3uzQW0tToylezPN360BVTZb1nm7fSYiaQHSZNBI7U5Ok_5G-t140ox_giXq6lYBtysODfTrSLhIirNr4LDtdRInv2Sne6pUUazXMM0tNzD-GeT9pIw5T_P_gUCnlOy3ETywQeK3MFxwEFUEGpFh5lWIueBwtmK6tF4Bfz81QXJ9dinTxD7viY8RJHOThGblsMpmEQbaKlHb_xriSI0GHBYN0xrwJ5tEgahSAMQdQQfPNGukvckZ0Li064GgKHWUVdc-2_W859YVFsr8V7CZ5n97ZqGVTGoqA1IVJ98OHglkN2OUyrHEASq5Hi40VLs8goDKZfcM0uLTQ-sJyjLuPe-aA28C6BYHQGg4pzuhWL_we5JHQ2HkRWoAsQYWVMmi4oAxZ0tkZPFTW_mo9fqTjwINjdqZ-lw5GIRadu-LTsPPJvFUi_cwZS1G3P9SoWgeUMxTRqtd0izS-41pUGImiKQfeCUMY05c1Jy2Wn5VldxsSjEW5wPyiLhovVuvxlK0vOqKfGWHJl6YpIJDzSHcLIyXp4Yu1X_I_9qqphbqnebhy_atkgby2d-HFkuPQNjPRRZ2ZldPzNsZTFqThIPiVSxL4kOBJhKSZORJ3TGS7-ODdE_RvIcN1WGOmQCNijzLjNu80HfRGC9tGkzWZ-GyY2o9Y-dvf2j-ONOxo3hPRRzW9YoajrV6h0VRGGmQYwtXRgtHk7UjvWGZqIwlEE0M2fR-oDKbzBe8MAGisxkCIcAtJja-g2P2sOnzwtLQcNXTu-uBoyXn1g9wlrA-buvj4fLeUAMe4R83tf0OTwnL52Zan-zC7YwHSl5jnOddOlwxmY_6Kmx7f5nF1mpz2TrcszWLYLI0iSM8VTKXDFoKhlj6i3daZKrCCWCikEQnqdwiI43Rd0qcqVYsKSSHrYfHYlSgKl-R-AlFRGYz453ye6WAGm7evIvygrpybLsClkwonAaKrFPP5MjpVLyCbpqTZqqlApAACG9W6Mjs6eDvaNlFDvCwzYg6GHSjtI9oytQeyw4BeBV026mGv7k4CSd0gxPQ2By1rXf8Trjzk44gUiN5E4Opm.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_08b07c4fc2d151bd016af72e259d9c87d1b4d4ede04bc1a5b0",
+              "index": 4
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794584088,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 1853,
+      "prompt_tokens": 22514,
+      "total_tokens": 24367,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1317,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 22511,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003740675,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003740675,
+        "upstream_inference_prompt_cost": 0.002814175,
+        "upstream_inference_completions_cost": 0.0009265
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

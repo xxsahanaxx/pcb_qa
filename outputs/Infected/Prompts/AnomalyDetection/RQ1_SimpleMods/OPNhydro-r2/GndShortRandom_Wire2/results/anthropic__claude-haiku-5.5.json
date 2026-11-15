@@ -1,0 +1,250 @@
+{
+  "id": "OPNhydro-r2/GndShortRandom_Wire2",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/GndShortRandom_Wire2/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/GndShortRandom_Wire2/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/OPNhydro-r2/GndShortRandom_Wire2/spice.cir",
+    "chars": 367340,
+    "sha256": "071148717e4e7069fd5eb39303fdb5c62822cb3f969f3ed16a4a54766199de6d"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.8, \"anomalies\": [{\"category\": \"short_to_ground\", \"components\": [\"R33\", \"U7\"], \"pins\": [\"R33.1\", \"R33.2\", \"U7.27\"], \"nets\": [\"GND\"], \"observed\": \"R33, a 110 m\u03a9 sense resistor, has both terminals on the GND net. U7 (TMC2209, the NB dosing driver) pin 27 (BRB) is also on GND instead of on a dedicated BRB sense net. The BRB sense input is therefore hard-wired to ground and its current-sense resistor is bypassed or shorted.\", \"expected\": \"Each TMC2209 has its own BRA/BRB current-sense pair. The spec says each driver has its own resistor pair ('R30\u2013R35, 110 m\u03a9'). For U7 the BRB sense resistor should sit between U7.27 (BRB, on a /BRB_NB net) and GND. Its pin 1 should be on that net, not on GND.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U7\\\") (pin \\\"27\\\") (pinfunction \\\"BRB\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R33\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R33\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"R33 0 0 110m\"}, {\"source\": \"spec\", \"quote\": \"with its own current-sense resistor pair (R30\u2013R35, 110 m\u03a9)\"}], \"impact\": \"Current sensing for the NB stepper driver's B-phase is defeated. The driver cannot regulate coil current correctly, which can cause over-current in the coil or weak/erratic peristaltic pump drive. The sense resistor is shorted, so the channel is effectively unprotected.\", \"confidence\": 0.75}, {\"category\": \"wrong_component_type\", \"components\": [\"R5\", \"T2\", \"R12\", \"T5\"], \"pins\": [\"R5.1\", \"R5.2\", \"T2.1\"], \"nets\": [\"/G_PUMP\", \"+3V3\", \"/G_ATO\"], \"observed\": \"The IRLR2905 low-side gate (/G_PUMP) is pulled up to +3V3 through R5 (10 k\u03a9). The analogous ATO gate (/G_ATO) uses R12 as a pull-down to GND.\", \"expected\": \"A low-side N-MOSFET gate should default to GND through a pull-down so the load stays off when the GPIO is floating or at reset. The ATO channel follows this pattern, so the pump pull-up to +3V3 is inconsistent with it.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"R5 /GPUMP +3V3 10k\"}, {\"source\": \"spice\", \"quote\": \"R12 0 /GATO 10k\"}], \"impact\": \"At boot or when the ESP32 GPIO is high-Z, the main pump gate is pulled high and the 24 V pump may run unintentionally.\", \"confidence\": 0.3}], \"summary\": \"The most likely anomaly is that U7's BRB sense input (pin 27) is tied to GND and its sense resistor R33 is shorted across GND, which defeats the current sensing for that stepper channel. A lower-confidence concern is the pull-up on the main pump gate, which is inconsistent with the pull-down used on the ATO gate.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.8,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "R33",
+            "U7"
+          ],
+          "pins": [
+            "R33.1",
+            "R33.2",
+            "U7.27"
+          ],
+          "nets": [
+            "GND"
+          ],
+          "observed": "R33, a 110 m\u03a9 sense resistor, has both terminals on the GND net. U7 (TMC2209, the NB dosing driver) pin 27 (BRB) is also on GND instead of on a dedicated BRB sense net. The BRB sense input is therefore hard-wired to ground and its current-sense resistor is bypassed or shorted.",
+          "expected": "Each TMC2209 has its own BRA/BRB current-sense pair. The spec says each driver has its own resistor pair ('R30\u2013R35, 110 m\u03a9'). For U7 the BRB sense resistor should sit between U7.27 (BRB, on a /BRB_NB net) and GND. Its pin 1 should be on that net, not on GND.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"U7\") (pin \"27\") (pinfunction \"BRB\") (pintype \"input\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R33\") (pin \"1\") (pintype \"passive\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R33\") (pin \"2\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "R33 0 0 110m"
+            },
+            {
+              "source": "spec",
+              "quote": "with its own current-sense resistor pair (R30\u2013R35, 110 m\u03a9)"
+            }
+          ],
+          "impact": "Current sensing for the NB stepper driver's B-phase is defeated. The driver cannot regulate coil current correctly, which can cause over-current in the coil or weak/erratic peristaltic pump drive. The sense resistor is shorted, so the channel is effectively unprotected.",
+          "confidence": 0.75
+        },
+        {
+          "category": "wrong_component_type",
+          "components": [
+            "R5",
+            "T2",
+            "R12",
+            "T5"
+          ],
+          "pins": [
+            "R5.1",
+            "R5.2",
+            "T2.1"
+          ],
+          "nets": [
+            "/G_PUMP",
+            "+3V3",
+            "/G_ATO"
+          ],
+          "observed": "The IRLR2905 low-side gate (/G_PUMP) is pulled up to +3V3 through R5 (10 k\u03a9). The analogous ATO gate (/G_ATO) uses R12 as a pull-down to GND.",
+          "expected": "A low-side N-MOSFET gate should default to GND through a pull-down so the load stays off when the GPIO is floating or at reset. The ATO channel follows this pattern, so the pump pull-up to +3V3 is inconsistent with it.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R5\") (pin \"2\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spice",
+              "quote": "R5 /GPUMP +3V3 10k"
+            },
+            {
+              "source": "spice",
+              "quote": "R12 0 /GATO 10k"
+            }
+          ],
+          "impact": "At boot or when the ESP32 GPIO is high-Z, the main pump gate is pulled high and the 24 V pump may run unintentionally.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The most likely anomaly is that U7's BRB sense input (pin 27) is tied to GND and its sense resistor R33 is shorted across GND, which defeats the current sensing for that stepper channel. A lower-confidence concern is the pull-up on the main pump gate, which is inconsistent with the pull-down used on the ATO gate."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 182634,
+    "completion_tokens": 7981,
+    "reasoning_tokens": 6759,
+    "cached_tokens": 0,
+    "total_tokens": 190615,
+    "cost_usd": 0.1112695,
+    "cost_details": {
+      "upstream_inference_cost": 0.1112695,
+      "upstream_inference_prompt_cost": 0.091317,
+      "upstream_inference_completions_cost": 0.0199525
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:24:42.445328+00:00",
+    "ended_at": "2026-11-13T03:25:21.968760+00:00",
+    "latency_s": 39.524
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:24:42.84Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 35866,
+    "moderation_latency": null,
+    "generation_time": 39093,
+    "tokens_prompt": 93720,
+    "tokens_completion": 682,
+    "native_tokens_prompt": 182634,
+    "native_tokens_completion": 7981,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 6759,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.1112695,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794540282-vJFOyQFcVTZbdRMN98rt",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794540282-Vo18Y1iRCuA3KeZ2pgS6",
+    "upstream_id": "msg_011CgzDGwdG1mUnxhGPzLtD4",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzDGwdG1mUnxhGPzLtD4",
+        "is_byok": false,
+        "latency": 416,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.1112695,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794540282-Vo18Y1iRCuA3KeZ2pgS6",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.8, \"anomalies\": [{\"category\": \"short_to_ground\", \"components\": [\"R33\", \"U7\"], \"pins\": [\"R33.1\", \"R33.2\", \"U7.27\"], \"nets\": [\"GND\"], \"observed\": \"R33, a 110 m\u03a9 sense resistor, has both terminals on the GND net. U7 (TMC2209, the NB dosing driver) pin 27 (BRB) is also on GND instead of on a dedicated BRB sense net. The BRB sense input is therefore hard-wired to ground and its current-sense resistor is bypassed or shorted.\", \"expected\": \"Each TMC2209 has its own BRA/BRB current-sense pair. The spec says each driver has its own resistor pair ('R30\u2013R35, 110 m\u03a9'). For U7 the BRB sense resistor should sit between U7.27 (BRB, on a /BRB_NB net) and GND. Its pin 1 should be on that net, not on GND.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"U7\\\") (pin \\\"27\\\") (pinfunction \\\"BRB\\\") (pintype \\\"input\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R33\\\") (pin \\\"1\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R33\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"R33 0 0 110m\"}, {\"source\": \"spec\", \"quote\": \"with its own current-sense resistor pair (R30\u2013R35, 110 m\u03a9)\"}], \"impact\": \"Current sensing for the NB stepper driver's B-phase is defeated. The driver cannot regulate coil current correctly, which can cause over-current in the coil or weak/erratic peristaltic pump drive. The sense resistor is shorted, so the channel is effectively unprotected.\", \"confidence\": 0.75}, {\"category\": \"wrong_component_type\", \"components\": [\"R5\", \"T2\", \"R12\", \"T5\"], \"pins\": [\"R5.1\", \"R5.2\", \"T2.1\"], \"nets\": [\"/G_PUMP\", \"+3V3\", \"/G_ATO\"], \"observed\": \"The IRLR2905 low-side gate (/G_PUMP) is pulled up to +3V3 through R5 (10 k\u03a9). The analogous ATO gate (/G_ATO) uses R12 as a pull-down to GND.\", \"expected\": \"A low-side N-MOSFET gate should default to GND through a pull-down so the load stays off when the GPIO is floating or at reset. The ATO channel follows this pattern, so the pump pull-up to +3V3 is inconsistent with it.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(node (ref \\\"R5\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"}, {\"source\": \"spice\", \"quote\": \"R5 /GPUMP +3V3 10k\"}, {\"source\": \"spice\", \"quote\": \"R12 0 /GATO 10k\"}], \"impact\": \"At boot or when the ESP32 GPIO is high-Z, the main pump gate is pulled high and the 24 V pump may run unintentionally.\", \"confidence\": 0.3}], \"summary\": \"The most likely anomaly is that U7's BRB sense input (pin 27) is tied to GND and its sense resistor R33 is shorted across GND, which defeats the current sensing for that stepper channel. A lower-confidence concern is the pull-up on the main pump gate, which is inconsistent with the pull-down used on the ATO gate.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794540282,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 7981,
+      "prompt_tokens": 182634,
+      "total_tokens": 190615,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 6759,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.1112695,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.1112695,
+        "upstream_inference_prompt_cost": 0.091317,
+        "upstream_inference_completions_cost": 0.0199525
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

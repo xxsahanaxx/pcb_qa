@@ -1,0 +1,225 @@
+{
+  "id": "PortalHardware/ResistorMagnitudeDownRandom_Value1",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/PortalHardware/ResistorMagnitudeDownRandom_Value1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/PortalHardware/ResistorMagnitudeDownRandom_Value1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/PortalHardware/ResistorMagnitudeDownRandom_Value1/spice.cir",
+    "chars": 68870,
+    "sha256": "d621a0377ba014d0e388b5ea22dd8d1df72ca4c7a24277466530392a65cff8eb"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R7\"],\n      \"pins\": [\"R7.1\", \"R7.2\", \"U2.35\", \"U4.19\", \"U4.20\"],\n      \"nets\": [\"DISP_SDA\", \"VCC\"],\n      \"observed\": \"R7 is 10 \u03a9 and connects DISP_SDA to VCC.\",\n      \"expected\": \"R7 should be a 10 k\u03a9 pull-up from DISP_SDA to VCC, as specified.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R7\\\") (value \\\"10\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"3\\\") (name \\\"DISP_SDA\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R7\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`DISP_SDA`: U2 pin 35 (`PB14`) \u2014 R7 (10 k\u03a9) to VCC \u2014 U4 pins 19/20 (`D1`/`D2`)\"\n        }\n      ],\n      \"impact\": \"The display SDA line is pulled strongly toward VCC instead of through a normal pull-up. This can prevent the MCU from pulling the line low reliably and may cause excessive current when it does.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"R7 is specified as a 10 k\u03a9 display SDA pull-up, but the netlist gives it as 10 \u03a9. This substantially over-strength pull-up can impair or prevent display I2C communication.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "R7"
+          ],
+          "pins": [
+            "R7.1",
+            "R7.2",
+            "U2.35",
+            "U4.19",
+            "U4.20"
+          ],
+          "nets": [
+            "DISP_SDA",
+            "VCC"
+          ],
+          "observed": "R7 is 10 \u03a9 and connects DISP_SDA to VCC.",
+          "expected": "R7 should be a 10 k\u03a9 pull-up from DISP_SDA to VCC, as specified.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R7\") (value \"10\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"3\") (name \"DISP_SDA\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"R7\") (pin \"2\") (pintype \"passive\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "`DISP_SDA`: U2 pin 35 (`PB14`) \u2014 R7 (10 k\u03a9) to VCC \u2014 U4 pins 19/20 (`D1`/`D2`)"
+            }
+          ],
+          "impact": "The display SDA line is pulled strongly toward VCC instead of through a normal pull-up. This can prevent the MCU from pulling the line low reliably and may cause excessive current when it does.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "R7 is specified as a 10 k\u03a9 display SDA pull-up, but the netlist gives it as 10 \u03a9. This substantially over-strength pull-up can impair or prevent display I2C communication."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Inspecting anomalies**\n\nI need to check for potential anomalies. There's an obvious discrepancy with the R7 value of \"10\" versus the spec that says R7 should be a 10k pull-up, which is a strong indication of a problem. Displaying the SDA at 10 ohms in series could be serious, as it suggests a severe issue. I should classify this as a wrong value since it leads to excessive current, which might damage the MCU. I\u2019ll also consider other components and their pin connections in the SSD1306.**Analyzing SSD1306 connectivity**\n\nI\u2019m examining the SSD1306 pin names and wondering if VCC is a high voltage output from the pump while VBAT is an input. The connectivity net shows that U4 pin 28 for VCC goes to ground through C7, which isn\u2019t connected to the VCC board. The spec seems to misstate C7 as the logic supply for U4 VCC. There\u2019s a discrepancy with R7 being 10 ohms instead of the expected 10k. The low resistance could prevent reliable low signals under I2C, which might be problematic.**Clarifying R7 specification**\n\nI noticed a discrepancy in the specifications for R7, which is supposed to be 10 k\u03a9 according to the key spec. However, the file refers to it simply as 10. I\u2019m wondering if this means there's confusion or if it\u2019s a typo. It\u2019s important to clarify this because the value affects the circuit design and functionality. I\u2019ll need to ensure that I use the correct value to avoid potential issues later on."
+  },
+  "usage": {
+    "prompt_tokens": 22744,
+    "completion_tokens": 992,
+    "reasoning_tokens": 574,
+    "cached_tokens": 0,
+    "total_tokens": 23736,
+    "cost_usd": 0.003338925,
+    "cost_details": {
+      "upstream_inference_cost": 0.003338925,
+      "upstream_inference_prompt_cost": 0.002842925,
+      "upstream_inference_completions_cost": 0.000496
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:30:56.390216+00:00",
+    "ended_at": "2026-11-13T15:31:07.719743+00:00",
+    "latency_s": 11.33
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:30:56.588Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4420,
+    "moderation_latency": null,
+    "generation_time": 11215,
+    "tokens_prompt": 17553,
+    "tokens_completion": 711,
+    "native_tokens_prompt": 22744,
+    "native_tokens_completion": 992,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 574,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003338925,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794583856-kFWXyh6WaL1M4BWulReQ",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794583856-fI38tfjkaBnqplrMVTOX",
+    "upstream_id": "resp_0347432ed5d048fd016af72d30ca2087d1b44059504734379a",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0347432ed5d048fd016af72d30ca2087d1b44059504734379a",
+        "is_byok": false,
+        "latency": 511,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003338925,
+    "cache_discount": -0.000568525,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794583856-fI38tfjkaBnqplrMVTOX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R7\"],\n      \"pins\": [\"R7.1\", \"R7.2\", \"U2.35\", \"U4.19\", \"U4.20\"],\n      \"nets\": [\"DISP_SDA\", \"VCC\"],\n      \"observed\": \"R7 is 10 \u03a9 and connects DISP_SDA to VCC.\",\n      \"expected\": \"R7 should be a 10 k\u03a9 pull-up from DISP_SDA to VCC, as specified.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R7\\\") (value \\\"10\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"3\\\") (name \\\"DISP_SDA\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(node (ref \\\"R7\\\") (pin \\\"2\\\") (pintype \\\"passive\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"`DISP_SDA`: U2 pin 35 (`PB14`) \u2014 R7 (10 k\u03a9) to VCC \u2014 U4 pins 19/20 (`D1`/`D2`)\"\n        }\n      ],\n      \"impact\": \"The display SDA line is pulled strongly toward VCC instead of through a normal pull-up. This can prevent the MCU from pulling the line low reliably and may cause excessive current when it does.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"R7 is specified as a 10 k\u03a9 display SDA pull-up, but the netlist gives it as 10 \u03a9. This substantially over-strength pull-up can impair or prevent display I2C communication.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Inspecting anomalies**\n\nI need to check for potential anomalies. There's an obvious discrepancy with the R7 value of \"10\" versus the spec that says R7 should be a 10k pull-up, which is a strong indication of a problem. Displaying the SDA at 10 ohms in series could be serious, as it suggests a severe issue. I should classify this as a wrong value since it leads to excessive current, which might damage the MCU. I\u2019ll also consider other components and their pin connections in the SSD1306.**Analyzing SSD1306 connectivity**\n\nI\u2019m examining the SSD1306 pin names and wondering if VCC is a high voltage output from the pump while VBAT is an input. The connectivity net shows that U4 pin 28 for VCC goes to ground through C7, which isn\u2019t connected to the VCC board. The spec seems to misstate C7 as the logic supply for U4 VCC. There\u2019s a discrepancy with R7 being 10 ohms instead of the expected 10k. The low resistance could prevent reliable low signals under I2C, which might be problematic.**Clarifying R7 specification**\n\nI noticed a discrepancy in the specifications for R7, which is supposed to be 10 k\u03a9 according to the key spec. However, the file refers to it simply as 10. I\u2019m wondering if this means there's confusion or if it\u2019s a typo. It\u2019s important to clarify this because the value affects the circuit design and functionality. I\u2019ll need to ensure that I use the correct value to avoid potential issues later on.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Inspecting anomalies**\n\nI need to check for potential anomalies. There's an obvious discrepancy with the R7 value of \"10\" versus the spec that says R7 should be a 10k pull-up, which is a strong indication of a problem. Displaying the SDA at 10 ohms in series could be serious, as it suggests a severe issue. I should classify this as a wrong value since it leads to excessive current, which might damage the MCU. I\u2019ll also consider other components and their pin connections in the SSD1306.**Analyzing SSD1306 connectivity**\n\nI\u2019m examining the SSD1306 pin names and wondering if VCC is a high voltage output from the pump while VBAT is an input. The connectivity net shows that U4 pin 28 for VCC goes to ground through C7, which isn\u2019t connected to the VCC board. The spec seems to misstate C7 as the logic supply for U4 VCC. There\u2019s a discrepancy with R7 being 10 ohms instead of the expected 10k. The low resistance could prevent reliable low signals under I2C, which might be problematic.**Clarifying R7 specification**\n\nI noticed a discrepancy in the specifications for R7, which is supposed to be 10 k\u03a9 according to the key spec. However, the file refers to it simply as 10. I\u2019m wondering if this means there's confusion or if it\u2019s a typo. It\u2019s important to clarify this because the value affects the circuit design and functionality. I\u2019ll need to ensure that I use the correct value to avoid potential issues later on.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y06zJ6FhGfHJn3nrYdO8Dz982ZYOlX94VI14mWfJNQwL1WAfVvpojRB_HNLWjLa07euB6-Le7n0DB6IqGfW5Dh3q2JayAUFA8cvWHCypKgdukkEZAhrB2nOZFugirk3CmvGoSpjVCZ-S0jeERtxb4dImiuMbar8UbIUNMBgazNxrZG9vO2QXKstrINeyw8jpK8ZritarLkw8OG30pgv1DgGlcNds9PU2C5zGvxc7KNTstx-f7MeVLyMnTJyqLxuwDo44iQyB8TgmLRNbWfZX2DnhiGH793LJoGyc9MRj5EKP6ts8NWJ47_sj43e_5piOVTD8opSExFxKyLzkgC4YuHracEygvP4VdFtlKsHzbt4TtEjOxoS2c5dXJ7nTxcaGU3_qoocGqehXPNn7R1QIB8TvtDuqKPO-fbD0Fjguj6_O9ywQBm26swmNPj9AEYJIi9bWhdGT5TleUrINs6L-Y9DKqSSxp6d41rmBEwgFM-yPLGnNfNTM3YvBYJC1hvNbRJfO8KzU9VTj1vq6l3FdNpRLycWO7GwQoiXAdGYBcVbdZJrlNfi-wEyy57QeRltFtMoWYg9Vs5s8yxDhStwdgg4BY_P2GBAJgkOT_4DJSsaL2q2o8ffo-GyIuUYTzjE7q-8bx-qUCaR5_XocSOkHwWntIi9yU_6vBWKnkCyg263dGQ6QI3IHqiRFjHBQGHyptA49kLwwI2DSmrkTu6qdCU8ZxASnJ-hQBR2oC0vDolLyYtxd7ZrTmWJrq803k1Z-wrO1lhUhXDJJ63EOVw4BZw4waqVm4dnSX-DO6BhAI0i8U7KJgCNCqmoWx6Op9nXyO4viLkeNmhnZLXXt2GxMEB92xYUyI4ZrDgMbaT-UXEU8DEFOkUX_XvBu9YUP6CUOx9kEuuv4x4LwuVyR4WxtG3vR4KBa3-MOb2WrroSey9dWyyLgdxUK3pcXuEHK85T1yrqUSnD8q6ZwiB4ERIZ0ZA6g8grKoGoqaEqgFOSMbvcJ480eQls6fb8r-X-7ZUlMRfrZcoEf4EX7od5IQmGQS4pd3-eIWFrbkEPBTKZMkJ7yg_VT8KmnBFHsn4RSDp_yDRumEldrzvciS_i3YpjEHEx59a7qMYlippbsx-nuEETToq3w4ncEBaDWMUqKQzYlgSa8BDcH_d4NJ8Wx0Ro5L6iZ9O2KwLnaO2DDWKXmCWZDLgsj2dbf-9zz7sZDKq1MN7ttF-p1q5ggpGNtiOg-uWy97KDaznt0Wwe-zlLqsVkZzo4VMgVHDQyVWA4vt0ow_YGhEIld4txseiETgEj4mNO7gO_pe0bqwyqcrMv29QGh3SyUlY5yoXx6s_Pmyv-bDMYBL876Zl9CmfnDBhFOT6hUzZ9uncpqUtPeQCWCAiyUk_HSHYRxW-GFEMFYvH7TGIlvcunOpaZ-N0WK1BlWVZnTMc_vNX63oKCtLiYxg-NFwYO1NShiWzmtAUzPnN5yKBoaarwYABqTjAjMmnxrkxflETcGbeRKv1dHGmMKXq-E3yZcDvD32HJ7TSywYfd_g3fIR1dWHqba5VOkT4kU-XtvhHYsgHvi2iwlSgNwPEHFnbYYBqki5M3P_or2os_s_JSCQUFWzYaNPq5mMHMmGam8DwmOVEn636rOvZNciqClWiOuCmSxrUlz91dVbnEsi6cJtFljfNawQQd-NIJ5R6BSR_CSPIYkEFOSGKr3PorLf96WlXUY3-j_gGi-4h9d3iqZMnVAcEI672xzbEt07Kud_rEsmayJHh_vciBZHhuJl1avykQdHDmF0OFa6hZ0vA1OK6u0r-4avfRI0pyLcUZ0h6ScfQKElLf7PyVn_IsqwwSvQFNQd6Q28fwZCRGlbgrvDFLE5mw5ZGGbsT3Yx0tgwTVvn-yYgWRojPlMewEPWR9oulgte4uHBegZ_q1k2NcOem_UiGM6_Omm47aFG8mI-Z7bjjEbJpZLAzqJJluOvoJT1M6AWMbyRFo3kdNguJdAoEks5hcCLLFz8y5v-QMj3CaTD2F6ImxE2B5pqegSf6dZGGFdZK7zbdzK8gWZsCo8T4LfiLQA2gbzeCcTuGUk2z_Q92IKi66XqmuvLtUCJJT49TKDtLX69rO9btUVCB8U7t-ahFJleVZXp8FW3kHO8qNPFY8eJeZO6qJ_jqCqBJLk0iMaIs2eadAamw51G0Wvz96aT2YhzTFFQ4R6au80uo__ANTvKeJ2l3gYItxS0h9LJSYWMAGg3NdJ6mZCUnrgf-dr22uoJtVqIns0dF6AB42hLzqKdhVgRNvROP10Z663uEEaHqq9E-W6ZrMI7dGVcMwmlT5ufuAQstXKP79M3GtBKFKYTM0kxqaDs3QtgMH5lVB1X70B-Bd8Jikoi-fs_p8cVEkAUlk80pdDZbm-t5Ses6Uozvp4Plb_uxROrXNBQ-E7eUp9R8_TC3lsvWIfH9Q1OHf1tr6MTK9kQcpaxhZWbMUBExZmNUr-gCewvBx2X54FAOYqvj32pGtNu7ryZF_ej-1p5syBRo5hyJUWqJQ5UpTOUfiaA7XmVxQDGUq6YZrKhwQQ-Puf_qPNu2fqUUBsd0-CsAsI36iQugjhKu_5oEKZpdoXj3FLsSZD3g8DKA2ehi9PDyHUTIpunMP2l4iLg48Ntg2oXR1q8zbIQ4Ou70lABthvuZ5XapuQR23dix8_JtaCW15lyQ4AaRmBGiV5fQiVZXXD18AqnFO5idV_lVeSmAL5I1qJc-ORUUHxOI7UMCwclyOievlySgjHp1avVNv-LxUhlq4Oag1JIU9l1UBGPkHHghGA9pQkl9CrIrAAiwgWgrp6YO5Wl1agZ-hQ8EmtEueXJZVDNRuyDpCqluTMeCovJOa-nfaojW8TBKsynwfXvOO9y1DofsxCtl7DV21jxmWCE6nF0DO_vmfrMlju5c7E2vQmZa2SL7ld0bd8UpCjt9qrEmVEXPIvhRAdukhbpCXJjG4P5iKgRDo2KW5qgCO6a4nC-RhJculLri8dQBzBdRTzBjaY1UGg9wmYTh_XNZJzHtuevFAJyZszGbAE1-E_ElO7ppebQ8TE-Ywuj9FIpDzk3RiIAV-o8dDFiUpbaFSh78T-Gtyzp_MM2vgnZHujNrBaCQuZMJf7ZAEPqhbwurqeTthbtpX9EJ-dC4AojttnqMWWFZUvcP9UrnldqG7oCAQBb7t6Lo78dW0e4Mx-UhohjDYWzEXQ7ABak6ZZO8-jY8T2R6wo_RyAen3zoOFphRX7cGLD35I-KRVYRDMlna3B5vxJj4sVctUtScSRSxJ5DY0FMXZ2k-dMwakFY9CJTSVYUUk1KTjHw6weffDdEqvD32smhazBmeHBEsqApE3O8DNyNk4vALqibOYdkBuB2SDVO8VGXMrSVUE3WRFKGuvzirVFtr6ma3UA4FDh-Kh8QCaSuh4nEFwF3X1CCzgl6QP3lkTnjKRq0nZzZEE-vJHCf4W3xbzIxLFwdRaBhDwAdFsPOUd6RcccFjv_ziKGdJMK3naCsu6uBbPFdw1w9K_7qnl6bwLzXH6RhcE1sfWJDoqzzJa9Hm_9T_LRGkJb8OBAN8coW-twXbcJmlvFnnZyOkbNqoUNEH1hiTAbN1RsPv_p_FxLetQ3gvQ0z2oMnFe9kVHo4-J2aOCdRIXiwPPuFEwm750Mv2sSsWAC-d9Qu6Xcjo5ZsRQuavFrQdLYbbiJ_s-5wKRlzBbXnYl5kq_hfRxMoaxZZgAWxWC8UEuKcg8ODH9Cm_38_HS0oBErd8Puvjq6s3G7uJJdfE4ghTm9wCTGWL8AspEY8Xf7ALV23xwEHTMDVvxSckpegJdNIPPeF62bMDOQ6bHHIISQnMZhu0zP_8WyVSXzS7JakIlw94jO-rvk14FHh_BxjsBh9RS1taFQf8wPQv251shPXqqxaBj7hza6gyYKNtw8LcjFXy8j1fx-Wt0HqLQIRUBOQxH5NTsCzz1sWN7USjcbGmrxK9lX7xhvEk6pF36CdTuvpdUwPDkV_W50Hljk9C5H7w-ToxSOX7vmZEUSKRO84JTGd3DAlH4tviiJc6llD4ACUq8XjzZvIAHMYocUxKlMyYsNV4Ry6-k5e_yCR-aGDH-L0OJ4nOz95zyxugIo9jnuFoK1GAqMcWVxqSPLnV-tRorHtvdFr7dvFyZxEox7ZRq7CU-3M_2IYRxitf3rk9WPISj12ICu5aB0jj0gqEH05W8vNFeThJhBozpyirP0jGaHMOyI5J4qifslbbwpRndJBktlVWeChErR8rcCu8ufhDclf3LQykyQNBxhiDVtE-kqBAVWMror3uz6LPcuII0XGbrkbt176i9-6WX1QCOMnjxfKBsj4bs2CFy3cn1VOISf9YBU0nx2N5QknaN1uSOQH24qMkDNcvzN9CIfrjMHyzNacFu01aqCOu437_ETiXKZhRTT_KKVEQdP7ieJqz2Ny3pUyXg_KTurxfpCZVsHRFd5Fh2dCqSsfCgHmPYiHZYFrsv1O4jcKIuE10fppZF2NMaHgrz0DtPxPixOG7qypXNMQ2Fpd3EGLPdbt6a-nfHRZy2AKsiVZkrlavIiteoqjmEOp7v-110fiNaD8kzi0icMiqml-Kx5PwvLkYYWcfpH2cwkJcZnZ5aylztQjApR-6rBJQ03oaq-hOJBJbXvSwCaekkReZogAuJEJaZ3dT6EB7Sbqy14bqaZYfTKsGmzoKgbV0adfhT92Xg5dx4JG61NDpumN3AluJ4D_WW1hUpFkpnuFhJMsrcbzThsXBulWYiXKfsuWmg9eYmmQXU2QdnS1b7JftyEiNSNAdB5hHaO_69vrbPA-T33NEeMsXBZozL8XHhLoG0xHzjMnpye0LOeLlEfwaJ4f_vQc16OWM8Y9klyu6Ch-buf1AE2o2JEcJEMf53SVzBTL3cjtoU3HnhwVkxyJP-qYDQxpz-sKBpoA_NoxPrQJOZSZsk6EVHoFHxrgc03wgS-RlLj-Lj8y5RgadGy5R2NuydTTsfmzNiTqT81oKQQmXYbNiz9UpTLx2I62ktpvU-0TLAWjaTKAw27P-Y4G339h5HUJec7Iah1e2ccCRQ1cdRmC7juDewQokJ2mOfTaph-bi3Nm_p0b6A-67BHd-B82pjPvrd-JmDCP2eac4rjb6U9fThfhNm007mbcUjDAPjO_BsvUpR9kL1tsmL-312NKJZTVxXWozkmAm6MRZ-9gRMGbNXsLhdY3S3op3rXKflhDJiOaD_8OjpHFxeWlu993IXKkAmn853GfFO0YvFVeMmGxZTcXl9T9_CMjpHjhzs2RnlDpGGg41ka17_3mzVk5yC5h4qFzBIHZ0lVSr1qQEzvDtZF3V--w6cGRM3BWLgx1ahvMmmN-8Tzf-o7YpnlabJlMegraH0r2R6TWIVm4eiNccCKgbhSfwRC1Bqs4h6l_NygGTYiDsTADgk3TlHvIHi35XwsCeznn0jU4zN4r1Rm7HW3iYDoFZUrgv9oSXzVIsKp5IJ9Mulz0GtkqPatDOKzBDsM0ityZnTet61qWzoQeAz0DrUsZ25NkmFNVYemLj3HUfJjjuKFM6klxsDhQQDH2njknxUvdJStHIhVljyyhPXWAXyvlHpa0HLVbsJ830BPaoI5NAelQkFQUbeJPPfbO1m3st8YFj4sAXwfeP4DyP29bjYf73xWMEOWFuXSqzVzJyal1h4SmK0mBBW_vd1MYFsBSK7xARyZgPdcHrkjmhiJt7UfORFZ3QIFvMaI1K6b_9sJp-L6M19pWvrvaejNTBUq_Sv6dJVBnWriZop2qqb_dH8P2dU-cnsUcRTZ3yCPpUhuIsOtRb8Ln6_goOS0P4D3LpS_aQ9r0sarnrYoeXQhE4P1G4U9kMBDC9MrCJtBtnWAuoCvo1xMi7VSIuORp6FF6WMrH0MKIOWZ7Pf7Vj1PJTP6hVQH_yltlIXGZIKSQvaPbga5N9i87silsG-rdulQ-A5GnmhwqgWnEKLxNAuZBNdHKcuYgjqGlaCAXYWexfFvyd8jNmI1yg5Upc_VdSvcjHlknFjhKqH6uvRU4RsiaTGx89asuV-UTTtLZXi1H6qlvOWvUzzkuuam6wP5YplZB77u2bJOjIrBaO-M4DatHJNBKrxuBFk7jjap9IZF0LdbSW2QT31He-vsD1TdsGZqpmvCqCruLpkQCnhpqaLmSgGMNIuyixUqmCaFv3z32t1Rj5oGQfUFx50_nt2QNm-xI2y19qZROFqo4zunBN4adu2P6eep5cHg251o1vOK7ahw5JxCP-OZKgx_21haH5Uhjsu0eHrxhn0Ns0m67R0PgQvnynEgd1ZX8kfDUxi7lLQgsRdx7BIDqPdo5WyxFGQJWWUvHf2LN0wNCVTYvZj5ezpTgNFAd7iglfH7TMs-v_6xXc6IeA9Z_8hldaavYNelwBdoKPzeeFtdPwpI_34jbU-hgbyDAtX7AUcb4WbnShDBRelikxC0Ma2Hu7ywZg7a7YzunkHv_9dcQkKKSAhoUfCWmtA2ubQIqdYcs-CQa_jK7vjU2rdYXzRrPVkeY_MtVF_G5laTFsE1WxYhQnx1hwlBhGaf3OUV1BGmYAP003psE0e3zGta1QEeiJiOzxbTYVj6JEZd6PammnwbddM7CHVyqxb6Ky_mdHYM3J3veUQHov5h6sMDcQp2nAeeTluT0sDG0EuefzOHaLRFOHeEzs6i2de8uYQGUV7sqbrDNq3yQK7CEYlEGoIJjfB6vorxOQZ9XLE-32_KtPIPc1BTEM9zzHGA_pfRyL6hiC2X1yKeQ40df-9N6VmbA1ql4HCY6etUzUHMRqZ25Jc-9wE0v2aIz37tqrrl3kmuwZtUobA_-zz9uzsyIIKUWxwHTJdqCVkE6pVCzOi_tHAYcL1APgvpP3jzMGHPHlaxWXGt1gVpdha0xG4KnnTAOzDfD7IYse4nr8EdoGihLsKdFuJr7r4y4d2a43zyv6nPlwduKnxCOaEBduH05WmCFawRuvF4wESze6rrKULgacn7W1aJ8qM9w6arWVYOR85fE_-7MXrKS7aU25ZEcht_-c3_YuWe-lZRkz9gLaNwuDa42vzmYknNFS88vfyHWn3HdlCBQFfkr6qYtwfEGmZDr3U1uCtLLGKQDK5cLrCrRI7ma9ospNBr14nbRrJpXaK5gh9K3653iWMWE16zwrUs_xdOC6UD8vwxfOeFMhahnmWKoGm9NJDBUQ6lyVO674lU_iRTB1XvgP0CVtHkpTkZDcIIFsTE7s_v0M0oYyCAO2QU8mpHO88erTwKhqo8sMgM_isQr5O8_Xk59cyxwFKUBmZA1zCIIQ3_f92ys_C8HoaoZjrgtOjd-X2CabrFYxwnrQjy8QPeiK_230tXcjM3-rAYy5eTnhBtFJBmMAatiRbgYvAnnwXUv79SoJkPw-uVV6s30Nx3TWp8HOSU-W2xMvMTL6jVVqyww4Rd-bTiyzvWg07bH5MUs50rL2vBw==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0347432ed5d048fd016af72d317af487d1a7883123d88130d0",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9y06KTK6XiNvN5Jt_Moj6w0iUS9EhjOABwRgVOopuDNZGlJEdQPPqO2wsQj0BrgdNEvudWkqKRIu1ozMWt4Itp0IDVjgzgxBriAJBJDQcNMYvKA9k70iZnaJa17AmHCQMmilbKltRHDogoOTchkiQwY7lqigSZbMFmSXyECJEh6X0o2EWfWUqNHobLFfy8I_cbotaYJxPk4dKQ5lN_SpNZZb3I3OL3prtZSAW_iIWMZbjoWpzb1jPy39GNm7oYgWNyAtez97QqFQZrIl4NCvMQBpegwqQg57h_OBu_MbNn96l3LNumMjgcCJQe0O3YADe0mqF62vKrHkMxBybjxut9L2xBgOJV_jvKh7ZTIF1BLTJAxpyJArKGG1OBunOon8AK_fo_Rdw_yTyJ5xC1GSxhSqEPhhnzWxUgsO4iKyjyPZTf1SbsGWlo2aD93I6v8IsZCjS5-Fjd0WtUamzBV8TqewgJC97rzzpDAir8NPYCWTwKJpmmNrB8pIDVKjrbYu9b6_DBLxkTy_mPxJTIxn8W3R6ucfaXiioaB1aa-NpjyKg2Hat53wVHYJK4xe8nRIwBrbxwl0FGQmm6LkbI6I4_CPXD_VUJjVhMzZqlJFSjCrH4ZaayZUnL-5BB42b8dqh6S9QvKyiLuxJALGET8jnSXRomZzFHVoAeDWpoc4wFv5xjR83P-r-T4P8uYJyLATCkJ94J3glFQN7W_s7gW4o1sRQ0aw5IsW7wMwFKl2O1mHS62rBONHESWxeSTl5KeJot-LonbDiJP97daF8ccvPIumxiYCopJwH3v9GuCi7E3uNtNuOuWPucGXvadYBDJfUUKzTZNdaUBO72eO7wAxvtJGR1WoiW5lVKRJfAzLNjq3XxlNQCJW-NZQUC0BRY2pmnuAeV3jw81apIu-2YwIqr6D-O_9IJTkMUOsl2uTRSISBM-ZpjZS5yqVSg0_gi2ASDEAB3BDypruQF9fXDl42F9ZPj-T5QXlwAv8XTK5VVda4S7Qs1vAD9y6ybLQ5lswNfezEEMx03OnZvfRXlywET2fVoPCG7W3zIVSklgjrfodCvTZ5NFZm-9oXaGS5myYtgPENKzv_a0STL7sj9hF3bvTFn1Hu3g5rA26sIO8g7WDx-UyLxV1sIzXRweeN84PIuqAxD_tcLhyP38VY1kEqCOGi3EecJqGPfKXlI4ovN8ne-SoWSSTEcR3qmHJRf7vSKjBfvWBpJU7staoPlcvP6SIl5epA03Zu2PfHO2KcPGFvRFo2PgqBDbZFVeuKeES7lMtla6J0Q47eJ9v0OdsAJyJKQ4KUZ1NsWmy7tHaBYohV-5WdOSp9yr30NFhszwnaWdZBqmPKVgiDlV_4Kn_rUsIqFP5yjeOXeXtLgQl1O2oa1GZFjUoekRWue97PSe_Mom3yrV74XpouCjw8v3khMyU3LVUFIg8mQLjJpgqlytVpFT-T_HTEJHlmolC5QDGvM2sTozzKbV9jO3aa5wbXzSJv8lsI0ant08IITJD21pF_D8XA83P0W-4FKCdYqKzbzaHBy7DfDeeocDpJwakfsn3tiTatiC8ncZfd-Nnw7Y2OXN-wVpvKUb8W-URdlxK4cnYKHSdrsmajk1l0QTJNyT-qfkrbyy6M1BGn4yXGp5I4qG87SWOZNjF5V7HIOEXH3tFDYIJwmGYfc0b6M7YEcO5Mx9GCl0YTGGFpx5blwp0ZVs_8JLrdcIxj3qmoLqeC4yAkDuiVvzaw-ygDX0bXytufvrXf0cK2_8dUsjwP8ZGeR9vuM3g-xoQ_oeGtSmxXedHMbytfVhfvFLdbUJVgmc1Cw0vUmYC8JNNLlKYWKaX9nAT095D6h5JfCEfvr3trU9RUleprYFI46svsGkk-PxWblBF2jRE7i91mjFB0s32EBeZMFe-0WYw6LKCxhiJeVHkb80dH34SsywnEeigJt_zsgdtgWTusf9fg9gu5gTLAYulY7lm2BSbd8xOd0aUgI24UKryLjJ2d1mFEWcZSzBMenBbKg7jxBqh0YGa0xVZhnM_wnzHPWIMwuddKbaOFQQYsWnyQRhLcqSad-yRLbb1sgjlcBrUfq28Smkf-c1bYs5KLHOUY3I9PWacFBfXv7Ij__Jsh8NN2hKHc76L1NtkaUtqfCSheNkmd1Sg8Z1wGSeUq4y2WI5JEanMm_XvhRkzggru1F1JKhvIgF_Z1wiqFNF9datmYwWdJlfkvLRQlkJoHKakm122PMAd7ZHNMugInq6SQjKxnyd57cUkIthpL1leQhYurx_oruXFxLcD0dN4YQywE02nG6paIWNxVfyv6mnmQFwEMvuA4XTHRfArOHx8Sx59RhuvQpfpCvUwOew=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0347432ed5d048fd016af72d3a2d9c87d19a71b31a110f56b6",
+              "index": 2
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794583856,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 992,
+      "prompt_tokens": 22744,
+      "total_tokens": 23736,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 574,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 22741,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003338925,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003338925,
+        "upstream_inference_prompt_cost": 0.002842925,
+        "upstream_inference_completions_cost": 0.000496
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

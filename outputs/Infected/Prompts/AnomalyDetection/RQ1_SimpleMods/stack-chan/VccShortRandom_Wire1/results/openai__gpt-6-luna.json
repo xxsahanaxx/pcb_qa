@@ -1,0 +1,284 @@
+{
+  "id": "stack-chan/VccShortRandom_Wire1",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/VccShortRandom_Wire1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/VccShortRandom_Wire1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/stack-chan/VccShortRandom_Wire1/spice.cir",
+    "chars": 69017,
+    "sha256": "02e4712776fbd3bc8d8a114784d8eedb02dbf1d456293016f07e6326f7643ecf"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_supply\",\n      \"components\": [\"J3\", \"R3\", \"R13\"],\n      \"pins\": [\"J3.3\", \"R3.1\", \"R3.2\", \"R13.2\"],\n      \"nets\": [\"+3V3\", \"/PWM1\"],\n      \"observed\": \"J3 pin 3 is directly on +3V3. R3 connects +3V3 to /PWM1 rather than placing the resistor between /PWM1 and J3 pin 3. R13 pin 2 is also on +3V3.\",\n      \"expected\": \"J3 pin 3 should receive the PWM1 signal through R3 in PWM mode, or join the shared serial signal path in serial mode; it should not be tied to +3V3.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"J3\\\") (pin \\\"3\\\")) ... (node (ref \\\"R3\\\") (pin \\\"1\\\")) ... (node (ref \\\"R13\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/PWM1\\\") ... (node (ref \\\"R3\\\") (pin \\\"2\\\")) (node (ref \\\"R9\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"each servo header's signal pin gets its own independent 1 k\u03a9-buffered GPIO line (`/PWM1` \u2192 J3 pin3, `/PWM2` \u2192 J8 pin3)\"\n        }\n      ],\n      \"impact\": \"The first servo signal is held at 3.3 V instead of receiving PWM. The selected PWM GPIO is instead connected to +3V3 through R3, so PWM control of that servo cannot work and GPIO contention is possible.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"R13\", \"R14\", \"U1\"],\n      \"pins\": [\"R13.1\", \"R13.2\", \"R14.1\", \"R14.2\", \"U1.6\"],\n      \"nets\": [\"+3V3\", \"Net-(J8-Pin_3)\", \"/TTL\"],\n      \"observed\": \"R13 is connected between +3V3 and the J8 signal node; R14 connects that same signal node to /TTL, which is U1 pin 6 (A). Populating both 0 \u03a9 jumpers therefore connects the serial transceiver line to +3V3.\",\n      \"expected\": \"The specified serial-mode jumpers should connect the two servo signal pins to the shared MAX3485 bus without tying that bus to a supply rail.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"R13\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(J8-Pin_3)\\\") ... (node (ref \\\"R13\\\") (pin \\\"1\\\")) (node (ref \\\"R14\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/TTL\\\") ... (node (ref \\\"R14\\\") (pin \\\"1\\\")) ... (node (ref \\\"U1\\\") (pin \\\"6\\\") (pinfunction \\\"A\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Serial mode (populate R13/R14 ...): J3-pin3 and J8-pin3 are tied together into one shared bus node and driven by U1 (MAX3485)\"\n        }\n      ],\n      \"impact\": \"In the documented serial configuration, the MAX3485 bus is clamped to +3V3. The transceiver may be unable to transmit correctly and can be damaged when its output attempts to drive the line low.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist ties the first servo signal pin directly to +3V3 instead of routing PWM1 to it. It also makes the documented R13/R14 serial-jumper configuration connect the MAX3485 bus to +3V3.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "short_to_supply",
+          "components": [
+            "J3",
+            "R3",
+            "R13"
+          ],
+          "pins": [
+            "J3.3",
+            "R3.1",
+            "R3.2",
+            "R13.2"
+          ],
+          "nets": [
+            "+3V3",
+            "/PWM1"
+          ],
+          "observed": "J3 pin 3 is directly on +3V3. R3 connects +3V3 to /PWM1 rather than placing the resistor between /PWM1 and J3 pin 3. R13 pin 2 is also on +3V3.",
+          "expected": "J3 pin 3 should receive the PWM1 signal through R3 in PWM mode, or join the shared serial signal path in serial mode; it should not be tied to +3V3.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"+3V3\") ... (node (ref \"J3\") (pin \"3\")) ... (node (ref \"R3\") (pin \"1\")) ... (node (ref \"R13\") (pin \"2\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/PWM1\") ... (node (ref \"R3\") (pin \"2\")) (node (ref \"R9\") (pin \"1\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "each servo header's signal pin gets its own independent 1 k\u03a9-buffered GPIO line (`/PWM1` \u2192 J3 pin3, `/PWM2` \u2192 J8 pin3)"
+            }
+          ],
+          "impact": "The first servo signal is held at 3.3 V instead of receiving PWM. The selected PWM GPIO is instead connected to +3V3 through R3, so PWM control of that servo cannot work and GPIO contention is possible.",
+          "confidence": 0.99
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "R13",
+            "R14",
+            "U1"
+          ],
+          "pins": [
+            "R13.1",
+            "R13.2",
+            "R14.1",
+            "R14.2",
+            "U1.6"
+          ],
+          "nets": [
+            "+3V3",
+            "Net-(J8-Pin_3)",
+            "/TTL"
+          ],
+          "observed": "R13 is connected between +3V3 and the J8 signal node; R14 connects that same signal node to /TTL, which is U1 pin 6 (A). Populating both 0 \u03a9 jumpers therefore connects the serial transceiver line to +3V3.",
+          "expected": "The specified serial-mode jumpers should connect the two servo signal pins to the shared MAX3485 bus without tying that bus to a supply rail.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"+3V3\") ... (node (ref \"R13\") (pin \"2\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"Net-(J8-Pin_3)\") ... (node (ref \"R13\") (pin \"1\")) (node (ref \"R14\") (pin \"2\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/TTL\") ... (node (ref \"R14\") (pin \"1\")) ... (node (ref \"U1\") (pin \"6\") (pinfunction \"A\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "Serial mode (populate R13/R14 ...): J3-pin3 and J8-pin3 are tied together into one shared bus node and driven by U1 (MAX3485)"
+            }
+          ],
+          "impact": "In the documented serial configuration, the MAX3485 bus is clamped to +3V3. The transceiver may be unable to transmit correctly and can be damaged when its output attempts to drive the line low.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "The netlist ties the first servo signal pin directly to +3V3 instead of routing PWM1 to it. It also makes the documented R13/R14 serial-jumper configuration connect the MAX3485 bus to +3V3."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Analyzing circuit connections**\n\nI'm checking the spec for the R3/R4 series resistors connected to the PWM GPIO nets and onto J3/J8 pins. It looks like R4 is actually on pin2 for PWM2, and pin1 corresponds to J8 pin3. Meanwhile, R3 on pin2 connects to PWM1 and pin1 to +3v3 instead of a J3 signal. It\u2019s interesting that J3 pin3 also receives +3v3, which means PWM1 is constantly at +3V3. There's no routing to J3, and both R13 and R14 seem connected strangely."
+  },
+  "usage": {
+    "prompt_tokens": 22479,
+    "completion_tokens": 3033,
+    "reasoning_tokens": 2052,
+    "cached_tokens": 0,
+    "total_tokens": 25512,
+    "cost_usd": 0.0043263,
+    "cost_details": {
+      "upstream_inference_cost": 0.0043263,
+      "upstream_inference_prompt_cost": 0.0028098,
+      "upstream_inference_completions_cost": 0.0015165
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T15:45:16.784139+00:00",
+    "ended_at": "2026-11-13T15:45:49.953015+00:00",
+    "latency_s": 33.169
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-13T15:45:16.995Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 7466,
+    "moderation_latency": null,
+    "generation_time": 33074,
+    "tokens_prompt": 17569,
+    "tokens_completion": 1012,
+    "native_tokens_prompt": 22479,
+    "native_tokens_completion": 3033,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 2052,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.0043263,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794584716-8HbjNdCN22EMUkkpaRaK",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794584716-NbIRjwoGd22zC6gRmvDX",
+    "upstream_id": "resp_0181b8f45e7b78ff016af7308d260487d18d4cf9e7fc1608c0",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0181b8f45e7b78ff016af7308d260487d18d4cf9e7fc1608c0",
+        "is_byok": false,
+        "latency": 430,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0043263,
+    "cache_discount": -0.0005619,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794584716-NbIRjwoGd22zC6gRmvDX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_supply\",\n      \"components\": [\"J3\", \"R3\", \"R13\"],\n      \"pins\": [\"J3.3\", \"R3.1\", \"R3.2\", \"R13.2\"],\n      \"nets\": [\"+3V3\", \"/PWM1\"],\n      \"observed\": \"J3 pin 3 is directly on +3V3. R3 connects +3V3 to /PWM1 rather than placing the resistor between /PWM1 and J3 pin 3. R13 pin 2 is also on +3V3.\",\n      \"expected\": \"J3 pin 3 should receive the PWM1 signal through R3 in PWM mode, or join the shared serial signal path in serial mode; it should not be tied to +3V3.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"J3\\\") (pin \\\"3\\\")) ... (node (ref \\\"R3\\\") (pin \\\"1\\\")) ... (node (ref \\\"R13\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/PWM1\\\") ... (node (ref \\\"R3\\\") (pin \\\"2\\\")) (node (ref \\\"R9\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"each servo header's signal pin gets its own independent 1 k\u03a9-buffered GPIO line (`/PWM1` \u2192 J3 pin3, `/PWM2` \u2192 J8 pin3)\"\n        }\n      ],\n      \"impact\": \"The first servo signal is held at 3.3 V instead of receiving PWM. The selected PWM GPIO is instead connected to +3V3 through R3, so PWM control of that servo cannot work and GPIO contention is possible.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"R13\", \"R14\", \"U1\"],\n      \"pins\": [\"R13.1\", \"R13.2\", \"R14.1\", \"R14.2\", \"U1.6\"],\n      \"nets\": [\"+3V3\", \"Net-(J8-Pin_3)\", \"/TTL\"],\n      \"observed\": \"R13 is connected between +3V3 and the J8 signal node; R14 connects that same signal node to /TTL, which is U1 pin 6 (A). Populating both 0 \u03a9 jumpers therefore connects the serial transceiver line to +3V3.\",\n      \"expected\": \"The specified serial-mode jumpers should connect the two servo signal pins to the shared MAX3485 bus without tying that bus to a supply rail.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"R13\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(J8-Pin_3)\\\") ... (node (ref \\\"R13\\\") (pin \\\"1\\\")) (node (ref \\\"R14\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/TTL\\\") ... (node (ref \\\"R14\\\") (pin \\\"1\\\")) ... (node (ref \\\"U1\\\") (pin \\\"6\\\") (pinfunction \\\"A\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"Serial mode (populate R13/R14 ...): J3-pin3 and J8-pin3 are tied together into one shared bus node and driven by U1 (MAX3485)\"\n        }\n      ],\n      \"impact\": \"In the documented serial configuration, the MAX3485 bus is clamped to +3V3. The transceiver may be unable to transmit correctly and can be damaged when its output attempts to drive the line low.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist ties the first servo signal pin directly to +3V3 instead of routing PWM1 to it. It also makes the documented R13/R14 serial-jumper configuration connect the MAX3485 bus to +3V3.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Analyzing circuit connections**\n\nI'm checking the spec for the R3/R4 series resistors connected to the PWM GPIO nets and onto J3/J8 pins. It looks like R4 is actually on pin2 for PWM2, and pin1 corresponds to J8 pin3. Meanwhile, R3 on pin2 connects to PWM1 and pin1 to +3v3 instead of a J3 signal. It\u2019s interesting that J3 pin3 also receives +3v3, which means PWM1 is constantly at +3V3. There's no routing to J3, and both R13 and R14 seem connected strangely.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing circuit connections**\n\nI'm checking the spec for the R3/R4 series resistors connected to the PWM GPIO nets and onto J3/J8 pins. It looks like R4 is actually on pin2 for PWM2, and pin1 corresponds to J8 pin3. Meanwhile, R3 on pin2 connects to PWM1 and pin1 to +3v3 instead of a J3 signal. It\u2019s interesting that J3 pin3 also receives +3v3, which means PWM1 is constantly at +3V3. There's no routing to J3, and both R13 and R14 seem connected strangely.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9zCVWv5hHUIFzec-9ruYATdiKpQNvU0x6Of9b57l890G29HkgyRr9BLP_q06sDiWar8I-hYMbnn0Kr4tZGHR9lsV8HcS8rWxGxlSzE-Vj83fau1c7tQkNAyR09cxsaQQqjVQdE3D-4gxxxGsetBJL7YtWj71iGLs37HG7YZdGgT0ngqUNZ_nqy-dgw0_vCYca429VkWOrROxy0-fnlmjJSl2jnoaFdCM3YL6X86E8FK532L1YYFM0he65W7aUGN1cHjMmXk3yZdVutLHVpZBMX3ZQIzIp8ZAeWSPM5bKXi0-R7xmrXAGK0YHJiARNDEOtpe72Rc5tqDuuhsuK5LG6LOKd3pU-i7xmEQLEErMfaWK0D0iTIdzBz_Fe_bEDc5oHEUWqJNlkRCmTTmvg9CWN50qPokcKPPHxri8QtXLQdPp1_p4R2pu766jGFjpzWtcUXVK3V7xAXCcDKeiEnUmJoZC0YiSrIrfWOhLMrhlkZcDnSBATh6nT7we2npuDnyEdLZTfw9a01eMMPhagYbkAvMMYovfSRVfH72_LPVn7f2gdmJsDTYlSfuG8_6Nn4w4O8bQqQfa-bFNltTx2idA_giJxbd6JqVAQK42WE6RAwalznJgCZiWmracJtd95ci9KSSzneh9fQKFcb1IVvO4dw7OGlH4kA1zjv5wCXwicHTFPYKEvMOVkTT5ZXkwHW6r2toNWWDVcBuglGqojUK7IL-NAhTwAqVjMtqHKPsrDAp7Ytz8oNrlnGepS1gbPyYCX1wgjSDrYnhqZiOYPLXGXFVCyJvZB0-DNcdZXuEvOcmUHwDfMc1dC4hdwvnIz9qYG7-AKHIFobURAjVDngTgOeHb1g7qNYO7Ww3cKIyXvcXsp7OZ1cX2sjNy0kSU0_-rkddaWoQFZKcpMm4dAx11Xat9HLgY44Yh3_ddm7DbdPSzMqw31Fn2fSijHKkiZxgrMTAhdnrf7x06xsyz4PvYNSQVZNTWLQLYWDoOGHnbZVgLxT3US4b1sAFhz-HzYHaDsR1UkOdh9U6jxUS73_9UYJOVJuazNT1sL58IALUSK_46Iyh5GDAvlcIaqvEptc7DbIUg_LtjHzUVvyd6ymrfFEB7hcIA0bFQVBvc6ORW8CAYkZDHlWKYQW63xC5jEaz84wcO953-JKjYegjDaKTo0YF-G2ydrIYvO-V-gSLlHtnnvL4nV6LirCU_3Xh_KL0wjhINPbtqV43HrO01iosI4EAlPA7SRpZ94bxGW5LIk017AXVZB7l37ABzUidQTeL281Eof8MgqlUxCeiuyD-GtrnIbVmZyTvXBpNqeasE3-Nzgd8Y3te9KqeT9-pfHR2Spl9W00MMObXm-tcDz6mga9RwgK7karPJHfLcbkyORGY9uAyIcFH7tKu8qa4aaTfDRz8-TPn5v_4f6TDn0FlnxADkPiKtcvgvVxzg-SU66vAH-UGsKJhSmyOTAWFMacHv1wdePNnUJorfWLlXs7Fc4tLfOGdUxAUjGT7JzX6hP3Ti8LmnGjtgnQvd7XPNqa9Az3GMgMibHKFt93yQvcJOeEJydCET9k7rgm70r2tECnSaB8Ac7M50t25i8QlS4pVadk_NcpdQTlBzWbYhbZtx6oVPcFT_bfKd1mecwE3dEZ1zT4ScyD1afYDt1DxmlUYDvGDF5dpApjXaqqGcFGpCBy_iHxG-MKHO4z8MGtuPWBQbjFENQzuca4HImIt5aV8lg_4Sg5pPtwme_FoC3l4FozryIrf3Bb7auxE7_v-tqBOanxF4mjF_pYWE_RVoarJ0ERXHMqhL0AhS9tmqeWJ-Q63JLWASDSMBGz9DNaLmKBv7lnZyZHpvRXSEt5RLyu_fG6Japqb7TOfELp2tAgGzVt4BhRvZB2OgiUWIVQLz5Vc5O6H57AA2tgtbtMI1wHQUtVhYUiJ_h7YsXqRvFviEXk4aFjXYDTlg5aZ6o4D1uph3LcmBhoWsMsdT-dWsPPXFsrrkoZdKFLxf-zooc6ntIdfrGUSG8IZiXTVoYb5zS3zVHYRrkc_8HCStwkIPpwviaPdcV2K0JfQdR6YE0cz9LzZSfwnJ76iqS7Se-E7_rmJziFJKIvxHplW3j48q2iU2MMlKyCq3ZmTcjjNwsB-2WVqox_akzPI3RZ0_yF-TD4YKMa1xXZY9LTARHDjlNct_Zlr62b_hx1ILuG9KCwkKIbJqH_kp1B6WEuDb4I9qClc-JGSK0d_RZbn9x4WM68lfn-fHQRTgoeM9R6mLczi6I50diNyNK0eNe2N1sFKAhgfBt3ex-SwWJ1jmjKTSnlnvr_DMjpEtNwameHs0y0j4gD_s8_RGd_dK_AnWk6GvhnP1jUnH9afT6SG2gVOcKeHw638sxIGahwYJIOFOXbPskkcXm-Sl4iePOWdHGufev1iuBzJ_-yXlW5Nml7rDdEy7mYFdGLfwB6g5Ifpti71-yUSbkuL-ZyLR9TvpxI3kqnFF7AL6j_PfuBC1wJQCt4s4Y9xw5ryrf8LgnVbXRMifNeSwijLedop6Bi9cKcPqq4U78rZjTZc5KtaXwMStRejCIXxN-0bFX4lh5qWOpSbhFq0fiBdJm6JTCcx7B-fvOwqArCajUX7Lq1X52JIXKLz7OhzaC882tVB7glBG1Z4LdEfLRLePnvOWZQP_QXIXwt_wN6wFBfd4sjAuaP55hqYGfN1t2_xwfbX9KeQSsvbnKqIkPvSdxqeYqZu2CLIUgwYbKOF7hFDzVIqnIaHV0vSuXHWtWsQeTALnz5PEIRYC_MckDRztCwrcxHO3TIAC4kkBN9xAuhjdUICN-aS7Mj_X-WP_NaCu3eKL--uPGPb1Ztbuc-XgW9UJBjr2V2xb9oHP85q-i0twLacUjDzh0MAdGLx9A5pgHbLYfXbIlzf2wkCX4pmDBsxwtDaAaLvSfa_tw9bLsh09-TeN2jOTiYJY83Su9lf5598M1211D1f_1YLiSJ1GvcygjtQakNy_PgJZy-BGs2V-83vdbPXF7rx7b-yXMnz5eDjozu0QlfzKAoCHtUo6syjxyqp367M8P037ca-aOY3S5SFgcCursoDEgdGg4IZFn_hR3TqBnql6Xm6J3f0qtO8r4FZ6T58V0Jk0LObX5ooUXgUOhH4jkJn9aUZwE7wjMvGajqRaz9TK8biWgtCRfKwSy8adX1Osbl7Z5nfp-S1MzoJqmgx8Ej2cTSwUAGUstsmxzS5SzL6QhZ0Q-p7J-RP0KLsbOy_IAPQEdsLx10r7hx8fSQvTgaheX1aHeQN-BuepAJ3kAzNxZ78JfH5vgwSOfc3JgmzMm8onKXpnk1m-EvvyhPgiBPjQV_2lesg-tHCiMmqYuMS45cS39RMRHjkcI6BB2un8rrZYgQlv4cvL7fKrk9GVE0BO8yUwA5UjE1RJo-zCwIdgG5VoQH189vvevb2ytTppR0M5da-qn3LWipn7u6FNLf3dPBslpDWGQnbH_UQ_uUe3v9ms4P4867VKXqD-aDrSiPXTR8Qnbp71_JlVmfjQYYVBhI8bdYZLUeSY1cGdPQQLng6LhrkrVNsthXQlXJ5k39303-tsmA-OuhIJ5J4NRyid-ayAr8aKUbTNOPz-GLILGfJn180Vt4Y1-R7btMfKcUsY97FCh0oUQe01W5JsoXIR1XHIzm3HNmLxx6ydvQrEvWQZmyo8IqxBEnt6x8WeMUWhB0kyWk7PvKcw6ZEAFJGtj6N58DvfECuTpEUWqXRDpNzKUJrJ6MMu0iRHUTPm_6nIGha42_gombR7-_4xmKM1mPTlYLi58hMkWfqy6GSMmu6F4zSbQoCDmcVCwhbnEzh8kf28wsU64gtOYaylRBB-saUhcYQRXOs-qiGV0TL3oFq9SYEovc7sNYwjxqVBwTicM30VX4YawbvAJQuGVNZTp7PBWFC1MbWV-bBtCdGdKxpA8lkg19MR4spHIQ8CGA6CH9PM72M70-yGaoYKI6zzn60nhyZ_mPZMd17E5kNPvkDnb3c7aFulizoqapV-z7CwmZwn-RMt1M1DyjGLymcKJfsit3GuBcrTjF3vRaosoQiDkE-fjmvQMnKCCfi4Jde7L-Br57hiRY6vHH2i8Hrtd_QAgBsQ6_B4uRVliivGGhY2MNDqA5HEie25Aawxb3CUKsD1UMTlCPEVFBy6Fc9rNL_SOl6DiUoqeezCRTYUBTpnrFqMJsNl2a0HHo3cSQk5wIX83yx4Y9MwTyCXTZ2C_hImK3E14YECLjRE5FdGuengHWAhH-49sg7UKN4YBdfmgmSQB6emqfioalKIcysHB8Yx1iqHYbSUSVoeuNWEub2nL6JMXGsBDpJ_ACdzss1djyrm0M8GIBeuCBZEZ8NWWJncgxRRcKy3E_mgkh_80L0dC_XSBkLUSgbCoIWnKwxV1irsqIQH6Ske8J2Y75IHojM6PCUj1_lLKBbjsSZKM7sbMXaqPa4YUWtTE6LvrCUPwPnCNL-WGiHhallXLdTEerBSkQBSY0XmfG7VYTkQXCDYiDGuU-nli6APbUtj5DFB3BA73TdWy9KQh1Aty8G_ail8PnCg1VnYq6JgElFcWdo9LmX-U_McYRT7KVA5dlfkZNbi3EnqRv4CtrfZ2ZkNcpooNaJI4PuxbStWOm5zK9Zvj04D5Y0emtwX1xvaesiJj9pWfBoQodIJqMtyWRR2eZNCxD5rBwT4DNf5xDRFefjrNBLHQ-MirpZqzUv9RcjVq6tt8tVnphg_8cXgGEn0xIu86errghkg41Z5QNiQkA6aR45Ybcaql6ameVlOdzFikMf8ix3qEkdQVfAckQwAEwf6lsnCBN_48Rg0Z71QEb-wH5rPi76k-eUtZuen5xfnWX19mdkGQA0mC9T0GzpKGtcIMkPpHDz9SG5dFAGgvRC8Az-Csiy8rUhcGt9vPo3PZZZSisdCbHqu06no-6CeeSGD7qeDc1GukFzsI9w32PVFJqls8aFuuhM6seZI_vs4etMNvIUcjDC9W55BcKLoRGgXny8qXNbyAPtF9WHQYgqTGjbdTVCv3jbn3oSJ2WReUf6nOHSvEh-5_L_MySm9FZcqPRGoni3Vr1iU5EHO6UZxCpNAg3JQeU-3rn4PbatYzaFGuTTBxyTg7jVfJjWAZffTHCHl_J5ow43Uon1VbdoLNG6_bWjRgxr3JZxvQcW0Z_tGjpxG26esoWsGjSD1Rmn5siFhr2lRRY5dLmcHZeQkAuh7JCujvTk2FLCOae2esBXg9_JnyJC_i6ACo9qGmQEH9BbK9zV5Um1hvJe51KZzWBAYM9o-FWl7t1uuN6FX4EVBx8Z9c8-0t5IQ2JUuxd1y-tDNCJcefiYAjSefVnRWYCvixsqcPpdaVW2cCNRvBa6YwewJOrzgEtq1aIitz3ZESsMKJf4XYiyzsfBTH2zkxPIsW369DIPT2I3Mj-gx34GsfKvUH50RXwwlFW-UOGj-9k1zUoPtEusp4nZOayi3k4U5bIAxHBM9DwqinMT4EsBYTfo7l2qVd5rxDHc8dXX8z__XpcKtw1ydtZ4I3_bDw6HepiDgDk5yoJwpR2Xx5qJ0YYB1lv8Ped3yYRqUKRvNGE7gJbFmuufFYDIpPbgMb0JVRR-m-BAXgPDHPqjlRFrxRRbkSJMGJt2lidkyyIvUJqGWPicEr81B0OtohCWhpxyHzqLix8mP9eWGlK4MFm6sn2u7syV6e2kwsb__BXzgU_UdxWDESJ5Tg_Qy6L19_e6XSwiQeP1jiUX6AIh1gp8EJ1ETKL0pk3-RhNjCG_3Uapxz5SPd7k5PhQCsv0EZT6XEDOoI9SUXJmA-LLZAqXZvRxH5NNgcD7PyxrBCLdINC0KuZiDfeFu2ZLC7RIAaE2ZZIG42k6RbkvVULXADrvixmXt5BA4scKhvpwd8HHa5KZqsWVDqjhcEO9gA_HyddQsY7_HgmAZmSQVx6sBLUanVLdfypeoJwerZTHm0l1UZvojQN0CB-P1WtF0eVSomne4vfbyZonz-rtKKI0qRNY_j3A3kfi1Tk23gNFaG2ZwhWGZXODd9pxC-CMPyDd-GmAfMLGULuQogMnfGGT3lcI7JgphjvyoQWRmYdmYPziFqbqkPZMV6RiiN_QKwMyMlum8zvJ-MikJ4JaKWTirD4x5juTS-3uNBFeaKOfejKoTxt59iAOchd_Ur3-9aVruHBt22ecZrsy_IO8kD22sVd82i-pNWPn3j9HMWXNQixcM-LotjNzD27-mIiCRoqhR6FXbwbJmeE-1QdpmzSy2kOEOM8Eviv6z7tnLT-tOexRC3xXA2gZiwCfFF0tWqCoPNGIldkI65blOUzX3KzTFrU0sGMvl_I0lDlWmczzzt1I_y93xMs8PqR6I5iIIKPUI7TUJc-K44lcxSaPyQIaCnWQbtsqUU-V_FDdNqFAQheG_7SEcGhrrzOGrX-ah5Fu3um4GAUV9tl-uFFwsWKLfPr91Td0Rs18Mkt21WAQWFQXCZipJnL74D07wHz-M9-RC6_e_l3JQj0QHuqQozDll9bM0SW5nkVxPouxdKmZlmd-cYSSaztpiXV1DeUl6BWrJsBbGnXMjiY4d9xq6lGpuciBpHUHKaE7-ikkj4Ps46Q3ydwrd6lRTDdLHqf0mw9gs1kIGdihr394s2BaUZE7PW72H-J_JaOhsZtuozjKz4YcEYq-WfLYO54yX8Lzs5qCdH8QpGxPNx07Ud9YrHLtYuw3MKtJeJLGd2YMATto0u-qzl.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0181b8f45e7b78ff016af7308dba5c87d1bb07aea1b7e539af",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9zCbTXQOJU4Bn7d5uCLm08shBkNgS8WrkuvUf27U1xo-zZG09Kbh5AltVjXTlnNjmhDDdy7DfKoiWAykQbNX405f1i4cG6Q7X4v_s48udJSxgW7g32xtx1o7qv-KpWGmtB6xxn7A2cbE5xNmoRasB8374TrHKpoo42grZnGZ1zyzhXqWtF1HbPX1v3EROjIZHaG4meZtSmaRFo7yVTpksSeFepYkR-MLkN8GAMO9KTd_A23OaTmTdhq0tZXCdsbNPtxZ8DrRoXEOvCzaqzNsca25ZHM1jNnuhHrTvyt9CldpoDw_-tBfpP2k58vmasP0skrK5S4npyRCOx8b-1jkWPABeLT7lzLFFLu9qQgVL6eXjiz4C22zyq2OPXJUgEQRq715VLh6iK624UohUF0D7u4zqeAHYXOZ72gRxdlms3zQVtZlOJ6IUaMyoCdvWbX8nktpsq6YmV85D6lv8N0_h_YVfxhPfguAgDVOEwxRtjRX2tgmU_2R0yiL0rj6AqAxJvm9d0jzjiU5juR7hTJv78BrSNZe0EDCaN8NXw6OBH0XZG6fsUMY0N_OqOvcsUbvzfw8T1Yc3Fgp89NYKY3PGPQUSEsnaZ81dR5WL3b5WKu8VCKTyHQFpKg6RBjgPVeO12UKLozYNgsL1VYsajTm8D7-MV6ivmjrs5Qm02T_eszbXbHN613Hu6JvA4PEzHOZSohyY8qtlhKaGI-RHxl11JxYU3eTcA64D672l3syfvYqHut5N9YAdKxHhg_bm-9FT9mVPvjAAwdHnfI5KmSrQN5ZFA-vE06M0GyfVk8DmRCt0I4aXPyrlmN0baNyOR9E4QD85gHu824nVhQIyj8H_slDrTrCQGrZiF3uv4SSUSrf6DG3RFgqSvABodBpfwFiU4cRexAx4oWspeet2UU4ngSlipZMlcE5hNMcoVXjqc2HvK3YI_UxOck9CpTbM9IsSeEtcozVS4lTPswAZLFDpLRLsO3HA4fV1GoS2Kxkv0WOgKnVzzzficNNeDl4_4YQLoiYJUXLGqtdGjWeXqmV8jH09D2XpT9V1CdPM_qgWDy7Kqwm5V0IwUmbY4CUrMhNKubwX1BNhqFyfbCU4j-vrx1xGjnKATZtoLVb7gQoz47_lhfTpK_rlWkMeEadBLs7B4MuQ63ulH90KSWPa2ApF3_bjT-piW_XhFcExUQ_ks6jrJCgyFw--mPhbZZgCGhxSs5yx7QF0KybR19VY28poHTZTuLKCUSBrInNVysTDHXP7KX3dMs8_a3cW6ojiAyQk_GVBJl5vPTof2zzdP-2jDhYczwaEsAnvJtXzT_z0z8HYO2iVH10GgsenyXUyu38kNQwlR53bs4lG0x_xYMvBfKGYoA0DvgO47tYfytmduhLb-aRti0NTFHHvvvbTD89sK4sNOc1k7161PYxXwSFod2KdlHmVb7_fws9VsY3MKUhJespl-3EAYdRxjXWRQc6JKtCWHpTzyBk8gUuMSPaMKeSlPPNLmR5q58xS59xy0ldB_lGQmPftnFU2pNw7T6z6Vtr9RnSKqzWSO1Re3Sz8-0kXU3nRGloLniAb2pUPhAfUjXEX_ToXSkPcDIAfow2_pkvnY9Mu7Y0ICun4_3WGHItJ5Xz7Etc2Fmy8SVIx0j1dusK_1zj1oy1BHKwkKT6Y7IHdPT4vTJWVgNsdWetle5j3MX2aUVdOUKgSeArvRsNr1UedAGoVtmHiDteNF0bdrmX0brZxMHxzzBjCHgUEEapAVBTj17LVj0_0N5y_7utE4lxKIjur8-SSU0F0yJghHFAMnOm67sOfK3PD8A2uqye1sMNL9QVQoSxviSEwBI8EnbL_gYIpezXVYhk0xcoh21M84QV9EECIU3qB2RC4Ctp3wIcWjIjC6R5ounq8_5A9olU3p7HzduvF7ps2giufZ4e56mLBUZ7UJtxeEv3Vpo5muzjdxTmTw9SVIhUvwLO19ZEj8aBbXA2LcBD9IIVdL0OAkOhZVVIhJMuWSVveQGcaJrKzbhJd7TXLD5WEOGOVE_z1xxjROANCBhtnehP-smqKKP0D5eczB9MZsQPnyMBqd-ttkOwDAkq3ONLaj3QFsUe8qBdfhYO9fzxlYhV2r5oMRarRfD1zsDtKoQTfTMNAOwrqMdAt8zDvjCKkmE7GXAQtiL1-XHXw4bNsaEfzUm7q1bjt7HqfUxsLrtcVKWX_0K7xkL6Jy5gcZaxqWbfdLqTk5FxBMAbN31weO7W4fEYHaeuArtUb7G1poQCf9PYJTs6z2RuLWhJNipgngvhZFK7U4o5KT3N8VWxPHjl4k0RNzhsNIyHLnfqshf7nLU31XqH0EYr_tYB0O9gin7SGGbj2oT8YUzM_jdKR1_tvwKi9ypgaviKEdksoNKilxKacSul7hyPSzQKqYBNe9dpTC3ALDOI2Eybs3g0aN2dlhry8Q81fpnYwh-rDdlUBh8d3qaydfn4gOEImmwhm40Q972V-gIv_jfnpfVtqeUQNByJrFP1v1mOZwgFYKsN5cavYP1upIxMa55X0icvo4XGn7TTtx_ZJk9ONUn_kjox8EX1gAFLWli0-58Kvchs9fG9E5TilA1d65ym4Xnp7yhDzrvXUk3LlpGh75hA3TV6tnskKw6nqh-nzDk6d8OOgT2y6-j5jRSBq_ByuJhM4yNAMUj_Pl32_F3YO_s9ha1Vp3D8PAxurt4Ar07nSkLtBN3utiWGeU2gvktuZ_IwoEP8KE-cQA1iH2JnZbDqwjzwN3kaaanI0V20NwodjED3ASRtRkBFUFEPniEb0dcYsZXL84DA3LbZN_dWI0QI-aMtYV28HanX92ivQQxbLH9GebYGKXI28xy2D3m-bBJboEwQHh8JBSLL-JGb7BdUDTVRy9OtRD6bRFAY6jhHoF15uaGN8bmnT1GYj52_ZVjBWbSW1d5xYfg8ujwvE98de6I5xjWsLxvpZvZBhO4RdPDmt4MnWoNVmTFITij3s2zJjfR7jxK0XN3memCjJsz7yNIaxjmF7N0YxXaNQD0ac6nml1vH23gsNhnGnNLS-uyUameMLEsRtdNAezesA2-5nln3nOkAK9K_iP0xF80zJHRGLZuTHe6qaPKtoAPlH4BBf_vGwq5paMHAHoqmlkvtTQRkP0TwduJCt83QnZGoFpGq6oAArE1dB9FYZ8MKziRVtqlokZt7qFFWXzxL48ESoeNjWrDPfyaHmwHbI5fh3-8GCmqDKA-6Y_eQ2podHLM3UMQQ0M0hWTT0HyC7Sezowc_HPsVMiP9tdhXb9uu14XGNN0JhVRw09Xl59yZaKtHwkZ-KvWnga6aAcPCVtgccKm938UVG1d-2Cvyx4uyjh25p6MgZzfjoqxBgBNoSJtgFm9solDMQEaw745CI-V4zQlicqGj4r6d5wYwG_SsaHcjiySx6DWv0_rLmTeWYj5EEtbiFzx8K1ifJU_91UNQ4gmWjNxBBfnFtjt3ktR3hoM21UqV4x2pDtoo6yytudXyY_6ugxbF6hu0rkN7CK3fd4ujawsTacKOzl5YCpUVQRTaBp1vFUt-F_pszdN5z22lRd3wNcTSnHM0MXcsHF8mRGErNkfNNaM1Np0Y5BbY-dYzRuKA8qomn5-uvErDb_9SvyE0SUxwSII0gt0mi8d-QDJq4wcW_soyxwhBeAGyQhrKVAJ7hakjS7h4GA75ozgEf6WoA56tNUAXnEnxSAUUivQN01bfzVI6n2XDZpifxH0omOhxhsj_rB6YQnXJF59qbEeJ_XdrjxBQDUdsw1zCtM3sFS5-t95lcXBSakCOh_psPOI09MTyJzxedljhJ2coz2y50o1sdqc-ohtJFnCbFR3R8wU1HTQwKzsCxFoefla7H8GlcbmzB3VwXkW1fA-506pBOUkkOE8WKqbZpr4-HkYJcAYfrOiO-KoHoB1pAbEkSazJS2f888Di3TXlsDsAoSCKgFU_gruLYI5Wa-UmiTKDJEjo279ma8Tv19cNo7uQdEd5A9rugx-PyncyhfWNU2mfDZNKNISRC3TOtArTVfIEUYXgie8BDLwudygEAdOdm7W5LEIW0snwr5iLKDEZyQpN71INILQF61gNGhGuI8cK1j3Zyn-NYFqhxrlgaZUquiamCA54yFX4kRKzBvAMmBJi8CU9ziDl5Y98M8Z4Tc0KsvKNsbN7PtfDWaCHxFmPqVheDP8REq6PEIkv8m8uPdjCVE_MlpGf9ckX8lz1ZH1exblNcJz7ecSOZAhkGCxrtmjrdhQBjdCCe3zbI2Hxkf-W5bD6HBUvZZLkPLJEktpqfnHDdFY4ebiH6xJiOeFfpaAYPjbsSDZEvhPmgRCfG_GTfsKxNGvUJmSice783z2r5Hyqd7QCsUWZ5mi-9-_HZVwb_u8Nnw8nif9OJUxC9PD2ca19LLIwozD0XUDlSZrbG5jxx8nMP-LFnSsDLdvCr_0qArsIkTyVgVJ0xtCkEHLQebNUCaAa6iFWR9b6jdsfaQBXamzAaHZCPa44gMZl0HtPV_knnYJ9Wt1dpZsfiLPxb0shKTgj9v4Yuu-CuQZWu6NDiTNFEguLA-lkv19Qo5rRD64zepiOFCaD9Z8qp5iSArMiJ1Uz4O7PQGttUlzGFhnvbi_7d3gpw_eaQDQ9tFBaSvpiXwNy2r8_yDW7Z4s21j-ytlWS0dEj9Dw9i9I8Jb0aU-x17gvxnMPQ7dHlxDHahN2q70jD8A8zoPBgPBoIeFAZpyEOcHkicx3Wb8BKMpUOrMbKDm9RUEwrzh7Z1Atlzb-ulECl8Rtl854w9gPLrKjvSiALGqS9cAJY55i0HzHp8hIj_S667jTRfkH0AL529uLuFGzCzY0G3A4dcvwHvRZQl8NfcCQZrkgN8vP8fkn9A-NGMJwccWZPOaYiShyWr62dsbYgIcoCx1zia4ImobPlQ9WWXXQW7JCiy159amPNBCVhD13vM-R3usdOurpLGrh5tUhKgFnY1Z2DWXjAz3GoM8J72eiRGQA4Tws0ufAFubBnHCrgaiBGuBEMPa13crhewuio_Azz0MttUl1KTg1uf2u64NpqoIk-2_ytmv_QxRK-HqY5x1TaLYw6MhGfVcOQ3tDV3u0ykQVn3HSMLurZ_sRjrEOVtwTA2Se-dIVSAOVAbN8A3EPm67vTOSownOVrQZcI1af-Wcnnt1WZx2Uzjuh2oONSAoHT_O6VgTnIR3NUQ01Qvi0FMpIq0RU7kHALtffneUghLIIYdvSywhpsgIKvwQLStAxLUBDAF8duEzsf5r9KlFmSPrQbl0XzpEvXXU6H98y5uWuoLdiFDbVqx80McuOdBRQUFbx_8RVQMUmJM9ne-zQ1sIdgg7BJIr02zMR-BqFCmU-eVcA43erBFrvFmnb1gETAFTDwDitJm-TIBJoDRpXzEEo05qOjtlbchjZJ4EQLDX64so_5TlIagpoimoO9TrKjF3QuSCgffmfE0qlWWNfduOZ3CsRydg8pe9l0rUjmKMXOuizNlqVGnHJZE92AwSZ1KQfCKuyeuxlJOiyHUD4z0SFPfW9JUHF6fmR2NerfrXWYQKWD4ldzwoG9-zW7bymYZ4MkfIS_LtnVBfvq_G74_yBx1ssqhAbOyfkofGWLCvjJUebeOdSHcQOI0isxPC_G2BQe_3iACdZt4kdCLOweD2QY3J6aK9rBImZKfgYT-vhgLmASWNS4h_h4n3n0hVTC37KSc3P9XH4NUyZRc8BP705Tj5BiC_r73lkFGisNgBd9rMkv-p5643r3UvV22oeoKLEJBjCS0UwX6QwgP1Tc9RWO5qgstNQBIZeHM0vBAWNB3xl6BanSNNSssByu9xMuGpIquTXMYHp_eHhtwf5JbxSFPGxwYpRx_zxMzHxdkV_le9Ppkd9MEuxYp6INttgxjv0r88vfhBwdJY7rwjPM0WXHF0xD3motyn8dUpZcrFUv4LyVdorDXsn_mw2cxmJhUBREnz3QTw7ODf71SSii0RzJrHUQ3AQrzoHuqbu93tHoTeJmGg5gJGSdB1dmck-Hsnn389DdCek5MaZ6gBTDa4x8-TS7QqQrTYv6zQy_WnOC3mGV3hLM6mFDd76CHi2CL15O-xbDSovXaEmMxM3BLTE3SzkT8aAwFmLwK9C9yfaG0bXi9WPT1EVyerGoSZDKBJfbG4E70xxrsH_4L1r2I8G1Gz9akW2bOVkPgAfebN4WDbeX-79ZsaVKPCsucobIupy2Umk3zPeXZAeQXh3nEniFk6JHweeIlP5P8huF0nudGubSl-wg8nihdS20T6AS6_L9k7xK-hrYzEY7RKcV1xTcSxOx5tTZ2HuhUw956ERIgnGI4ZBuh75f2TBjwJXaGouYJIQ6gZAXpE06I_XaSUAZBWygJX1lkpVZ4wpTx8ZZWXSRLJKelJK7n-nw2YBZKOvZF660LjURPGj5su__QdTh22CwVFruB4fRB-mAVEgsuutERqB5pkq1V8Tvq2C0rShRXtcA04tSHm8SQi9YFxQTHGK1W-O8NQpj-RAG6mTWd78VIQBYesP66GZj9WK0KNanC0_RWUhwFWWLNuX96tDkTMGsOIelsJ7uPFu-8cKhU49ewWtRj8qoEjuRT7cvgjmEZ_oFSY4BZynUnvS3KbCAAowbuX-5kCdBf_4XFqRW2KLUSoYoWatuu52KWAxDvF4pJ3hhWlHL_awJYO5YuzbW2O8CbUcchVu8FV3T-4Xek3tWACVU0Qz-s97AzasUi5Y0Udp7HHPR4sCUzNh6M5xybNK-NziO8j4_bVp1u4tE-HvASIQDCrMLU3FEVPJdQn8tCA6lNlOO1YPfYPhY0U2C8lv-cmeUX7YU7Ahq8sNnkJP3srSNLkUDSd1H_IiZIc33Ae0ErfaolOZeLh9_kVK5NuLgnkk0d71S5t_4pNZ1lZspAbPYcvbzwhmJOqaQZHT6-NfLhBFSq0v_6FBfCnN0nKOM5Jm797jz-0Rq5szpa7aRSoD6w1zpdAeUX5MHml5lHMNCA_W5D1wHkWKZL4JqV7NH4nVarhsmo_gDr6QAmq5BweCycWHPo7F93KkI6yCHSCBTLgYv9qTk8f-qQruA96QUsT9dgSpMwKAHk8qBIw_ciFn8epGtPmcwl_BLopcW1lIOdhvm5Rad81TLC1SsdnEbp32DmUukklOCWoERIUaudZDUFjjsg64xjpxgEHy6uBU-iLNSOu1Uarl2QECMifu1yZf6MywMUk9AWPHsIJ1v8NEzh448pWAJqun7Zly4XcSG4.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0181b8f45e7b78ff016af7309527f887d1b25215af30fb78ea",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Confirming connections**\n\nI'm considering if J3 is indeed the actual pin 3 signal. It seems like the spec explicitly states this. R13's pin 2 connects to +3v3, and J3 pin 3 is on the same net. This suggests that R13 serves as a link from the +3v3 rail to the signal net, confirming that J3 pin 3 is on it. So, yes, it looks like this is correct.",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9zCgiLe17HQIZlikYgoZX7fFdLmsNL5Ci6RghvvwannAy7yJ2pSqEB6AO1TJFSN6jaAtrQ-h8lP9Lnvo3MsHYkyAVd-4VrDQWeYBi7pC_xqXKqTXw2Od1I_h4JUM8u1pfPTCqzqtzrQuX6-1dIVyhUdWgbTiVP_KkZZPESjGALhYy1fmOkN1hnd7d72EBNWz_we4crgL_A_VIUNED7Nd1ibnzBbYRHikBISAkSbUG69KcsR7KyJaZ3x2L-vOZWDRdxX8LeYgUQnkIOUurb5ST8GCe_EApEdkNx7K1R23r1MqVOv-uhEe1PKVBwerY_P0M9gkof6MH-Zi20Y1YQ-SBacwOlksGYfaryrcxd-OvYwvMiazmGXb-64fKjfeYoKrk4jKqipmdpO7unYtEf9zKfejGbT3GidGue4KQqI4FNmWwGCXH5Swbw4B4DxwRT3R87QfI6qHuf-lxH5QvHdUW0bYoM7z2ozqSbEGT-AQ4MaXJPx4KeogW4PjzZiWjm7CIcj2FRA3EoZzXVPqGpzNtnAMDszemDbEIR81gfrynCA4mV5Hf83RzEOy64XbJohxE_N9aNy2qvTq2cqzjI4AKHRDOEXuNpa5c5EgTi6f9PjjJyS7Q5509IqPdcPX-0I5G-oD3IlTjPnF4fu84MKYKWjstAoCKTTH2C9iAVEb6m7dDFV43icUzUiKuGdEwa-K3ugc23e-UV6OVYI4aNZzD2VoTV-afThcPxjzrxDyVVCBdiU7A3wcm49J-PVXTYClymCH9kvznqpXzS0VM0gbLRhelf8b0avTYztAN_WQMc-5TmZPSsjGaU1spnDuTeuStmGDBj15yyqk8Gj6VxeU7FNko5mmmWg8Nb6f0R1B7Ugoi0ZV1_BrvRlgeA7T25JgvYF3qqoNZmyXfBBh3axxRNaQIR8Ks9EiEniQ_orfT4-xb-Ga7ik3vbDZTUQ1DWlxnS9Nwb5_P3KNIKjQkZCyhiWmJeM8N4MSJrEpyU8gNsJ1nwOiAYy29jaV5alZ4hnjkNd9HJBHzglUlM67_mts6Twhn9Rsw9rJOgfBsMOaj6akIn808gm7gDQNUNYuvsvr4lNflygRZeYRhwDy0EqH3Ox1PU8TXvKOqG2ltzqzXj_MdwJx--ejQ1mi1D5UZcHJT1IsaXfM6Ob0Elqfo16JJnsZgAYc4m7AX30C_mwBYQAtbhyF31BGmPae6bfMTwqc6lJdF1_TIlSFn8jEqluR5a4tO5OtpBzD-d9b5lGncgIKV0P4wz5Bo5RHSZSEwnGYtCKt6fyhaaRY_aTP78KSOjEL3QrjWT8p8dPQ-dVzT7brpKN1FHJUNy0zHGTfRXZwCkLkwsnBJJtWPla_V3UbY0gGXEpew7rG00dmP9IiQVLg9rPSwEVr77qVXg3quKiueM8gvcBjgPGTKDVFGGuR44yDfMVW4f-JQ_3oo9becg__F6uvWeU6bELJUupE72r-6B6l2X3LJJA6uqpYvvmM-wyCq9GiwuCJA-6VfCR1tmePp3mYVH_q1VU8WkW9nzXxOyh94Vaq17VFvOzgkkOtstHzSxNsfW3o73GIWbs__8ybT-klM1IEZP7syXu4VSNvTAJBuay4K_xGKDaAS0EKPxhrBe41pJp6AjIjfiwxsSWBLOppKjmErlEHWO1QPHqwTfzVxb4y_X5Os7DMf97meFkkdJbv4_Wj971K0bkC4CakexNrVANEDBKQfGe52LyQgmSPfU3esepycwIKfB6TP7USjd8gb-UsgKi_yf1yw4nTl0XnYDtPcqPTvZA679WbO6oydu9MaeSD74TR8raJi4CySF7viH_9uBsZa3mQ5CofOhsDYhjikfcw9efhf09PPQDDU5loXT10W9Y2EHMn4oAJlvM2G32JFku3tCF6lmFr54RGjiq5IoRcDtbkUo0xpr6uJKX7WkaRDIrgffF_FnKqnP-ISpAZ2RXZvjDDCbV6iI_pwoU2QNtBCgtrn87aJw2A-Ht1Q9fqHAQIIrY4SQqzExtCx7E2uIXJhZYJovQhmjNlCqe3qopMAyFWDL2AADANxkJ4lGAzQkGSJeOv1bK2SapxIRo-pbVMJP0dbquCdBPZJeIZnZmvE5lynsbJhhFzIiPXvFzOtSBC6WDLikf5neJGDzAC7Y4GFqzgLGrNV_2lqLJ9OwDx7cnIvfR3ermIWsOoi7Ds5aWQxjTsQVrDg7dp-aihr2EOV594aEKbs2JlRzygoURh8Yp91gFrr4YOZyHXZ0DEUUCxL6qd7u9I0ALZMur3acYaNiz5r1fS4SkrzTU26-_wE694FXvZVmdW2MAjgXQV36fnve07Le1Y2-dTXvNoMkv52Rd0KZRD3Spgf-HHerXONoqKqJjFTJPbT73kEj9y8bkn2WM83ZpfpCt_-pRv9QUx0EwAiQEsEH2L4-mlRJFEVu6dDe5qOqmphXlmBvCi044uBaD2Kw142AaDX25etT-9jQRi2xB2PQQ8ICwUHD_f_KANEM1jBxdVvOpdeLgyzj0QyuOuRXcXdkV0IGbh_u19VqJGh1sXMCcY5FkvcyXMxNlZANPB0cjyR66guUB94EydipSzewJB5M1I8i7KN2Ab_W6gTwjpEl0IIFwz_60GfCF6tdCfDWIFKgqwmaRC2gx_onNgmjic74bgX45riMnbYH2RWxChm3HjzS1brFFVCqFmKV7moD3p0TKB8rK-IosihTk9QFGOGg_NM3mUxFaVu2VUUaEiLrWy50GqXEnJIYTsPsrxDKwM5gJtXW9Ks8nsJxCOapdiQ0A8JDD2qKx7_P8AfYwEkV5v0HP5k21h2h9wAg9ydXTywRJMpboFXvdcdNKtENWma1_-DfaSnca8LNZeeaDDX_QrK8VdOCcTYSWq0-JhVGjZhZZtQs_UxAoiWtukd8HY8a9WAyueldlzs0MBt8u9bqQbXYJxUIef7aTljA-l-ifhGRizGUXtEITYW8TZ-h4lTvAgmGEKv08OMb4TTIuJQ3uGYd331flpTMOqCAkXT1LLoLtbQpzvCvDdjh7DGxHS4xIbx4jyW_2UcBkFy04jzLF1sLJyNCBnWYwvo_7xh7RLPa18gh86e2ZjNJlZbsO1MPjJn1rCiB7jzt6pe1VZp9VOpPbEnP4MgGN0qaW_746Sw-PpxM7WAoKJf-0POMDrJSAIBlJd6mQ-KAybqNJjtJdzGFe-_QU1M3383khwkxvo61TyvE0w5yKF79Y46dGMS5Ug6hFkRPLUqn4JWZ9YPcOQ7D9VwnyjPx57PKI3T96iDB7L4ybqaahEt7BMKNFDE_ZeNPaBblc0qYClocTEfQwJPY9m9Ba1K6EPFV6cklloRWqQmLLkNqDV5-GkOGsYLUhwAeykIIBsTpJ67MddM8rPO9bHauHXe2fQDy8eq540-PSRFCxReKvnz2JPIXszmlExOj_NYDqS7DZkqSo_9GKkcAAuvHUfreg2NgiXwmMnNl67sbryOHsDG61X_P-yI1EINy2kymEmojxkq0xsZx4vi0jnZjLznvsdAXjoXVBKuvNrJ6FQZ7Jg6t2C4ic2tY_DbEPqezUGYuerPxfbFJa6Lz1CxGpvFK1CtEiVk9c5Let9SvoqqvqB7dZteLdAoo0Zf6RnTHxfnUrDwhNqvJfEYb8z7ouE3Vr-LkLNVwVn76wxl1JRVzsCkG8HTDU5YgPRq8N0klF8J3RBAkSnMsnXqBjzJgV1cbHMtWs5f3PuJUqQSdtSJDPD39gTPjOOtfgQb_sPMrT-crHURElu-q80v8Aj6FZ4szhbHgMMMprCW5MDXSAFtF5sdD_dc9lqG9D8wFTmQNtfrKKhbgtgCDDHSLEzAzZxGKJdRXyStvZd62mptpVwpSDTinQq87zEiYR0KYSrSq5tsY8ZEO7bhzPsSe3Jpd5rlqj9Bk0LXjqpuygJ54MXqH7aXC77v7CXr3KtFIdT4QvDMSsfUP8v7TIPZRzwnzDoR6P-bFtv81XFf8lZ0c-jQrb8CWoEguT85B-LReGe7BNaFxee4h6H8lHzOSNCkmxoJqPJiobxq18Fuq13SMMZHGj40w90fsQF_l1vmQ9CI1EiXud1jxq9R6Btw4Uq5qctPl4StTxlpmm7qwzea2JpiZOGldda5hk1xTgemESBkcyEJgdQl-mhip0wo7umm6b17GgbLttQ8ZqGpbjGQa4WryVfyPYOrHhA4VYJrwJRb2X4P1fDjxnecdtRYnMmvC3Qhln79MLUS9aMBoA8i0uOK_0smHmLM2Wxx1_TxK0jv1mb71PZtcaT_DecHegX46GAXyMdMyvfbJGyhUoag3WRy2maHdeHg6jzs7rlcVIYASBU4jjUxLJu2WIGV885BBmmBu1I_pd5UEmVJE6AL_dmvR2_Bnvgb9MBx869bkYXgJrji2HyK7fg0lTfxs6WFgXMOGns8X3qRXrltXtajD8GUIDjgwlfm5tSnEDUpUy0Km8KVk5N5s2jEzhjSWND1NB-CHZ04XArvkElzy1y-koKSqy4kvGEW-HOanLhgQ8CJy_PL8qltBDuAny-ya0oLnE5NAkdns_GlEsRUz2d8CjkV_BFXHNuXs43u_Z7dEWtEsPZBopJsn7sbkIgZc6aKXx1Q9r7_agAJq8qJERG9tiHK2ukOINfWksq6VT3hYgkYHDOcqS1c1r0db_6SV-ZWZFVkmyAROBXEVJIAecY9g73SIipZLANJM_7sdP3hazBkzZpuTREvpAFIgwmiXiZ7EkmlrRBZ2LoKGQhnYw4Dpyuo3vZPCVfBxt2f0WCiAZWbpBYkSRileIW5bX0cJqDmS4Q7E-QIYyJNa24aYwhOdLC2AH0alqaEFB3j0Vbo6Pd7GMqB7d9vMIhk7yzPbj6NMbNQcWLsvv_n8580nBPH-ks49ZGVh52jIvxRWM4l-aoSZiL6vO9VT_2-NO9caNDpQ5xRv6KdeSSthn6tt6dX2j8nT4im7w13qphaiV7E-licRPAg0j5C4vmwURXwOzoX1JglMjSqu3HTmzQ54CS24KGgwGgrsAChsLTl3Khg3aOeX55r7EJ-kSrKQkAuQAslDx3Y2wHe7g3f4jpgCeB_BbUhG10p2WDYYay7RqYJ6eMF0tbI8qhhUV04GanH2ftEOYzBUYCiXfiVvfJ36CQ_mCeAZ1uQnbHvwEbPGgyqNAoTLHJDSx9gMyd9R081D56uouyN5DMvTwXIBADlXLBoTUQWXBQV7XSdsMHVB-LXDUnuHvfVy3QJSATz1KdTt5Wi0MuQ5mncoiA3tRltjIMAMOL_b4EtPAo2SbaMpaFcCvPhcwa-o1plKzHPk-IG5yMCaUYrKbeJvyt3TLM9JIUiFUWOV2ZEuff_nAgAaRQ_X2OfRhoLdFdrwWpYXpWzbVQIoXOL5iRqEsvJBchF_un0qSUuL6ZaYMv-dn2iM1HB98MC7UoX0yqCXUY4ytOU_yMWuKBCTLW903RkJxvaYmgs3joAzzO_WlYzFIACujsRwzZog2FnU3eNVDBNrHsDrLVxKTfM7Spnbg0NE5ptS-Rgc5fur4G1XS-fif9Rvrpmn1DnVetNFesIFQYQ4OAr4yL_5faImjOPM4dUZQe7NHdvVNu0qGCRuklHy2V5XpFNluVFAzSD2E3ls-BfRw1lu44e09Jlu9ttpdK2YfDIZE9xvCL6gDOSW3TKGkVW1fSs5d5YNNv1v-ilvJqH9KO_dre51BGhu7IhLCDIkcThBe-BO-whs9YbQAfJG6i9KGTJLmKoqN0J4hGcuMu2Q7y2RowESTL3YlDhi4D00NLi_iUVyUk9ulJx9YHdonGgNWw_jp9o_IqdaVGBH6W2SEe4OwhhjgkSuDLNtA2MWdoraK8ppYZrVuVTXyRCuAoInut5w-Glwjaer61eKNDekpuzLdxGpqlglrtis4RgkDyiCCeH3OTR7M1qzNmzlLgpDHN4jAb8W1YuCgoxhDNQGQWoUjjpwjTd7cl4GzDOTputJl7MhIWwYKyXQwcutQzuwkHIbNgd5Z1jFquUsHFdeJbsMXkQZ03o3mLkdK4qe7aMr9d5gLe3LrHFD0HaDiT0t4CnhDOhQy58P7TCG7Hyt39r_KcsItE7ui_pwxRVe0-T5T3W4wnHUF4kdlTR4zej_C5wAJGSuXczAdSXQqWJgMarWrqMNTaHvER2RJo8BKswfbN1K6Tuhdjb4RWC_d7mmHpyV_5FJ0X1SGN-H_Qd4ULAb5xs9NtsI-pNjzXVuJNLd4FUBl7MdcqNOM1nI-m9f_ZUvbwNG9e3tuVuU-jI1VciEaQxqb-bC55XdPkZ62BCtU0RPFT38k6uJy3fhWRwoQh_53arRYqfBmJTveGtrbO7g1oVZdKGv9yTkXWDl0RXgRvwX5tUf-O0jGlCulA3YJF0otMBGos9H-NZeVajwvOU1X3X_VgIj_orWWeboOfmW9GazSVcQkr7mxMcWs3lXaKg-ooxTphP-nTWwQR6ucCFeIao0jxDXaE5hERHh8bLOIDe_QSan5__cqL1WgusnQJxN1gcMmLQPSALW6Q4GL2bq0hkbBHJlxc9nEqxCuo3zoFWHjfzKL-aKnhrOh_fVhiiLpVniYJpWbY4gcj9MtXCpNuoxcftABDRyCPsljkjVOOxgqKGoJpVa3nGETozC8_l6-qKeiUxnOZMTnJ44Qr1CnikNzMRjTLsXFwNtkaKoBdpUXDq4pfxS6Ya7vY0QvXANuIiTsADUgpp3G0cOOeJPRFXcYaohS540Aj6KohqTU_bT4dJJR18XkFkRkhSnvXJXMsNX5mFY6DmhQkeB6BjTSeAkwyvm-fVdoR9NIA_GdCzA3UhCvMuhcf58FCEZJNdgmLin3jn6GjqRi4fWR79jP0ye2tDFWoht4wmPXQw8e3XCHR79HCmrUe3Y8BOS1q1EdFMcf8HbiyaKw6H7vC8FKhU63Av8k1XC_gUYz6iF_HKZpk0aAY8TtkaEvsDymHX10FBh-gXkniydYelp_OGmB7fMLJ5BrrVR_CzicGSDBQ2MOZUJI0hARJVPIzdkd38Bjo1ReoV53f6-I0JvfpJJ2iAJT58JQcxUH_wPE7D3HGcuT4TYYLc4LUF55pcsMuXesCoEDKOJ-5dIaLmgjN0HXH-olp3xPpaeKAYto10fdrhO7gdlaKi4iGe9UXxTnkcYkQQH510-BjHF5r8U5PdffTLmbxBH340Jzp13PIpgNWOFWYAo4YkS46BXlD7DaXkUYh5Rkm6TDqPSmlNZ4PBuF7OAlFMULDHRu88i3okC9rpJLfntB_oYWXra0_2Uh8TaQwf4vtREOXACFlvs6VAclKbdPEdrSJ1jcziu_DG0JnuLsUG-1qiSeHRW_isFOWTR843h1AWex6lXEt8iUf3oOI9i3hkX-Ja4RYqoerfhfCMa5v1pQWKiLlRy3WCsc6cHLhgHL6ezShygqLe97XssNKiwq6wjggLJ4aFwyK.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0181b8f45e7b78ff016af7309b60dc87d1b5e60452a8a0fe80",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq9zClkvZkOD-9AA1TAVAP7Qa7uKvXNmXeaFoYZhu16XHV8tX370seGl1RM0kuSwRc4TKQw5Bma5sM5lGUfg4MDAn7q93uXC_0PcCnU02MZYguEZrzGgHQfEghIDEoGvklCYHJRYT9X7UxDkhGn62qLp10Uaz_Wf7kpu0esBtYngjue-67HJH-6i_1eva-3DYku6B0Mfy5fG0Z29hWOGLBaS8NIEGPlldj7s20ZFuHke3h04hnDI2laRVB9XI5aAFnPcJSfgb8T5esVBM5hQ19RGjrtS0JwEeaInThmyWdFtzIOTfM9kHcPkORLOdEWpG748i60otqmr2phOt4sRgehNFjTD72roVBlS0IdTV4wAxdIfni5gCUi99l__00YzNy9paUSH4G6ofrVaxpgBjb_v7E9in2AjJ0ypvmRGr8g6yfF7A_IBXXMmfNY_yPILSNiVfIRQrtel2AkjZ6HkPPresbCleufG-GQFBkJQUKzvFB1iX_4l-_uzfKjB808jtNE-1I8dnHYNWU8SSiFzxyYvNefnnzBtbkW01qLlBYMRfhPVPsWK1WI_Mgp__Msbo8hsQhOQVVslJ91dwtmWIxzJ2TFb8DfjRc7_yOHbprbdMThO4Rnsb_1K4pxj5et62LF9a8Yg3WQygXBC8-6Z8PCgCGWUEwma14CA73CX-zlh-fbhV5n2BbXW-rWjC1x0doghnYyZs3hX_KMSs9zsh8Vg2eFRvTu6pQwF02DJRRH30wBMRHBZVRRD-HOw_wGmR8C4n8aFemQVcme1eum2igsP6msQH6dZ17FHYtezSWQsdHbrArDVHJ-uWqb8cD5qPFF88Ol9F2ersbWZi66dJsX858ITrCNp2L1fqt_mk2R039fkftcJTL2Cl5U0uWuRFAi_box4tGPKcuHwfmkDwmRCecpKRNqnE0n6KNtRoMrgHGXckKowtnQTtxf-cL53h0rA0aGU6Rw-ocrtoWWGv5HAWPWrpyjOoTmPlUp15DyNWxX-YIUSZ1_314rA2Kk7dBtxD_9Doops9AQ_MkqKZqhR8Wru1yk3fotptcPb8s2LFAGYzCZZ0mTVvLDTlf0mOI7POsWLnP8GzrISYveD50Kh-QZL6epabQhzNzpwUVRyvfiHx5_MM3YkZa9g3KZJivub6s8D_VWm0M0NZqX5HhC1E1ocTvygHznxganPhqb-xYEFckvIXoWbrZaxR_D20KSOw-3TzUYJMGXlyaRvJraOX_XM9EkVMHaMr4reimaIa9B_VyJfRnqB4UtjGPU2Uxiep-IpwofKSy1u6ZjiojvczWxpNUiH5OpSltSElCfZQWakBodRaFkAFz1wUQE7bNMPeGsV8JdL7EPeCAa9c4QOTLDKheR2_cMCT9Tu3a_b-k-YY0KgZmeK_aUESJ5HHQfqh-6YQbZ-0HnYs19bDV_mk9y91Iv-vhOs9VB3SwAIBOW2O8MqjmZxPs8aeO1ucQSMMuNBAQnZcHuHdAB4lwe2hZacp7-NIK3FKegMwpOkZLidJflJZ1tfUm6ueXUrXJ2tQ6N7U1sXzCkCn2IBUlh3L_fsMcdusQCWBXaU56XgIRhUOUega3R6l_ZO3EO7Hi1vJEnq2p2to08y8EpzeaVl71yMrq86Wgmutrzn5OXPB9W4sX6WP47YHrCEYAFiKC3CJwLuyjw9Um1MuWGBr1r2-2RIfMt2PFHlC8pxcx0FljrFN6BrTzB8NJPJJBemMPtzKlj5YHMSol03V_v7IgX6TMH9bKbwBjDKLhOCj33_9P3xPQBAwvqynwW1YiFpayUim-m7U4mEmLPFKrVXk97NHg8_wb3Cg7AaPl-Sp3oe5UqqCtz307-Biw3gkgoVOCRDxSGJEbMUBdnT4rZkMaI-M2wGDuAVDsmKbsWJZdYPtIdMOf0ZUgn32ESA2jA_5H6w3NpSLnIJZqRuu7323hqud_WqPg7vCbFWcMdcaZCawKllSSXXydOtqJawGZkZncPWS0cHVsp5G0Q2ov0bCtMDkcxtraTbR9V40ccfzXVyGTwGM3L9NC5uQmySnV9DvBzCvcSYtPLBlXRQUzwg3HyjBRkb9hhw9HJMfx8BjaYIg3ScSZ9WWV-4RUlV1SOnKsbNiaGTCV6d8adznafyrFs03iXInhF-WUJrAx20c_Vroxk_a89q4keq79O-H76eDWLqLQtyjTc9iFSYPfyX8bVXxgHE6T8KiWbGk9Ytkb0v43i1-WiB3DkpkHqNIuuyfpGn4pZPEda6V0fgXXoPByk7dbMurxsppEaJeK40uSjIwiPmZj_wFkPfU3LY-daColqfevb4JnTepavnwDJs3XGZR0o0iXpILw2JmIbRJwZCm6bF68dcJ9wV2r69QRMD6--TT_awmdanVlE4eLwaiivqmzV-wRKqWScQXzPnecquaIPRUVRuLBlAzsvBTEBYS_YsDzfEdCBvHumjEpNz6yrJXRrOz4r5UkqRjERffYB_sbTqSm4wsCJ_fbyraP1jHyyENbE-dfIjOA04tH9MXrMIOs3KBFL-6euK4FCZuN_sF7C-U2tDeX88GaTHUSm2wWEepd7--nWW8wAunGYX7RX0oWIcEBw59euPm2oltVpHyaxahVQLvX1MHqw4VZo3yhzIGZ7YuBkJyDFoinX8cn5QxTarCM95Ps9dFj00u-WG99R5BdBQRMrAbvTwYnF5x73j-wfgfh41bJg4e5GrmnhbHQsWxoRhzeYuTBDrCvKozm8Q2hJVRi8YWQULVNqwUvUht-13kOZ79SSHvfokpMVffmfduL_SQF6bRG8K6pjC57KYpXzZQVi6JufGqGOI8s9sRxpTGP3tUruCMcOSnuK0i3km4QQwXLiOOkrgOqoM6Eo6ybD7tVPBQ8nGAXwmgGVFe5ZhqOwlZJjXDxBnYiebyf3gxbcAaIEjJqKaY8sUeKgjsYWeey1-Zs9QHTb8a5yKzDcVM93WkHlIXRAGrn9qo21u6ppf8i0oAasyhz_sLvb9c5rHcXDGPIPAtGe1pxyj-PaoNFoeHOk21RrcXo79_SEoI5lEGT49U0JRUkdSmVUOJ4jnJUfh4Ip3S0GdBMZkiPjQOiezh-Idn-t44sZbZKMuMcjP0fWJLrrGSzwfJQ7DkOS9wfXgiZD1Npx5qP0h8e3_ayh5AXxpnLQzqmaFT_R_zHoN7aCNgUuugRXbvTT2BrP6R1lzTj2RY3BpIf3hjqigiHXks9PfdVdJiBFC2cBlgGCuQ7YOs2LkwPqxSUuoQw0V39ft9iKxqHA8xVN64TsNvb7V3Fg-gfZbczYUVnzWXHCpaceCazVdQHT1QNyFiBipiv4GS1YSfJUKBHWf3t1nXrlpKBlC1Dc2Pf-0pfyg5cu_TxPYC6mzuZXCU25DJK_yk5FpK9mRStB3v2El2uymInmcaR5Q08FntwqhI7fqt6daodNN87ZG4cVaNHrm5TZEhqrcjUGuxd_U0juZ5mR2Nv2uHjR5vqYs-G39-iltnuGuHzuzNoi7m0I71K-wTLx9JOB6UBV6kAgKODPTQrMuXcFheyZNn3OuDNIPqIhtKXtQHvsPtMtrw6e_xGXeMa53eVUCQktcd_FXZ7KSc64AWsd6cqMFqWL7jqrrw-uIG7pNP9NvORmU6HyE4xC5CZylGvoWqwKONdUSOjCiFatclkN20mxUUakSgUktJmUHDlHnjkscApJZiMBPOxxRApQaMqyTHzIVjdeJxGGSgzSHi6oCxH58EtVHrn1xyBUPCZ-763GRXtPHcJ_5YR7UQHHEoOG7I50Gy3o1K7o1eagzlvepJnEGAsGqK8ZMSw1Kx0IAVVeUoZhozvRaKcxbZl7iv9PjksBDaRcchghU4HelP0w5nksCinvCL0r1_gxPO21jDe7apXTKcLksg4Lqv4A7e7ZNdNTw6nOYzOcPpJt-mKtmtq3CgvhcOa70kEDFs_jMfhh7bDtt1cb4EDIl86BTas4TvZYp1OkSKdy3D0-7WAuUBjjIpTeMVSQT51qwA2pgBR9yGCu3gTNav4uvL2ocjS5YCxAidua4RhtEPQW4WNbpWgO4S7C0GyN2y4foPHTzwSBWifkiWRvd5mn__HXZ5TYPH53S8W5sSuRp2TTJ5YVt0nLeXPXHYySwWEfh6DIi8vDGGd9xgsfLqtc1P9o4tnwp7DoxZL54ImpOXPYdiI-22cyTb3N8Wkor93gsLRQD7Beh2BVOapkALO_PZdoUODDh5mlvLeSCh_2g9C5v2qb3lTOdMSZiWO9igBpwGTsPUrkOBiKGOk4MJ0Bsh5bB6O1RCOmO9c886RGC0mhfxdxPO13LFBxt6gPfVFCJWMQfrDLLukl9tGX0rOE7qbyhFgP0KR4G42xF12PsEYj3-KsnE51mN73VoXtThMYv2U1ReJFmJGnbNbNX3kG1QUU5Squ32CPTkQmsSrvrA9qjmMalxeug-ZUvPMbHezEdKhCknttJ1Q3EAzOqexVfQQtZni-A6a8HatWHjG05Rrg5oWuONnJOss9YUdq80pig2cknfEyUcE5sAzjE0u-E7cX-nAo673MoVaRgdkT4bWtE0zDAGIfpcJd4JpOmdv_lA9SNLF04-jCMmjwciQSYLczxU4F_9NLuBAXB8dr9S-fApIzlaESJV3oPbTv9T3cfMSpcymT5KoieftdE7nSvbtLlYRlROwXgDSQRcTn16mwg8m8KdgiGjJX1uH8eerymCoOdRhUQKDfUwbeeh78FMixAn4EavYpQBapCYmFVC3fj0j_EwtO-eIMx1LDvv9sRzCVPpEt7wgSpU5kKqsWWHtd6mfcVmGj8ae4FsI0duxwe28hekvy235SQEOFsOepwmSI6zLTqTeBeWGAVrTR033Qfbnin1TkN3dfv8T9bMqSnvRAslo9xsBn1xRbV8N1CpO9xsEE147zovF865SHgHqrBz7-C26ERondm9JnxeaCxc_aGgR2GHphdblIzqPsNOdFwnuVrV1CTZhKDi4g1Kut0QgetrP83qBudz6o1emjHhVbIHvWd6d9BCcfyA3EqTqdZushzpy8ylxbgaoZM5M54bIGL_baydfc1_4zp512neqYMQ_KUJ02E6IUnWhHT5uEvk7vXYSpaZiPwZEou6-u2WdpEwGP039CLgO_rodMXIk8--mrOUuNud9EEjEh7ecniUxfUXS2J_9yEOBS_gBTadEDWANAp6Kxbc-NFLkKxtHK0wrUqr_J45kx11pQuC2rRjHD5Qq1igTUGnwUFYVeiM-9asYD-segG63dAB-2XkBh1RZsnujQIIFL6k3TeJf2CvhmQV0CfB8Bd8If0WAIg_2MH9tJMJ8Nw2TZFPF28sMK9ZAT26uc_KkPtXKPOlz56iO_aCpiSULA3xFqO3ZGwiCf3RCT3TRZ8v09VAOcBnmbD8RimhUgZbjHiika-OfwFlGIvEJZtc-BGE2t0GiTrBKoF_RzZau_3cunXj7_k1GKe-7xrZR7_pIXeuFMmHUynpoFasJyKZpZc2VVCiR8DLZjQvvbXfaB2EuyxgbjWMALlMuJJ0xyi2oy7GhkJcG4VKW7-DXbVxN9HWnWqEyl4Ec8DDk-s2Y0RtFwFRC7ElHISy2R1PAUjU2fwvdRLQtpogTYOev1aMfqStF2dA9lq8n70faTS80MsRb9hOTvp7rHiVNQCxB4v0wyRZXTrlPEXh3b4GvM1TIRoQkjo0JQcGfCFX880PfOTn6-XZtN9nT8_apr9ZIra8O9dLXBNfBvOWU6W5Erpu69TWc_5CV_3mOi3ShoVmHOV6r9y-N4usMTRu_I9JZ8V54zs52oGKO7aSLTVXJI0qy4YXljM1v1nVVnGAJWmwtCbQ2oGuxmbkaU85-mWCk0pY-MhCq-XPTnjD18us52xFUQrEdVlHfU3ccLPbFmmZ25t-FZCRnEvxaJf4KDQEdjmBSO5WkCBLtVLUig6PwhwhhZFxy_Lzz7hgPTx1zKqtZ-XrKMBq6M0qj7CwGFjLmAtl-WrsjJB5S8SN3mMJr5zhySr1RYUpA1loOYA7fLz2_5VHDJS862S9dEHrl3tDkzwURE1faKZnvD3RxdBOleRpyA__GL8ChhjPejgcfSHMFRbtq0saikLj5LyVJMap1Qnol-IU6EVCUbb0DB27nPEyCbD1awvQUYTfjkPpwXtC9fV9Y9qlBgDZ7-wEmj0KCAQV1BSyORNuqXJFIs7Yfv-0u51T4x0_hUvIDdEd-MT-mlR5YsAweaIyybw9yCjE0F7cFv1bd_BRnn0zxKSC3kYHmzfS18crHEScDLDNy1t_3RqxboPsvcxl4mW8WoCsM4U-xgKHTlUSMJS4tLzbMhFgCr2n9WbksnU0XQfb338vWOxuVcdDR4obsacoLmoefDbzKeR3T62QIog_-XzV4z_aBqDC8Jnvp84FiHxP2sa6-um-ue4YTv5-3wqtuuIRkBWkYyO9uhnuhbE70zBbk5qNcTQV-kPl9GjRe5lK3pqY29c4ueslDcOExyqwMT_oIJmwG1dIsJ6yaXgcRzQiKvlFCvg8uTJ4qWDXbYyhkVQsiMIVDQltT8xmE6gqbkg67BXXk_sX8vKF0ppsi4Z7NzQszkMZw_TTMLVL-LdkRluUwlvCySfFjT2u2z7eLs0nhPzXjsnZmJ7SUgFKk6AZY_cUGbrXW4IKUQIsRvtvwRLNxz9W3jhzR3Z_1FsX3vhlAzpXjtlI8El4cLyWhd_eK2R0J2_SZzsNCDVGpR0hBnoOvsFA8QOcqGs1R9EWzwGZUrfYtDm2n4PvhegLJmgaMX-KD7PftcaIsvLXj9okmACPyEX5TBrxYL3TnLkENk-f2s1XW9Ex29ycETTAGT2c_d_nyXxrodoU4J1hBUeSiLCGIOBiVZtJptMQLXF7Q43D6D3Nyerp8YyewqPK0hECyBS1MREY5nWnzYX51hpssUvdRI3uhISQrea5jf7lEexq7-w1jZMp9jt6NMka_a9BEAOWEsAeIk8GgaPz6Z4Q_tzKpHqroHPT0a8njqVD0f0S8L5HyKprwyAvDpjTDXICf0rJgILmJM_UKcsX21uNuV8CdkKGfSsBcKrizTCC4mkrAOZcXYufdvEdjvMDiubNX5a7APSrOtbIjle9lciPS2tOZky7pD0mjneeCCcsV3hl1sb07XOaNTB-SUvdNh6VVv36qwEs-fxnmkVdAZuFHlF4mqrzUOji31ZbGrMfI80mFotM_TNl8we9r6lIBEM980n61g_k58ZliICa8UmhnkT9-kojsG-gx9Zpa8BNEXwJCn_rEYUHJMElsXv0KRNMEF7bVGLT4onQJHATgr-c3AvUIUXl66nRhgVDJK8FuoCtTwMmuMSQq_w==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0181b8f45e7b78ff016af730a07e9c87d1afd468b38a231f61",
+              "index": 5
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794584716,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3033,
+      "prompt_tokens": 22479,
+      "total_tokens": 25512,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2052,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 22476,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0043263,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0043263,
+        "upstream_inference_prompt_cost": 0.0028098,
+        "upstream_inference_completions_cost": 0.0015165
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "id": "Meshinger/ResistorToleranceUpRandom_Tolerance1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToleranceUpRandom_Tolerance1/prompt.md",
+    "netlist": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToleranceUpRandom_Tolerance1/netlist.net",
+    "spice_circuit": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/Meshinger/ResistorToleranceUpRandom_Tolerance1/spice.cir",
+    "chars": 100264,
+    "sha256": "ade5eb7a63c4ee369f1055a0eb6f07d792d63d6837350030642d0d643b9d1dbe"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.55,\n  \"anomalies\": [\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor (Device:C symbol, C prefix) assigned the footprint Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Its pin 1 sits alone on the net unconnected-(C11-Pad1), so only pin 2 reaches GND.\",\n      \"expected\": \"A 0.1uF capacitor should use a capacitor land pattern (Capacitor_SMD:C_0805...) with both pads connected, as the other decoupling capacitors in EthernetAndPower are.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"59\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"},\n        {\"source\": \"spice\", \"quote\": \"C11 unconnected-_C11-Pad1_ 0 0.1u\"}\n      ],\n      \"impact\": \"The capacitor is electrically non-functional because one pad is floating. Its footprint is also an inductor pattern, so it may not solder or fit as a capacitor, leaving any intended local decoupling on that node absent.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_tolerance\",\n      \"components\": [\"R1\"],\n      \"pins\": [\"R1.1\", \"R1.2\"],\n      \"nets\": [\"Net-(Q1-S)\", \"GND\"],\n      \"observed\": \"R1 is the 0.47 ohm EPD booster current-sense resistor, and it alone carries a Tolerance field of 20%. No other resistor in the design has this field.\",\n      \"expected\": \"A current-sense resistor in the boost-converter current-limit path needs a tight tolerance (typically 1% or better), since 20% makes the current-limit threshold unpredictable.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"R1\\\") (value \\\"0.47ohm\\\") (footprint \\\"Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(field (name \\\"Tolerance\\\") \\\"20%\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense\"}\n      ],\n      \"impact\": \"The EPD boost current-limit threshold can vary by roughly \u00b120% from unit to unit, which can cause over- or under-current behaviour in the display driver.\",\n      \"confidence\": 0.4\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"V_BAT_\"],\n      \"pins\": [\"BAT+\"],\n      \"nets\": [\"BAT+\"],\n      \"observed\": \"The SPICE deck drives the battery node BAT+ with a 25.0 V DC source. The schematic power section shows an 18650 single Li-ion cell (BAT+ feeds the FAN53610 VIN/EN pins).\",\n      \"expected\": \"A single 18650 Li-ion cell supplies roughly 3.0\u20134.2 V on BAT+, well within the FAN53610 input range (VIN max 5.5 V).\",\n      \"evidence\": [\n        {\"source\": \"spice\", \"quote\": \"V_BAT_ BAT+ 0 DC 25.0\"},\n        {\"source\": \"spec\", \"quote\": \"Single-cell Li-ion battery holder\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"IC1\\\") (pin \\\"A2\\\") (pinfunction \\\"VIN\\\") (pintype \\\"passive\\\"))\"}\n      ],\n      \"impact\": \"If this stimulus reflects the intended supply, a 25 V input would exceed the regulator's rated VIN and the 5.5 V-class parts on BAT+. Simulation results on the regulator and input capacitors would also be meaningless.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The netlist connectivity matches the specification in most places, but C11 is a capacitor on an inductor land pattern with one pad floating, R1 is a current-sense resistor specified at 20% tolerance, and the SPICE battery source is set to an implausible 25 V. The first is the most concrete deviation; the other two are lower confidence.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.55,
+      "anomalies": [
+        {
+          "category": "footprint_mismatch",
+          "components": [
+            "C11"
+          ],
+          "pins": [
+            "C11.1",
+            "C11.2"
+          ],
+          "nets": [
+            "unconnected-(C11-Pad1)",
+            "GND"
+          ],
+          "observed": "C11 is a 0.1uF capacitor (Device:C symbol, C prefix) assigned the footprint Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Its pin 1 sits alone on the net unconnected-(C11-Pad1), so only pin 2 reaches GND.",
+          "expected": "A 0.1uF capacitor should use a capacitor land pattern (Capacitor_SMD:C_0805...) with both pads connected, as the other decoupling capacitors in EthernetAndPower are.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C11\") (value \"0.1uF\") (footprint \"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"59\") (name \"unconnected-(C11-Pad1)\") (class \"Default\") (node (ref \"C11\") (pin \"1\") (pintype \"passive\")))"
+            },
+            {
+              "source": "spice",
+              "quote": "C11 unconnected-_C11-Pad1_ 0 0.1u"
+            }
+          ],
+          "impact": "The capacitor is electrically non-functional because one pad is floating. Its footprint is also an inductor pattern, so it may not solder or fit as a capacitor, leaving any intended local decoupling on that node absent.",
+          "confidence": 0.5
+        },
+        {
+          "category": "wrong_tolerance",
+          "components": [
+            "R1"
+          ],
+          "pins": [
+            "R1.1",
+            "R1.2"
+          ],
+          "nets": [
+            "Net-(Q1-S)",
+            "GND"
+          ],
+          "observed": "R1 is the 0.47 ohm EPD booster current-sense resistor, and it alone carries a Tolerance field of 20%. No other resistor in the design has this field.",
+          "expected": "A current-sense resistor in the boost-converter current-limit path needs a tight tolerance (typically 1% or better), since 20% makes the current-limit threshold unpredictable.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R1\") (value \"0.47ohm\") (footprint \"Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(field (name \"Tolerance\") \"20%\")"
+            },
+            {
+              "source": "spec",
+              "quote": "R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense"
+            }
+          ],
+          "impact": "The EPD boost current-limit threshold can vary by roughly \u00b120% from unit to unit, which can cause over- or under-current behaviour in the display driver.",
+          "confidence": 0.4
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "V_BAT_"
+          ],
+          "pins": [
+            "BAT+"
+          ],
+          "nets": [
+            "BAT+"
+          ],
+          "observed": "The SPICE deck drives the battery node BAT+ with a 25.0 V DC source. The schematic power section shows an 18650 single Li-ion cell (BAT+ feeds the FAN53610 VIN/EN pins).",
+          "expected": "A single 18650 Li-ion cell supplies roughly 3.0\u20134.2 V on BAT+, well within the FAN53610 input range (VIN max 5.5 V).",
+          "evidence": [
+            {
+              "source": "spice",
+              "quote": "V_BAT_ BAT+ 0 DC 25.0"
+            },
+            {
+              "source": "spec",
+              "quote": "Single-cell Li-ion battery holder"
+            },
+            {
+              "source": "netlist",
+              "quote": "(node (ref \"IC1\") (pin \"A2\") (pinfunction \"VIN\") (pintype \"passive\"))"
+            }
+          ],
+          "impact": "If this stimulus reflects the intended supply, a 25 V input would exceed the regulator's rated VIN and the 5.5 V-class parts on BAT+. Simulation results on the regulator and input capacitors would also be meaningless.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The netlist connectivity matches the specification in most places, but C11 is a capacitor on an inductor land pattern with one pad floating, R1 is a current-sense resistor specified at 20% tolerance, and the SPICE battery source is set to an implausible 25 V. The first is the most concrete deviation; the other two are lower confidence."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 46949,
+    "completion_tokens": 8696,
+    "reasoning_tokens": 7031,
+    "cached_tokens": 0,
+    "total_tokens": 55645,
+    "cost_usd": 0.0090429,
+    "cost_details": {
+      "upstream_inference_cost": 0.0090429,
+      "upstream_inference_prompt_cost": 0.0046949,
+      "upstream_inference_completions_cost": 0.004348
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-13T03:41:04.795587+00:00",
+    "ended_at": "2026-11-13T03:41:44.549652+00:00",
+    "latency_s": 39.754
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-13T03:41:04.97Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 34828,
+    "moderation_latency": null,
+    "generation_time": 39654,
+    "tokens_prompt": 25522,
+    "tokens_completion": 964,
+    "native_tokens_prompt": 46949,
+    "native_tokens_completion": 8696,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 7031,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0090429,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.49.0",
+    "http_referer": null,
+    "request_id": "req-1794541264-kdWlrAD0Jq5Pz2FbjR1z",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794541264-pn5613Dq3favlE5SHR1L",
+    "upstream_id": "msg_011CgzEXLcNMMpLzhwEp5CNJ",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011CgzEXLcNMMpLzhwEp5CNJ",
+        "is_byok": false,
+        "latency": 403,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0090429,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794541264-pn5613Dq3favlE5SHR1L",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.55,\n  \"anomalies\": [\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor (Device:C symbol, C prefix) assigned the footprint Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder. Its pin 1 sits alone on the net unconnected-(C11-Pad1), so only pin 2 reaches GND.\",\n      \"expected\": \"A 0.1uF capacitor should use a capacitor land pattern (Capacitor_SMD:C_0805...) with both pads connected, as the other decoupling capacitors in EthernetAndPower are.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"59\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"},\n        {\"source\": \"spice\", \"quote\": \"C11 unconnected-_C11-Pad1_ 0 0.1u\"}\n      ],\n      \"impact\": \"The capacitor is electrically non-functional because one pad is floating. Its footprint is also an inductor pattern, so it may not solder or fit as a capacitor, leaving any intended local decoupling on that node absent.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_tolerance\",\n      \"components\": [\"R1\"],\n      \"pins\": [\"R1.1\", \"R1.2\"],\n      \"nets\": [\"Net-(Q1-S)\", \"GND\"],\n      \"observed\": \"R1 is the 0.47 ohm EPD booster current-sense resistor, and it alone carries a Tolerance field of 20%. No other resistor in the design has this field.\",\n      \"expected\": \"A current-sense resistor in the boost-converter current-limit path needs a tight tolerance (typically 1% or better), since 20% makes the current-limit threshold unpredictable.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"R1\\\") (value \\\"0.47ohm\\\") (footprint \\\"Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(field (name \\\"Tolerance\\\") \\\"20%\\\")\"},\n        {\"source\": \"spec\", \"quote\": \"R1 | 0.47 \u03a9 current-sense resistor | EPD booster current-limit sense\"}\n      ],\n      \"impact\": \"The EPD boost current-limit threshold can vary by roughly \u00b120% from unit to unit, which can cause over- or under-current behaviour in the display driver.\",\n      \"confidence\": 0.4\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"V_BAT_\"],\n      \"pins\": [\"BAT+\"],\n      \"nets\": [\"BAT+\"],\n      \"observed\": \"The SPICE deck drives the battery node BAT+ with a 25.0 V DC source. The schematic power section shows an 18650 single Li-ion cell (BAT+ feeds the FAN53610 VIN/EN pins).\",\n      \"expected\": \"A single 18650 Li-ion cell supplies roughly 3.0\u20134.2 V on BAT+, well within the FAN53610 input range (VIN max 5.5 V).\",\n      \"evidence\": [\n        {\"source\": \"spice\", \"quote\": \"V_BAT_ BAT+ 0 DC 25.0\"},\n        {\"source\": \"spec\", \"quote\": \"Single-cell Li-ion battery holder\"},\n        {\"source\": \"netlist\", \"quote\": \"(node (ref \\\"IC1\\\") (pin \\\"A2\\\") (pinfunction \\\"VIN\\\") (pintype \\\"passive\\\"))\"}\n      ],\n      \"impact\": \"If this stimulus reflects the intended supply, a 25 V input would exceed the regulator's rated VIN and the 5.5 V-class parts on BAT+. Simulation results on the regulator and input capacitors would also be meaningless.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The netlist connectivity matches the specification in most places, but C11 is a capacitor on an inductor land pattern with one pad floating, R1 is a current-sense resistor specified at 20% tolerance, and the SPICE battery source is set to an implausible 25 V. The first is the most concrete deviation; the other two are lower confidence.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794541264,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 8696,
+      "prompt_tokens": 46949,
+      "total_tokens": 55645,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 7031,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0090429,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0090429,
+        "upstream_inference_prompt_cost": 0.0046949,
+        "upstream_inference_completions_cost": 0.004348
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
