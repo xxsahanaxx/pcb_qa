@@ -6,10 +6,10 @@ Localisation = one finding with the expected category that names the fault (for 
 
 | Model | Results | Not answered | Detection | Beyond baseline | Category | **Localisation** | Top-1 | False alarms | Cost |
 |---|---|---|---|---|---|---|---|---|---|
-| anthropic/claude-haiku-5.5 | 79 | 0 | – | – | – | **–** | – | 71% (79) | $8.855 |
-| deepseek/deepseek-v4.1-flash | 79 | 23 | – | – | – | **–** | – | 67% (79) | $5.847 |
-| openai/gpt-6-luna | 79 | 0 | – | – | – | **–** | – | 96% (79) | $1.181 |
-| qwen/qwen3.8-flash | 79 | 1 | – | – | – | **–** | – | 85% (79) | $3.290 |
+| anthropic/claude-haiku-5.5 | 324 | 4 | – | – | – | **–** | – | 70% (324) | $23.186 |
+| deepseek/deepseek-v4.1-flash | 324 | 134 | – | – | – | **–** | – | 51% (324) | $19.410 |
+| openai/gpt-6-luna | 324 | 13 | – | – | – | **–** | – | 80% (324) | $3.466 |
+| qwen/qwen3.8-flash | 324 | 20 | – | – | – | **–** | – | 66% (324) | $12.123 |
 
 ## By scenario (localisation)
 
@@ -22,9 +22,9 @@ Localisation = one finding with the expected category that names the fault (for 
 
 ## By board (localisation)
 
-| Model | AcornRobotElectronics | fan_controller |
-|---|---|---|
-| anthropic/claude-haiku-5.5 | – | – |
-| deepseek/deepseek-v4.1-flash | – | – |
-| openai/gpt-6-luna | – | – |
-| qwen/qwen3.8-flash | – | – |
+| Model | AcornRobotElectronics | CF-Chef | HadesFCS | Meshinger | OPNhydro-r2 | PortalHardware | fan_controller | stack-chan |
+|---|---|---|---|---|---|---|---|---|
+| anthropic/claude-haiku-5.5 | – | – | – | – | – | – | – | – |
+| deepseek/deepseek-v4.1-flash | – | – | – | – | – | – | – | – |
+| openai/gpt-6-luna | – | – | – | – | – | – | – | – |
+| qwen/qwen3.8-flash | – | – | – | – | – | – | – | – |
