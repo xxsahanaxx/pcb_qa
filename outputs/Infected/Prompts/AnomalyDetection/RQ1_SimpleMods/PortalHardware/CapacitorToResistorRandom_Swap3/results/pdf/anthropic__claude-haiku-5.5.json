@@ -1,0 +1,268 @@
+{
+  "id": "PortalHardware/CapacitorToResistorRandom_Swap3",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": "pdf",
+  "prompt": {
+    "prompt": "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/PortalHardware/CapacitorToResistorRandom_Swap3/prompt.pdf.md",
+    "netlist": null,
+    "spice_circuit": null,
+    "schematic": null,
+    "attachments": {
+      "transport": "pdf",
+      "files": [
+        "/Users/sahanasrinivasan/Library/CloudStorage/OneDrive-UNSW/ComplexAutomatedLLMTDIS/pcb_qa/outputs/Infected/Prompts/AnomalyDetection/RQ1_SimpleMods/PortalHardware/CapacitorToResistorRandom_Swap3/schematic.pdf"
+      ]
+    },
+    "chars": 16979,
+    "sha256": "692b912a5dccd3e4c58e17b591f044eae9d126bcbed366f984b9b5269dda6249",
+    "attachments_sha256": "9806a7c70b81916f4c5bd52ffca424ec4b6b4712f2c881656155ded557bc65df"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.5,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"U4\"],\n      \"pins\": [\"U4.10\", \"U4.11\", \"U4.12\"],\n      \"nets\": [\"VCC\", \"GND\", \"BS0\", \"BS1\", \"BS2\"],\n      \"observed\": \"On the display sheet, BS0 (pin 10) runs up to the VCC rail at y\u2248310, BS1 (pin 11) is routed to the GND symbol near (768,335), and BS2 (pin 12) is also routed to GND. This reads as BS2,BS1,BS0 = 0,0,1 rather than 0,1,0.\",\n      \"expected\": \"Per the spec, BS0 (pin 10) to GND, BS1 (pin 11) to VCC and BS2 (pin 12) to GND, giving BS2,BS1,BS0 = 0,1,0, the SSD1306 I2C-mode strapping that matches D0 = DISP_SCL and D1/D2 = DISP_SDA.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"BS0 (pin 10) \u2192 GND; BS1 (pin 11) \u2192 VCC; BS2 (pin 12) \u2192 GND. That BS2,BS1,BS0 = 0,1,0 strapping ... is the SSD1306's documented I2C-mode pin configuration\"},\n        {\"source\": \"schematic\", \"quote\": \"display.kicad_sch: BS0 10, BS1 11, BS2 12 wired to VCC rail (y\u2248310) and GND symbols at (768,335); BS1 wire joins the GND drop at x\u2248768\"}\n      ],\n      \"impact\": \"If the strapping is wrong, the OLED controller will not select I2C mode. The display would not respond to the MCU's I2C traffic on DISP_SCL/DISP_SDA, and the user display would stay blank.\",\n      \"confidence\": 0.45\n    },\n    {\n      \"category\": \"wrong_component_type\",\n      \"components\": [\"R11\", \"C2\", \"C1\", \"C9\", \"C4\", \"C5\", \"C6\"],\n      \"pins\": [\"R11.1\", \"R11.2\"],\n      \"nets\": [\"VCC\", \"GND\"],\n      \"observed\": \"The decoupling-capacitor row between VCC and GND contains R11, a 10k resistor, placed among the 4.7\u00b5F and 100nF bypass capacitors.\",\n      \"expected\": \"Every position in the VCC\u2013GND decoupling bank should be a bypass capacitor. The spec lists the decoupling set as C1, C9 (4.7\u00b5F), C2\u2013C6, C8 (100nF) and C10, C17 (1\u00b5F), and never mentions R11.\",\n      \"evidence\": [\n        {\"source\": \"schematic\", \"quote\": \"Decoupling Capacitors sheet (page 1): C9 4.7u, C1 4.7u, C2 100n, R11 10k, C4 100n, C5 100n, C6 100n between VCC and GND\"},\n        {\"source\": \"spec\", \"quote\": \"Decoupling / bulk capacitance directly on VCC\u2013GND ... C1, C9 \u2014 4.7 \u00b5F each ... C2, C3, C4, C5, C6, C8 \u2014 100 nF each ... C10, C17 \u2014 1 \u00b5F each\"}\n      ],\n      \"impact\": \"A 10k resistor across the supply adds almost no decoupling, so the MCU's supply has less high-frequency bypass. It also draws a constant ~0.33 mA from VCC. This may cause supply noise or unnecessary current draw.\",\n      \"confidence\": 0.35\n    },\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"U2\"],\n      \"pins\": [\"U2.1\"],\n      \"nets\": [\"VBAT\"],\n      \"observed\": \"The STM32L476 VBAT pin (pin 1) is drawn with a no-connect marker and has no wire to VCC or any other net.\",\n      \"expected\": \"On the STM32L4 the VBAT pin must be powered at all times. With no backup battery it should be tied to VDD, as the MCU datasheet requires.\",\n      \"evidence\": [\n        {\"source\": \"schematic\", \"quote\": \"Top sheet, STM32L476RGT6 pin list: \\\"VBAT\\\" at pin 1 with an X no-connect mark, while the VCC wires drive only the VDD pins\"}\n      ],\n      \"impact\": \"An unpowered VBAT pin can leave the RTC/backup domain in an undefined state and may cause the device to behave unexpectedly on power-up. This is less certain because the original project may have used the same convention.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"The display strapping appears to read BS2,BS1,BS0 = 0,0,1 rather than the I2C-mode 0,1,0 the spec requires, which would stop the OLED from using I2C. A resistor (R11) also sits in the decoupling-capacitor bank. Both are moderate-confidence findings from the drawing, and the VBAT no-connect is a lower-confidence concern.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.5,
+      "anomalies": [
+        {
+          "category": "wrong_value",
+          "components": [
+            "U4"
+          ],
+          "pins": [
+            "U4.10",
+            "U4.11",
+            "U4.12"
+          ],
+          "nets": [
+            "VCC",
+            "GND",
+            "BS0",
+            "BS1",
+            "BS2"
+          ],
+          "observed": "On the display sheet, BS0 (pin 10) runs up to the VCC rail at y\u2248310, BS1 (pin 11) is routed to the GND symbol near (768,335), and BS2 (pin 12) is also routed to GND. This reads as BS2,BS1,BS0 = 0,0,1 rather than 0,1,0.",
+          "expected": "Per the spec, BS0 (pin 10) to GND, BS1 (pin 11) to VCC and BS2 (pin 12) to GND, giving BS2,BS1,BS0 = 0,1,0, the SSD1306 I2C-mode strapping that matches D0 = DISP_SCL and D1/D2 = DISP_SDA.",
+          "evidence": [
+            {
+              "source": "spec",
+              "quote": "BS0 (pin 10) \u2192 GND; BS1 (pin 11) \u2192 VCC; BS2 (pin 12) \u2192 GND. That BS2,BS1,BS0 = 0,1,0 strapping ... is the SSD1306's documented I2C-mode pin configuration"
+            },
+            {
+              "source": "schematic",
+              "quote": "display.kicad_sch: BS0 10, BS1 11, BS2 12 wired to VCC rail (y\u2248310) and GND symbols at (768,335); BS1 wire joins the GND drop at x\u2248768"
+            }
+          ],
+          "impact": "If the strapping is wrong, the OLED controller will not select I2C mode. The display would not respond to the MCU's I2C traffic on DISP_SCL/DISP_SDA, and the user display would stay blank.",
+          "confidence": 0.45
+        },
+        {
+          "category": "wrong_component_type",
+          "components": [
+            "R11",
+            "C2",
+            "C1",
+            "C9",
+            "C4",
+            "C5",
+            "C6"
+          ],
+          "pins": [
+            "R11.1",
+            "R11.2"
+          ],
+          "nets": [
+            "VCC",
+            "GND"
+          ],
+          "observed": "The decoupling-capacitor row between VCC and GND contains R11, a 10k resistor, placed among the 4.7\u00b5F and 100nF bypass capacitors.",
+          "expected": "Every position in the VCC\u2013GND decoupling bank should be a bypass capacitor. The spec lists the decoupling set as C1, C9 (4.7\u00b5F), C2\u2013C6, C8 (100nF) and C10, C17 (1\u00b5F), and never mentions R11.",
+          "evidence": [
+            {
+              "source": "schematic",
+              "quote": "Decoupling Capacitors sheet (page 1): C9 4.7u, C1 4.7u, C2 100n, R11 10k, C4 100n, C5 100n, C6 100n between VCC and GND"
+            },
+            {
+              "source": "spec",
+              "quote": "Decoupling / bulk capacitance directly on VCC\u2013GND ... C1, C9 \u2014 4.7 \u00b5F each ... C2, C3, C4, C5, C6, C8 \u2014 100 nF each ... C10, C17 \u2014 1 \u00b5F each"
+            }
+          ],
+          "impact": "A 10k resistor across the supply adds almost no decoupling, so the MCU's supply has less high-frequency bypass. It also draws a constant ~0.33 mA from VCC. This may cause supply noise or unnecessary current draw.",
+          "confidence": 0.35
+        },
+        {
+          "category": "open_connection",
+          "components": [
+            "U2"
+          ],
+          "pins": [
+            "U2.1"
+          ],
+          "nets": [
+            "VBAT"
+          ],
+          "observed": "The STM32L476 VBAT pin (pin 1) is drawn with a no-connect marker and has no wire to VCC or any other net.",
+          "expected": "On the STM32L4 the VBAT pin must be powered at all times. With no backup battery it should be tied to VDD, as the MCU datasheet requires.",
+          "evidence": [
+            {
+              "source": "schematic",
+              "quote": "Top sheet, STM32L476RGT6 pin list: \"VBAT\" at pin 1 with an X no-connect mark, while the VCC wires drive only the VDD pins"
+            }
+          ],
+          "impact": "An unpowered VBAT pin can leave the RTC/backup domain in an undefined state and may cause the device to behave unexpectedly on power-up. This is less certain because the original project may have used the same convention.",
+          "confidence": 0.2
+        }
+      ],
+      "summary": "The display strapping appears to read BS2,BS1,BS0 = 0,0,1 rather than the I2C-mode 0,1,0 the spec requires, which would stop the OLED from using I2C. A resistor (R11) also sits in the decoupling-capacitor bank. Both are moderate-confidence findings from the drawing, and the VBAT no-connect is a lower-confidence concern."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 14023,
+    "completion_tokens": 8198,
+    "reasoning_tokens": 6502,
+    "cached_tokens": 0,
+    "total_tokens": 22221,
+    "cost_usd": 0.0055013,
+    "cost_details": {
+      "upstream_inference_cost": 0.0055013,
+      "upstream_inference_prompt_cost": 0.0014023,
+      "upstream_inference_completions_cost": 0.004099
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-16T06:28:23.429484+00:00",
+    "ended_at": "2026-11-16T06:29:00.548673+00:00",
+    "latency_s": 37.12
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-16T06:28:23.553Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 32188,
+    "moderation_latency": null,
+    "generation_time": 37038,
+    "tokens_prompt": 4338,
+    "tokens_completion": 951,
+    "native_tokens_prompt": 14023,
+    "native_tokens_completion": 8198,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 6502,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0055013,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794810503-8PcbLo6pnA8EH245YcFN",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794810503-bRVXRT5aAbKFHzVZ1T2G",
+    "upstream_id": "msg_011Ch68i59L8Xsa6wrEWUzGL",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Ch68i59L8Xsa6wrEWUzGL",
+        "is_byok": false,
+        "latency": 555,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0055013,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794810503-bRVXRT5aAbKFHzVZ1T2G",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.5,\n  \"anomalies\": [\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"U4\"],\n      \"pins\": [\"U4.10\", \"U4.11\", \"U4.12\"],\n      \"nets\": [\"VCC\", \"GND\", \"BS0\", \"BS1\", \"BS2\"],\n      \"observed\": \"On the display sheet, BS0 (pin 10) runs up to the VCC rail at y\u2248310, BS1 (pin 11) is routed to the GND symbol near (768,335), and BS2 (pin 12) is also routed to GND. This reads as BS2,BS1,BS0 = 0,0,1 rather than 0,1,0.\",\n      \"expected\": \"Per the spec, BS0 (pin 10) to GND, BS1 (pin 11) to VCC and BS2 (pin 12) to GND, giving BS2,BS1,BS0 = 0,1,0, the SSD1306 I2C-mode strapping that matches D0 = DISP_SCL and D1/D2 = DISP_SDA.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"BS0 (pin 10) \u2192 GND; BS1 (pin 11) \u2192 VCC; BS2 (pin 12) \u2192 GND. That BS2,BS1,BS0 = 0,1,0 strapping ... is the SSD1306's documented I2C-mode pin configuration\"},\n        {\"source\": \"schematic\", \"quote\": \"display.kicad_sch: BS0 10, BS1 11, BS2 12 wired to VCC rail (y\u2248310) and GND symbols at (768,335); BS1 wire joins the GND drop at x\u2248768\"}\n      ],\n      \"impact\": \"If the strapping is wrong, the OLED controller will not select I2C mode. The display would not respond to the MCU's I2C traffic on DISP_SCL/DISP_SDA, and the user display would stay blank.\",\n      \"confidence\": 0.45\n    },\n    {\n      \"category\": \"wrong_component_type\",\n      \"components\": [\"R11\", \"C2\", \"C1\", \"C9\", \"C4\", \"C5\", \"C6\"],\n      \"pins\": [\"R11.1\", \"R11.2\"],\n      \"nets\": [\"VCC\", \"GND\"],\n      \"observed\": \"The decoupling-capacitor row between VCC and GND contains R11, a 10k resistor, placed among the 4.7\u00b5F and 100nF bypass capacitors.\",\n      \"expected\": \"Every position in the VCC\u2013GND decoupling bank should be a bypass capacitor. The spec lists the decoupling set as C1, C9 (4.7\u00b5F), C2\u2013C6, C8 (100nF) and C10, C17 (1\u00b5F), and never mentions R11.\",\n      \"evidence\": [\n        {\"source\": \"schematic\", \"quote\": \"Decoupling Capacitors sheet (page 1): C9 4.7u, C1 4.7u, C2 100n, R11 10k, C4 100n, C5 100n, C6 100n between VCC and GND\"},\n        {\"source\": \"spec\", \"quote\": \"Decoupling / bulk capacitance directly on VCC\u2013GND ... C1, C9 \u2014 4.7 \u00b5F each ... C2, C3, C4, C5, C6, C8 \u2014 100 nF each ... C10, C17 \u2014 1 \u00b5F each\"}\n      ],\n      \"impact\": \"A 10k resistor across the supply adds almost no decoupling, so the MCU's supply has less high-frequency bypass. It also draws a constant ~0.33 mA from VCC. This may cause supply noise or unnecessary current draw.\",\n      \"confidence\": 0.35\n    },\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"U2\"],\n      \"pins\": [\"U2.1\"],\n      \"nets\": [\"VBAT\"],\n      \"observed\": \"The STM32L476 VBAT pin (pin 1) is drawn with a no-connect marker and has no wire to VCC or any other net.\",\n      \"expected\": \"On the STM32L4 the VBAT pin must be powered at all times. With no backup battery it should be tied to VDD, as the MCU datasheet requires.\",\n      \"evidence\": [\n        {\"source\": \"schematic\", \"quote\": \"Top sheet, STM32L476RGT6 pin list: \\\"VBAT\\\" at pin 1 with an X no-connect mark, while the VCC wires drive only the VDD pins\"}\n      ],\n      \"impact\": \"An unpowered VBAT pin can leave the RTC/backup domain in an undefined state and may cause the device to behave unexpectedly on power-up. This is less certain because the original project may have used the same convention.\",\n      \"confidence\": 0.2\n    }\n  ],\n  \"summary\": \"The display strapping appears to read BS2,BS1,BS0 = 0,0,1 rather than the I2C-mode 0,1,0 the spec requires, which would stop the OLED from using I2C. A resistor (R11) also sits in the decoupling-capacitor bank. Both are moderate-confidence findings from the drawing, and the VBAT no-connect is a lower-confidence concern.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "CAQSjWkKEAgTGAI4AUIIdGhpbmtpbmcSDPxy6PWju04DyxWEPRoMyIh6QYXDymiv2SYmIjA+7rEEvdHWwOkCa/+9/Vu8Lr8Rir8t/AzaMmMlapkd8tN5FpynFUJT9/h2DADA6MMqqmjiOTh0ErqWVIav7he8RYyQguezZ3NMGFdjejTA1ipmiCM5rp+RmtFZbKzwewhlXvXei90bGM77Xje2m4gQaHoy0qkC/ISNQgh7Q5TlSGd+jX2c0tavLsa4tlG+A9xyWy23d/hNkGDqG2/k7WbzaQNjnmzmILqD5Xwo0YkVn18qW9lAY4dLV9Ez2gyc8fTtnCscPV2TdLoX4nnhzmUSdli4yV94pm7m4+i7I1TIJ1FJGD/FFZ5PdWdyQLOMc1gP33M4CQtNwUNCM6foBdnCSfAkJpObmf4tffmQ7nqNMKP9ywLAFKsay6PtjecM7uloJ4O0bUSdEIXfHdHEB+l1163uc6+s6rj+u0g6vVLp9hO02vXExZFDQG11700lONJRCvjmlIwTRIRuHpv+C8xj3J8K5RuIBJLpeQDQ1R/jShZnULuMe9pZb1/ZffNI2HqQvh5u7B/4j3lZtYlCZDOCKekPAOZoDiA5gnQ6KKssLmlj2NzcKKN07d82HOpslW/CJN0SPYt3HM/9+N8ENr1h160aX4Jlez2J+Q2YBKxHdUs5bidvUgDJCL5KPtM4N+TkqIWu5XndvUZZoEAt5lnu2GtOVZzJ5t5ikwqmS/praRmr6JbBpUSRFA4/1Wb5BF+c2vn24lhmmkUxVcDikPCcE+A73O9N5bPqW+YN18FdmloQOERRWJgifzXUfaUwSZ6snH9MO+H3sXy/+nFof5xttKQftQZm9X5Ai47cr7pvqf+6mxeRWQ7laww6WO0QYMth/+NRPluX7RsJMS1rV5WuyeGb3cQy5fQI82et9RlpSabYuJvVeuQnCDpRmYlltn+2iwl0UmmfP5vjgFKlvokCB61o9bwZrAoX4fX/n4/XXS2OsBKI49dAcWiNWqDG+SDxUU8lePpW6AgIWsWPamlGp9cz4sysx/fhb1bBIAUeAX+1+xiA5M61AEuNdWnLuAYEUdoz2oIq7FpefiXxo73t0KvTqaCCOep+AEzuPK5w8y9TJpUFDzSuysjT60xB4ndEtbiuDN5EgHRLlWCk7zPoyU/AUfX3sxCCbWPA7VIoAf01l5J0nAH5JA6LfSyUGBATot6gmNVRC1g6RJMRzpjbVEnZkF4L+I0lf+DtJk8YNgjmixUQH5M9kutMV0ziw/KuOUKHuEC3S7wxSm3e4bgk1R5sZLrrY0yr216i1YKsRngNL2oJMKrItySnvIH00KXHIOdkWFjffodDs00n/JQlKwLxhAn78bWTr5pqUq+R+GwB6I+lR1AS538r7Gbeg9s7n5KbpjI5SGegnlllyYQaY7pOm2+13CMOMQwgB2vo5SZP+Wg6bsQCvrxWAVE74088JGUYnkhduZtzOsEP3oLiD7aiEFczK8lrJQYG9nmEsk4anXQO+DYZXpDsTqV2e1BAyb3oIofqAvS/VhQ5p6WYbLpfnecL5Cq+DVkWiTOM7+1KjOzxGgtSCZbPsMZMQmLtWVZHiu5qqV/FF6TFjylQ2pkBifvEf10sUr0JW4uCIVlnK13LuonC1rQhGDRFfhcFKd164mgCbMXDrFsbS9LKNoqqi4DhFc4k/AtxDy+Fc7+NJv/qo/D4DSTveYZ/nyFMjaWj6AhW0EriFH82YzhmcDLKY2JB9C/7FZErjbdU/XgxtCM9/k+t6WZEqj6Y3PzeqGS8mv+zgipbF4Oz0RqhXbcVpA0dnji0EuzkJhscY56fSHBE+KB4QPaxH1BzH5Zy6ht5uwK9NgS06dtB+qFQch/94/kFL/8aL1QqU0QCNPx0u3ysGGdAj2IVDoqShhaWpaFOcenPTzLbMBHqBcDPS+J3ie1x4FvkFnf697vwa9EwOWyIOntIachNK0pmqNyqpP+6x5CxZRI0W+rOjSF+0HjCz67r0Z/JdCJK4O1i+DHwq1psrM3EjkfmJiVxTnIMW/X9tViC6I/jgFl92DLvAVwTQ5fvvYgLvk4UNOe+mSpfPBzzTyZL9EyhFncxXoE8r5OVBtBKeP3fF9RPcnUCNoGJmVOqiIkldeYrI/Jv+YwPH5gULuVe1M4wYmMlSQCJUsAxpD+lteaiESC2lpaTEvG19wSYtJ/89gFcEyyYTOVW5bOW1JgIxJWYiw17EVsseIMYNrczknAwPX+lmFbHqV84Y4UPRcSqP4ziKZdDBqOdLVpNrmf0cdGeI9f343bOtVdqcPf4lKSMHXt9qISMsInXgcMS17vHNM+5qOhz6bi1GLGALjT3SU4SIpYhScU+HyoC9daLOJjAcIBbcic6F6GrjEO2toKbEMZMHnv+83sarqVS7y0PS8wjwdyuhKPyk505rvrodSizKRwGb7DWP+UYH/2MmxEFOYWyjNB7c0y6Sqb636bahjEqgvWVY5mxK3WeTFdJvyLMOg0BSpu8WzB0qLeta5HjlokOfDbf0ZcV+shw6VdLRGuomRhIojHY+1XPi82k1HaOdX05KIPM2A0prJB+SSErG7hErws3ShUEZQADKGZ/csWTkmKzOE5ak2ZGn2IUlxSXG/R5wk5PoXg/GbA3+tETHgiUy0nGuerjWuKmfJGy1L3tFu5yMXVOQgTJFyNZ+AdM2201cfQUrcq+jVf4QF/+IRurZ3IpTYlQ0yS/hIJsSyU57wvU8zY6xoXhPyTRHM+5bXf1XCPG8Swz1cl/PrsIvtWhDekwWdpLg7RS/9v//dhXt5NtvpBhhejRXVOYUjMk8BXfaOsEhGcBbOTetnfmzf1UOAGyUUbrvQTZf6KZUMoLQ+QFbIDl8nEgbDlGRrMXFob8+bQdRZSfY3QJPSJsRjvdjKi2E1LT+FQQWsPv2BtqIZZQ4j1+Z36ITdcZ6Iumaic0IRlL8OEu7fz5Ffv73nR0lpfWI9h6SQH4FDDh7UqwS9GNr8RgMW4tmpQQhIVAHazpoHpdlYEoV0lvd72PL4wmjyOsm2+ZMqQkFV7s5j4yAjS3kzzULaVhO0hUKFFu1lsocRTb5yIZjcapIFPRSMBxHSAK+4lsIxipcSE8wg6QkEBvbVW/XmYFyNipSGQWWLniIBPpIKDkS/FXMXCAOvmBm77H1lriDmLPxhV30RI1itfbcEJm5q/1umA3n9J3hoFSRFi6Vf8oF29skSkW0J90+91MzrNBptQM5Z+q2MGgUHbFu7lmf0eijtOezfbfI187CzfL9lG1BU6+h1xcc0v71ZQQZeEkth0/Gz4/Yo5xxtVCaWV2qek/FRMatP5jj0/VwZ/zynO3slmkKeYcO4t/M8YXGzXZYgVHiSIIWaEeU9QrvklrgBK+b04oCaPU7UjV/W8dJYJyOdbAvDSDjpU+qxvA/aKN9HM7YOjGpKupnrlXTw/LRvApqRu60UvRHF8LOXZnzmsc3ZpFF1VieSX4HB25fVqbtvnYpw0iknSX3m6grzEyDt3QxXegJ8l4l6f9ksYvEdNTqSQ2sGUXKp1kucxqBg6UC8NdTmeZtgBOcbYaphOEETfpEqZNB3l7LyKPR6DKu9dMlCKqZZsZQoUHtzXwM2OlMM4ELMPNaqMl00Y/Gk3s8TNFXKIS+a79XkRmwojrygtokzKChWtivKNJfj3sxYqh+HEjeiy3gTazCrMZ7ZB/i3106PRk+bCViolQ2befGoDcz/E0EImi/pC0d+hm3yTWhh7OXuSOrLqcHf0YJ2cPu+gUouIm7FP6Yryl5w614c59OW59rDI8eUhfG+rwxGb0OV5tyfLQuqvD8hQPJFmIjAtnoGDcV6k48r1/Gzy9y6Q3LLKPC7Ymd75JXDNvvX8631H3jE21GGAWE2z3MWYGCyBD75iCAgvebQUU0rjY7zjLuFMwaRdz8yegeOeFMD/Zh/Op2a8JUeFyzLq8B5CNBQWcp21T9vs1CxT7p19G7UJ/LXLbRpQs4FF6pIrtGiBy458OYzxkttD94jTrNfUW96fJ3bpMrEdZcAKT4jbayPTG12i7LkSZlmnybTfJ+OmjF+tRtX4XUcCyjSA3PkAkrcifi6v2YBC6kJYdPtmgwlbKKAh+abpXCKwQJAGLF1PIDWdYRr2baO5pCkDsO8wasg94TkSG4FIu9sGLjVKPkkV9lUATzaytmIaNMGonf2II2w9Lf4zYludytHXLs3pwOeVKhDWIg1d1JOPVXJO8ZEAekqBxdq4DF8nvslkfRB5xGsh4GZrB6VvFMaqPVVux9+QVrsQNmkcHeBFK6td9dVu+5ZdI3QDqgGG4zQ5thl+2yx++FvvwbIX9SgYQAllnGmLD875QxizlkibkkW1heJcp3QYO/YgnpdumohoRaLROpd5YJi8RtRcqoAWgXYLF24GR04O/CHnPuM5UP0gq0Dd5H9DNSYIQ4pN/pOUMPT/gbQJ2xg83RyzaN7mhoGWLpC4rV9mDUf9nFmZkbyBkxnE9heuBMX5UcCkdG+hwUGsxkDIMVx1xR2JJeHyH1NkZpi2AioU3L8l8oh4MyJZ64OB7AGjOT1jztb9NCJbdXOhZ2LkhuOhyxkF8Fub97kU6U0Gj+7KKqxKoWFQ2pM8HOot6nUMStCk0Aes7kXOCXNjzqh6dV7HwYMrOcpOUeeH+ywLqKg4WpDji7qepf90NiafFlhqLnyqCpWWCOD/wB42spqKxgmPh5unlwQENV3r0fnUOQiDsfnunq0h7WDIf+idpqvwkpp9P3JQNJA5MA4emuqSgYQGqj5znV03Ho7FSExmUAeUk1mo8VoWqB0k63Aba3wJ3vA9buJ/nZIwW7rPrx0Rr3RUNBMs4XOVzQ8msGm2cq8HMSk2l3Gijn7lhvYSWCXDEXYdaNLjS2xAmQ+19IOoEVfPqNcFxXSjQsgOLK7QIldzObQ9ZwdO1BYG1TztLSZ8jHafbjKWoM9Rod5I3nLpBkn4W0pjSZIrw7gMfNnruNv1nog53tNB8b2S6dUgJPPj0t3RWtpU1mOzdM75941R4Nu/aJ1G9xkhspxDP/04jIuTL89jYtyP+xZKxjcY+oNYuLTXBX46ckh8ig+EdoPmYkZ4E1tPhkXLW1sC3eBsiyunOKyWJMxhmMyM0yCVvE7BxpGHY4fX3mcoVAkZvNBhLtS3ksFNlbUGwV7SQJcvPYm6kKJyj9p7SAJ+uld8rb/CU10jI9QpW5VlZWqduKycoctsuqGynxkMUitF6sAmsjVerglZ7hA6n8Y8Kcty4zOqc3PBKKTZfRqKF0XvZOqh05latJQHrFRaEB8vtlrJEBxjmNMENG+2JPebfiyacQbImk2KnOt8kRud9HspfPMDkiYVmHvALi4JMkWQ8ifZPR9jM+E5Mu0xSail2i2Gtu38p6EoHmbgE6w0rATk5/Uhkf6fqGYU0uo8h3ZHQkBTIyaGl658fWwt9EP72mCcEZYKSO9KO0J0XsNAct5IZdX7GJ60gAeylg9TDl5V50SLay3eBG4Uf5fFr1/IJaOCWcKQ3j205pWswfqd1fS8ZnVyONzYrOjuoPNjODPr4aHd/Pic5I8wR/bZ0O6sjSwrhRgJWL+6oFdlcrKKxvMDiTtEz3MS4oW4g+PN44A598y9SCKejpWIbHmeQ9W4UvkueLviR/e8C/rgToIddnbSIXGkegGfRBUsZYOjEcUd5ivKU4abSyiMNeHBdJm1fTRQTjPlKCS3tJUQsN0Fslsl6x2FurdRoBj1OmsN7+Rav5LF1dXOhWuZQks09rEqh/o762CXXwANb3AfP12SjyLz3gGYg+QfzgrvFNHNhYZSwKiIMYJsXmbreHB5zS89zvuu3YmVphzZWGf2kFlffAvD5FOHrRlox1EjgpH7NpgWd1sJ8gQ+7PNLLrO/Rzy2ZfZkXIHZSYuvRwFqCVUPSc+YjArGwp4dlw8xUFYWg4QUQb8+hxnQT+/k5S+anjXjJHJsBtK4KmueVfC8AXEo4G/QhPLET1tAbjxyTiWbQlVNDP4spkzRnUpj+j2F+IO7uNdETh+lugfmACCqdCM/8p2WCkiarkuKuE/A0KtTLakh1PAG/cz5CViDi3Z3jCg1x59sABTkWYABYnUUk2yUa7XGlYoF7pUKSB6xbHXia/H1KAo2IKeY8Ree9ImZmErGL4LibtEVIdmJ7uOjnbSwUEwVdj1BFJndL4T3tVSgJKLoPHPyl8v7yH2wF3Emr6tr87cs0rC+CllNXqa0ru3qlBc2JXzu7cou58xeBiV0SGWcAK6g1qk/m/RAIh5zUZyeTpsLTv87y6DS+FX8BY2NTleu1f8EuI1p5FfBcn2AHYby2VxgdxwbcwRRV3MizzpIzf+tw8OPHzZplzOxJg2FhBJaTu9gYKPnl/ye1NgZ9subRdu2ToQZ3DYd49gdLMwnuQZmDuig14Ne0dC05x7vW8krh5huYyXchkfzSgWfVlwURfaHl+yD1r/e46kUvhJwMJWm/JWqbsQKE77cA+MTKKgGK6XVaax1msYFL4qrsj+e9kHImukUCD323TZ06+cMWCb46801I7boMv0qmX/wh7HV3g0UYG0JmJefOxofSANBTQXTG89MaRtxugSB08FT1mrh0dImmW8u6Eo0QYt9UoNP1P6yJSmvgQzzvx9ZkmgsgRyT2PmL0kcBaPpEc1q3u0hDazZvyzhBF+sKJxDj0GFPRSosK7tfO0xQPtGgXb8PPnFjZdBYqj+uwJCh6TG5YMvuYVchmiLYVGQtdKMFdWeprIgswdE8PD4A+dXEZWeV/3fgFMQFD27WsJL0pCItZCU7xf66aaxmciHAp3uDboBkyKnNEiMdbvztZ1MqHtVh+oYncorIcUljOBi2/T82dYniQcaL2ngb7Zyhhfj5Y1w79AwN+/BWsv3Yp2KjoSRihog8CQXAGn+pXNRJMrtvZkvLNDwaNyW6wL9rZTXS5r0oVQWB0HPBfWwGyscVgyU1E6Vg9tpmc7ljEzfjnriEaWagBZhYJQaUmYtLjfS2+WRHk9qQY7+ozQaG6z46hI30oAMPDjuP4azELHcw9LqBky34P/hV1nKG5asV2n0If0TrIsTlTgGKvXw2xukXQT3Jg5fdJ+uKFD9Vzt4h73BgYs29LKNe7/XcCVzR4YNWlvENBIyq1RJPrjC32dNiELVeGPN7lXmkBM4LBcmfBIizlAthd/1qVJBeB052xGahisSHz8ITUzOzMqqPOrJqPT06yMwWlU+dJmG1spVENCXDK9ClZE/XT/WGMDlv3x0sb0SS+aqJvSbfm6kPcx5JQxqUB9kel7bxTi3jFIG4mtBPXK419Xe51GuyHheyjJSKCZ4A228sbVvjN91HzcdgU+30+07+a/3bZW15ZyGRn8yGJ4YL0Izj6q6z1ZfUoUSC/AaRwzDJYV4mSIr/kO+gaRK1n3BuigS4Yui2Tus+cU6GaqOzukrbjipchq/6q0E5S+Rf8N7Ate/bTUl4iauiipQOw8mDHS72UDmOGh1Dc4lygYntvmPCVu5qJ9WoO+1/Ceb87mBUm7IA3VAXnpa9+7HcDhdBMIMfGzTva8JT9QsJJTfTjAGntRMyt09sPQM+zShmfdllWhTQOzgfgqrNyDAh61IzqwuqHaR9fUIfguDO8/f1p0NxVD40qTeNjFSMORRG1JErfNfZz13/stec40+W/LTjK1SQ7iPf/X8fUv+9QeXmg/KUrLqDylIaw7bdMBy8JFA482bzj2JNk11bXqQB7t++VQtUBKUI4hjdr1qGf5wBpom7MnwATPJL1Q4POKAQN+iz6Pm4WCuvtzVtpaIcGgAhj6OFbqgdhtbnGYzHrtPYOHRjMJrBSxPR8wd4rjrwLPL+hdh+Ma6r+2fMG13Pzlf53KjD7E4o57rkyU65N+vCJ5rP7I+jmN27/TAsbNZEZ/Xy5YgEtZ5z+FZfLfbu//W7l7Y5Fm+zB9ccYXUd6tNN4sEYh4yigvsX6vnmWC/lovSYrmNT1bDWMVVTki/ImhC0A2A+1JmA2EffEnzgeHqHcSncLnDiKelgGzihp5I0YyqyeRxuv77B5Ay8hpyoxNY4HPPZPPku28zxORx4BrBp6UMmnA9S94xZ5Jt/vbYqbuBJ8ame/8zH06jlQS8kiJYv05s9ycAXYQMi1oPjCidri5Zp1zOzD4py3sXcD+Jy6uFHx14o4n/b6U0+zOGCn3C9wph6H5d2y8kKtYNg4aoaR1bzrSq2vsSLBsNQLjSgJ9Rk5+hP9GvtwDDzFJ/o4vnewQJmVReHjzGVzHAKftY6sAuh7tfB9NBIKfHdaoYLXkHrta+aHpWKeUTFKxgir3Nn2V+JVqEp3VEhuLPkszcRagQqnaJiNzI0lTVGAqPfBEtK4gYYFOXwVMJvs7sPcUelU1J6lhhSjxJI4tSwd2K2JwOj9VYq5vvz702Mt5mWtnxhc3Bowo0f9ya7tIQBrhQo9XhdvWTQD0HIfoKXGjtWsQczy8kSMiJwzugdfVB0rFUq10y0IohpuCc4mCwdvv9vjk2fAd2zADIDi7bJ37nQKQMQkxHzzWNoejNC2iWTK24IdaB0z0Foo2OTK7NwCnIW58bMUgFiGQdqJX83LgRCpsPdBvyd40faw80HQc/WF4LpEqjjGafLFAdenLFlYR9aEkZuiG0bPmVUZ1N1yn7hKgifcwEpNK+Gte/JDdxWZrtZwH3KXztf/NjGkM6Tuy6BbREN0+pJU+S4XaBhyxvQiS5AVAKWOh4CpHkpkESV76EJbgUL11Puw/lEmKQGq6O+3obgFt+Bl7WN48xFjZ8ZiVB7in+iAX+zBPuqNlT1I1+OAlG6o6+gM9KkcAg/Xzy3BvjBUyWeH6t1GWoCPTvEl8HygL0C8oOJmFDHQcH6ln9FeL2cB4gokD3cL3Mruo+Z1qPX3WxihTHmCsL23E2X1gaQjBw2jMXumjZXhKOyAAeLCoLhQhsHvyFTVHipfgSTjK3ZJbWle65+8slgxT0kG7WLaSkxAblh7Vp2f4UjoC/mgnc2u/SHFgayFR+9as7/98u6/NH4cnHwitKxUNtJHC/XPHrCg5vAfEx63g3p5z2lVZtFA5QLEb44fNF5FV+60+ikR6pbGYMu+dBmuTpOESIeAvq9On5xOzVqUJWnX76rQIGdtlbHBPQLy4/77M62x64+PwvX6F5BplunCo1vQtwFdc8tsO+Di9+1OnxbBYLf3sQ4iAj/HfXq39UVdFCslUeZGwOIhp0ygvz5rRTESOj5uPrEhnbflVw3kfl2AHwbLb5o0uApcG9EvLDyoRMD7Q6WnCV5fDCO1fjy0mH6eccdTRUiNuHuXpFM/O8mT9557Gwm2Ql5ZKzLq3WpC7Omh7oF3EomDiuYNnzrK8pZew7gMuDQIhu2LF6VM9U8y4OHINLfsXpnphR9N7V+8DMiNyjSWSX0gk8DPXq7OjB73E/9oXkTkCxG2SsijvNUFaIS58OFwinW1xp1ARloDitZVLsbHfP2qyGyGQDI8tBzZVpHa51dNOBIG3wh6CibfGnqybFb7USCMSY8EWi+6798HxvvOh1hGbgpylc4SZBNvioCpu5O69B1mXpxllsHLxt70/DSJfDAA2awdylZbzoGFndNXcGMGWyTZZFANssGVQSeIMhKqR110qAK2AqhoPlXs2DzU/n4oisMFDjZSzvzykHTW8ynSobrN47DaWRlhWU2mL2AT4gZhAaBid/nb3akRt2UdbYPNX6rfStleNzg6YL6qpXbPkU+PB+jsZbcAUj2CuEd/e0DgpKyWn+Zjt9GmGAtU+qfNqmLNt8Oxoq8E6NsdboeKh5vXn8eS5GEiHMw6hJ+1+8eoJ2FrwYDHCcSP6FLs4OTA6zlnIm870ZnamAzBCcKjFl2551+T2o99oyPFRuCRg9uF6ZLdMk6MbLzeDy0Oj7YGwBr6x/grxL89wrA45rB+ayYol1H1V07NKvG5q7YceBUm2Ize+2Ndn+fOVEh+ztQdq+oUxvIgu3HPoDGO3sUDuJYEmFY+egbYzMq4JsaTT3TAbXuhSIOLCmZmo85zdlQMwIuRLovIwmLOebZnxe/isFGZzYriB+Jq5g+GrTjr7DN/FrCSw42i+aNnevhgE67ukiphNcnlrr6v3+RYfcUYrNjWylbDehuVQFtDAQH/i/FixUe/lm98Nfec69Sq9p8fAL8dCeekXGSsUlePq00UVeQ2OaGGnwnWkF7KdN3jYipxSXbtGI8+k3yKYtseo6e7DhsE2K8+tFX1NZNskUCAVrkxvg1qLQuRGljXAVlrS2rzauGo88UyaKaEQEGLJhNbQEUY90J3febrn+wbphybrld33E9OC20+pLOmRXTnamqjcBSKtxxUEv92el0RvDc/WnyHaKjjovY2VDVdmQmK9ts86LamoPVye3tlgORjBAbtFdd3QjbJpxjDaGXkBQW2jf+X/4XbO6j/SyoxUig038/r1pZ2Uql86QjGI3qk8vL7glq2tSVz6oH1RyQzRasjnUyxA4MG9mkAq62/9vzncOHTuAm98FoRpeAKknvPBCV41SYNeqgOp/6+UndKF026YCdCzVmsMJMaN6Dv3YoO7jfuXKK1fX+wmO3bfKprikq78SJwDs8E14+zo1QdWxgr2d7HTcrlrZRPWHJE3p4JfRj/eLhuaMYzj5d+y9zFDGKlqTmENjc4cntIMPDRih2FmYCAkp8rLYdAcrTL1yvACHl3TPADeq/DxemqYmMPd2NKsFYtw1V3XwTkBQ+jfvlkEVEWDSdXyt6y3AkMkAQ14efMuoZw03nm1aiiiSRKU6x3BbMyyMKZtp5SJXes94Tz3gghgyYXbg/2g1J6yQNqo0jUUuaM1F3pEerrSRO1oNOTPpSYF6d5FA342W/rRDylV1g+yKD3hFPVirYTah6t//70WL8u5+AXAc/JrAjfBoHLGQ4OP+JU2B3NQUSANLzwcHZkvaDAcx3YdOj1DbFE5xmoSNPjW6QmB+CgJmec/Uuny20vlx6xBcmb4ce98mB92sDHyLrKQ7UQ42Ttlt35q+Pfmwno+PH5MYGYo85WCmOxczKl8sVMOzS07KJfzTRQnI5tiWjNqEt0jn9EhhwrgmZTZF/tjJLCqyjjbT4Irlfyi5eZRSUx/wBVbz1ief8N1KLzivyvVad7ILpsvgUzP+NvQmdWvG+wLqFp8lNFXvRFEMdDfALspv3Jm3rgFezGqnRLrGyUIqueJnU1VKQVkSjQwUUzmHGyVdVfXkxWVm6hi4dUWVAVQUrNFfCpMstRm5XqEtE+MJbjEMzlxrvkLJfxxHlA5KTp3vTzLA4KZTlzrzHOcDI0VVH7Qx1k0h4jDJSQaUkW5yf8eavdJNQz2oWhLK2L+3poltCcZA/m4O+vFQnP7uzw2f44s0rW3NcAnVXxqJpyqqvexI9GkOtAC953YJO7qXu2LgbQqREVWr6ox3zR+84DSvK2OosBWNAwXjDXYJB7k3kH2zINXNo7zfsx2mCUU9vkpSFc4xtEkvSkDdp1EzxMxTPpBW29UXPa0bnD9uwuDSeY3aIRg50TU01JBz2p4dnMryZJKh0ZSIRS+wz2u8wmplPtvREzF8/5LlzqOA/5u1UOeGouDfj/ieGKUNGzk2o7y5I+yesZ4aEIZjkwa9IDRCi7qU6mAi0t+o0r2NKBuTfmj01FJyh/zJE0c1r+qKSjxxUzXk7ATJBkYwtpgQgw/YeRhlGZYGXRT5P0fn0R/ZPL+l2fdFYGaRbtgkxbnEaLA/3lRMdabUWEnGdadO1knzYoFx1WigpJg8L/hDebZwryVOG7B5gxdBqLkfXf0J6WIrDZ9XQ8bJYLEO6R98h7MHS7uMCw0qSXtHiqO1Z0OjT09whKb5XR9cVM/UelN/p/nFLPbIwj1L2p9xnxFIvpoPqLrRM2X5U8Bw8MvLqvl+FJALFGrBz7w23juc0kBZ0EzhJK6Q4ht3frvI23fylL2mqoIL4xQV3UquwmhMzp7+vi3Kqp1yZKPM8wh0k4uuy9ze4Nr2+rfGJUVjR+5yebOuM0r0Jv31TdpveH++FsILVnyoa5fybE2bbe1iWhjxmqLLsEOEaOTJidxivl89ZKrUGy/8RudSrrJ4CfPHeVy2OM0wyIJGrqBFBN2+TzMQoPrPe1Q/PuvOu4KIAqo8e3qI2Ckn794LFY1thx2dt4m6vzHYbHjSlCEnvO3w5Y+sd3VRxC1NcrCBJAYWnfkHLvtdpXIleQCXp/uzbo5yDXXL3QomiIkoKnZUajyxzQKMK1pWBngel0t6hjtZ2lzsj5RQQ7NG+Fp4nKgud7ChGDazsomY8+4zcja+Z3ySFoGpIFItPw9hIN8NEf0Cwfx0geHTQbQ27j6W58Bbleh6T+20mkWb/DBrreihMGcoBB9X/HZxnVhwhvhjTMqWr5ig+y7WJmpY27i13iSsiVd/ZhD0+PfOn5QXsWZJfnU7TKq0fPmtHQjlSB5tWUV0rCmBqSCWNM9E92VzeL/hqxCC3CjwXShOdcLZlQ9vcd82rjL9XCxQApHI9Ju7pM0pyDebo5+fedGiJ04KNRBYjZpeQP9sANZD20LEMggsb30COcnKGBkw99QODtqyKoYJ/p7FEv5/waGyW1I5D9zNFDyU4QoNfTDZkP7SXlBs96foaO1v61ujyvS2D2ZvSNJNOb+HXOKSUwYj/332/7ZjNcK3AXznBFZivYqPX+36IERuGKKjlgoD1OSPrYZc4uWZZEslBZVc2ORzr6sbnaP1Xl7ZY8yh6LfbWoN5CJeGIHL8z7si2G+85kWcDYOsyWzxC6KvCtcCO72Cb1xkHXaqUuUeiG5up+hBIozcE+oPlcTvJnSBqQ7voYs5s/FLaOTqsSP+elnSJncqN3bYnPC7keJEOscQLIOOs9esGf8AIs4e+T2FNMzjEZiaJl7EXxZrtZSLBJKDP3OqAnZDeYr+8ziLvYmCvWH8x3oEHES15Y3Ddx7Qd9UUIbv7mdM5NkYxD2i7ZYaJr8Tv7//IthhnlQJSkPEMraGrDI49t4K+88ZKpNALBEBVkS2igKvM6jmt3BAbNHx29prAC42T11CnGhSD/ooAmnMpdaMuQ0gsJpre7h5LUrf4cUQfl1azjNxdOuATkIkGrW/hDQwMSVh3pHcu34qT55ud7daks1bJVnavQ4Gc/Eyrc08cPiRp2JIh841hsXUFQEzpBG9RBxW5q05ZQ/sQ23jSCFsVh35Rpgb+KmKr9TH3w3GltviJzScPEsHkPFsn9V8QPkSMYZa1p5OI40BM/Yph/YfsF6RinMc0CwDimGXxpIdhj64cF+nuj21DE3gbRBw36IIus+HALNjpwA3+upORVU0YawJBo5/DvIKlVSn/TRSDj39I9MiDmVGOnqVtW3mTsTHsVJyheW7XiKG6VQ14aH7jWbk4byyY5Qn/NXRM7HoxX5W4g1PkU+z5TzYPmw4TseQEYUOYoLP2hi5UCCfd/odPRzrO/j1is7XB2cHPdnfZtugVabffQyBtEJUKewLlUkVOqVq3KV1cROytnEEh8YjbFsLvp4n0NigcodDhA1chsV+FUZAq//E2etcwVu73MQr4eT9aYp5ZgD9sndukAH8aMWgU0o+KOvKhbqtT1CR+1WAItG2HbZBYc3FDB/RSD+3XEg55SQV65eetkt240nCvFVB3QOpW2h1R7nS7fC3Ziac47Tap89bMgpQmoWid+EEVe5sFSIi0RooN1FSneCmebslAOgX1M0L22Z/nEKLSvKO1MgCMpFa/HC8eZICxwUvBKd+IqHKFChS5R2sKcdIa2NRdQmQORHP/nSNWWvRQX7BvvfEX4dRj6EM9uljdOX70p/9oNcpp8Od1cIzVo8bNpWsjRvPBjjtg7KPyJ6E/d6+OM7wFOU6tO7fZSsov3uvPEIPfNpE8bS6BOhIZDou5+KBhUpQC29qOfTtyTsoYaaMxhWDu/cjSPFZGcg9dCJK0Kxzxu5lozyrZv/2v40u7TJlg+edBV9egubCOy5io7+XfipESVuI1p6wvVchnNWeq06eooYiKyPEjuZ5PEe+5p/qvI939yXMesPEfo7aV2AjeH9jJJbR53Vw5LoH2ms8vzFbh8XedmNMxSHC51ZRptl+yIzoJcTTpXgGd6qeY9GIs3HejmqBQ9rbJISkgEJY5rdYXhUQOa6fZu+RPecHmetXQC2oP+6soHrjbs9V/IeAl+GoIVxLKgwmtLWSTQvBcuRuCaUd6lCDHWe7pHb829lItY+8DlKFyU5Omp4brNsVQ8BDEfR18f+4zbGkA2Ayia0iYxG0nGqSfY7L/TUKeIxBOaaZhaB7CxGCVrqBGJuBl5zOuUG7Uut1sa2KayTL/7wZjDyBb/c419j3DnfZFlLzu0yeLuQSba62TxWdzTWr1/8suqAk2Aj+Jak/yCTvi8EqrMMUE8v7kJoLFGzxNOOGtOR8kWBXu6pipzHY5ZIrsCexOPHfE7MdhJVe0t+VVM5gcGCFgYZAbT2xRpRCQ4nBBCtht0P4ZDdaNfq1RoYRxOWd7YWGMrvHj5L+37jQ4t7Loc6DKXotBL1MptDkarLDY99OURWuF5vzs6AnwU7swDKfJYdmA2Dt8Li6J0O6Z7ZT0goeGlrzCKgE8xaA/c8r/btDbGv2reNDdJOCm5JMiVQpBRXN38gBx0O4EX8r+YfqNGxA282Ul6aISTrDOxaxzSkZXNsk7MzJwjdJNnRuFu5Dxpvrbz1mU7T5ptAon057dW6f/12ls0Bd7t/4gtjHzv0IckUfZw4JFBoxcwb2jy5wNa7WrUzynE6zcuqQSqYWIlVFWbN62V3Vj1u9EO1DDL6pTiDQ5xRiXp2tPnjfHq4NVHvuz3d+gCzwBmu+GU/NPLe3i3tgGWD2stuq3DeRU5rPwYc9d8//W8yXqolJSBJSjf7mtDqEhgbHn50YZkhUJ8SPge9zJk4ODPMHp5bVFWyshzen464bWTkWZgmvVQxXLUDcK1Izc+hD6diSRITBRj9cC9hSTvtEH+/v1lJTURZ4wb1gh6hb+bmhVCd4/s5UEDFJxLc9wgx2fq5lBUjVYUnnO8mQrb5Dvs/C3NqDiicPVXdO9MsCnhgUSL9WSOw1CC/BrvF2IWn8IsTuiL5HTQL+uYyFku+l/aOLMp2A/B5iRQUYtqeXMRuy6p7ijOWwbfXRIti/0RbQl2d8Aa65r9NrtSiI0PIY5IrWhb7a3JDMMBrP+f15O1MDRAIQY6TNE5b/o192wloBVQzBNpEIe23eWfMN4+Y9LAGYGWSu3C6IQWfItg1Cyx7jLXJbTP5oVbE5faEx/LLC6gcmURY8WoL27mJlHOirgZQouI21uizSjc1P3CwUwcEqHrWceskYYy/TbV0T76Vyq/qyahKPiX7q+pONIZrF3gjAAS7XPo2eCqRNJXPVl4tzOri+h6Z8g9/1nasLq5269LSBUjj+1NPxBI9LclnqRqWqrKjZ2xXLhACup8VR5Cu2qqAFc7momLMStIYT+IHOSSsdEq86qwI+RMsUXdusB+Ud5HBfEm49dV4Gxyilj6aiB1BMovwuUW6LO0LQ6S0pfZlSO5Ur2gEBxOrA20dXrImqNULG9lQciRvwPWAavO+BBL5s/U9we8DQEY7p6IX4ZofdFMb2QSZ6KT2faCfk3CJGwYLmN7U5q/BDIBE52b0YHj0NxFK+lCygv42cCaU/sDbhNp8i8Dxxcp8MifVCHNAmdjE/VJ/gliRd4Rq1aRsf4rEtHJbljWOtze8+PTRJH5mJc9KekQYtkfqi/KclW1qvbfjtDBUo3WatqU0QH85DmU1uM74JxU1q+zLuLt03zb4y2vOoXcTS/kg8kRHN3CHsr93n9qHHpnsfaz+AeyJ69VphmfUYp+dhqloqm01sdQiRyCr84LCmTFBbe1OFovoSzLZ1sXtHK6rzQF8tONMz9p5Sur24g/mrGuvKbD/rvnZ3XaVayBmc0B5IwRB046ICsqvy58U+yTgOphT4nfzKXQbMB2yXRuyD9BnABfM6Vq/Nn7NDvBiDh0E/w9hLvlC0/M4p9XhK7aGc+geczRsirAXM8Nn7h98fJeSxhIxjcFAcRziojW9jq+svsMZFZCrq6AWrd1t2lFPkr9MvNCr7VpwpLNe0wzYb7SPrC10v2kl9JktLKVfn/4KHBmn8Vi8JuCrevciD9fjmiyfYaOUG5+ozx2W4qbrXr5ya5ebUDTVKpeNqhtnEY6jt3zwQaJ4QFKQXy7GB18FOVEWm7HArFL7HIkwNa7D32nOqvqnfHKcn4JljrT4uiWeLvHoa3KCOYtOyDmC4U8CtUdIaPe/x0GPV2PqU4x2JREbiRcLEkWopCdGVjFHU4akD9z7OWC8EKe5fThLAUDxgOl84os7G80MVarJya2RdqbNcA3FpLt9QvLjnmvtFIn7c+s9KcYoyEaiQUyFIXCB8xwl4wPPHptcGRM5gf3UsYD3Q8M4ryeK2vJ8wwII1+lRaGYo7CEmWaqNvYQEh/jROkJiFJBfIa+ZJ+HjHctYW04zkotnDTGVya9B7dEvZ0qcJa8WBUHP02JncSBYqONuD/gTefw4RAIZugo0zcct2KoAnfIOX5QgC7zTvulzw577qoAplXcR8KDxJwQDikK6SY8EZEXDQo516z5vlQmDt7Wi597lr6zVfSGiv1qsvT0icZxMhoiLS6ko34nPSVKo9e2e4c3i+oyiaZtgj4b3BGPdXZNbGVWXvpfcR5rTOgIhEpHsBShFYowkiktXhx+EPAv4PBUpKoyn0NT0ngKDAnLofrLQRpDIDJ+8EfRwDrZJpjLs6+riNZJ0Oa5cCsOnacIKwkaGESv+4929fkiniB+VtBZn9AJHqQp0SCMcR8UBZmgY8i2BksHAZ+egCK9/fzFgo0bFEgY3vTK9vGd8SotfXvjWkb/i7b1tGHAYNN8ccqpVM4tSxbBfS+xi0+efuxj2FbZFvT0NEE7iSa0vFXprfjwzjSjnXH7Xcx4FrruRVxAA1PKBAyUiiezyMNokRTL9W54s/vmpYjc2PNp7KFCV3LskyX6bS3wK3dzwa52nKVM/QEdavKMQGr7Om6fdDKjo/ZIbnpca+vYRpeasMR8FutqD2E7E/UrPej5XWPFSsiZu5FlhWTplxExjmgd23yR/2IcXxR0d9AYviiFGFtqeQcy0xI+HUk+DHBGi8gO4FBQ+5n+vVtVw1Lnavu9GEIZFF/UoTHEkXOxxP0IwJzPkhZDalBUwDaSPyCHw+jYJAHqkYvgv1LmVGJtakCs2REX3HAuC3r/QWyJLLQDAed/Ig5CgXP3u2aJDLyOQWuCxqm71oKYqRrec8/vFL5BzvmAesiZUS/vUKjO+YjgC92sslcJOYik2091sCQ0pGqtOIKtHDoUcMIseTBoX0zAdlXv/iGsxNCd/mmadybxKseknqACNzBXl9cMM8BOOUpBK9nfd0IfXFjaxTsWXqT4ssqP3PBrGu3jPAc7XZ8EE2v3aQHmIJtGMKSt3UXG7FtJXjgOZ0dFAheFoeC8P5eK4m+zupdyCC6BzB8bScB0AkWmwOyq4awvKadp8m3yjiZgHRopNYqrQD5UL+1rt3i47zH3Bc2czHbaAMcXdBK6kCRKF8gdDC4KPqeZmG45Xk9Nyn3f8LG8Ipssy0qyP+4zXsXUa2sqb0qdM/9HHaObn7zyN2vN2AFWg18V4UFYce/auGhay+xLKH7E5tOphAuN57RnDwmxu6CwH6mpqv/C8M0fI4O/DgGmYFTc1X7yrc6/EMYusGSjz86yVXsnrX2km2qds/71jnrY2FNlYNwRXRRbTzjfMoGEaLKOGKg8p7mHaBZzogTPgn1xwNYn2YKF57/LNJO6G6Bifp3+Ymm8VweDhmrhyOVMX3tUEmXyea4tu3LBVZvxUgZRZgkj/r5BRa9smrgnLSFbVyg4zUg8YI6ErKedjdRAs/tx+8djYaGBPL51PnId64dNw7AelGAE=.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794810503,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 8198,
+      "prompt_tokens": 14023,
+      "total_tokens": 22221,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 6502,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0055013,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0055013,
+        "upstream_inference_prompt_cost": 0.0014023,
+        "upstream_inference_completions_cost": 0.004099
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
