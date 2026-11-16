@@ -23,10 +23,246 @@
     "sha256": "440f326efc66e6ac24f374a7c6a40b800e931041b8cd652f5baffdec4f4097de",
     "attachments_sha256": "f912c34a42b005dd76600b1a06a5e3fdea54224fe090e1e3b6db0b730c3d4fc2"
   },
-  "error": "PermissionDeniedError('Error code: 403 - Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/6a8c23c966103b8e2611c090ed669842105fd86e03908288457a101115bcf274 $150.79 of $150.00 used; does not reset.')",
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"J7\", \"J8\"],\n      \"pins\": [\"J7.2\", \"J8.2\"],\n      \"nets\": [\"+12V\", \"GND\"],\n      \"observed\": \"On the /Power/ sheet, the vertical wire joining the +12V symbol to pins 2 of J7 and J8 continues to a GND symbol, connecting the +12V fan supply rail directly to ground.\",\n      \"expected\": \"The +12V fan supply should remain separate from GND. The specification identifies J7/J8 pin 2 as fan-header 12 V pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"+12V at the top of the J7/J8 pin-2 rail; GND at the bottom of that same vertical wire (/Power/, page 4).\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"the two fan-header 12 V pins (`J7`/`J8` pin 2)\"\n        }\n      ],\n      \"impact\": \"The +12V rail would be shorted to ground when the board is powered, likely causing the supply to current-limit or shut down and preventing normal operation.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C4\"],\n      \"pins\": [],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"C4 is marked 1mF, while the corresponding thermocouple-channel decoupling capacitors C3 and C6 are marked 1uF.\",\n      \"expected\": \"C4 should be 1uF, consistent with the specification's 1 \u00b5F decoupling capacitor per channel and the other two channels.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"C4 1mF, connected between +3V3 and GND (/Thermocouples/, page 3).\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"with a 1 \u00b5F decoupling cap per channel\"\n        }\n      ],\n      \"impact\": \"If the marked value is literal, this is an unusually large capacitance for local IC decoupling and differs substantially from the intended channel value; it may also create an inappropriate load during power-up.\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"summary\": \"The /Power/ sheet appears to connect the +12V fan rail directly to GND, a severe deviation from the specified separate fan supply. C4 also shows 1mF where the specification and the other thermocouple channels indicate 1uF.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.98,
+      "anomalies": [
+        {
+          "category": "short_to_ground",
+          "components": [
+            "J7",
+            "J8"
+          ],
+          "pins": [
+            "J7.2",
+            "J8.2"
+          ],
+          "nets": [
+            "+12V",
+            "GND"
+          ],
+          "observed": "On the /Power/ sheet, the vertical wire joining the +12V symbol to pins 2 of J7 and J8 continues to a GND symbol, connecting the +12V fan supply rail directly to ground.",
+          "expected": "The +12V fan supply should remain separate from GND. The specification identifies J7/J8 pin 2 as fan-header 12 V pins.",
+          "evidence": [
+            {
+              "source": "schematic",
+              "quote": "+12V at the top of the J7/J8 pin-2 rail; GND at the bottom of that same vertical wire (/Power/, page 4)."
+            },
+            {
+              "source": "spec",
+              "quote": "the two fan-header 12 V pins (`J7`/`J8` pin 2)"
+            }
+          ],
+          "impact": "The +12V rail would be shorted to ground when the board is powered, likely causing the supply to current-limit or shut down and preventing normal operation.",
+          "confidence": 0.98
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "C4"
+          ],
+          "pins": [],
+          "nets": [
+            "+3V3",
+            "GND"
+          ],
+          "observed": "C4 is marked 1mF, while the corresponding thermocouple-channel decoupling capacitors C3 and C6 are marked 1uF.",
+          "expected": "C4 should be 1uF, consistent with the specification's 1 \u00b5F decoupling capacitor per channel and the other two channels.",
+          "evidence": [
+            {
+              "source": "schematic",
+              "quote": "C4 1mF, connected between +3V3 and GND (/Thermocouples/, page 3)."
+            },
+            {
+              "source": "spec",
+              "quote": "with a 1 \u00b5F decoupling cap per channel"
+            }
+          ],
+          "impact": "If the marked value is literal, this is an unusually large capacitance for local IC decoupling and differs substantially from the intended channel value; it may also create an inappropriate load during power-up.",
+          "confidence": 0.95
+        }
+      ],
+      "summary": "The /Power/ sheet appears to connect the +12V fan rail directly to GND, a severe deviation from the specified separate fan supply. C4 also shows 1mF where the specification and the other thermocouple channels indicate 1uF."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Inspecting schematic anomalies**\n\nI need to inspect the anomalies in the circuit. There's a significant difference with C4, which is 1mF, while the spec suggests it should be 1uF per channel\u2014specifically for C3 and C6. This discrepancy signals a possible anomaly. I should also examine other potential wiring issues, like the U8 AP63203 output wiring and C13's connection from SW to BST. I\u2019ll verify the connections to ensure they're correct and aligned with the schematic layout.**Identifying connection issues**\n\nI need to confirm that U6's pin CL is grounded according to the spec, but there's a potential major issue with the fan tach inputs\u2014possibly swapped? I'm analyzing the diagram and checking if GPIO21 corresponds to FAN_1_TACH, while GPIO20 relates to FAN_0. It seems there are two tach inputs but no mapping. I\u2019ll review the J7 and J8 connections, ensuring that pin labeling matches and confirming ground connections through the vertical ground rail. Time to dig deeper into these potential discrepancies!**Examining vertical net connections**\n\nI\u2019m analyzing the image to see how the vertical net connects. It seems to run from +12V through pin 2 of the connectors down to the GND symbol. I found a vertical wire around 1372 that connects +12V at the top to GND at the bottom, possibly intersecting connector pins. If that\u2019s the case, it would create a direct connection from +12V to GND, which could be a serious issue. I need to review the image carefully!"
+  },
+  "usage": {
+    "prompt_tokens": 20260,
+    "completion_tokens": 2625,
+    "reasoning_tokens": 2000,
+    "cached_tokens": 0,
+    "total_tokens": 22885,
+    "cost_usd": 0.003844925,
+    "cost_details": {
+      "upstream_inference_cost": 0.003844925,
+      "upstream_inference_prompt_cost": 0.002532425,
+      "upstream_inference_completions_cost": 0.0013125
+    }
+  },
   "timing": {
-    "started_at": "2026-11-16T06:17:28.055496+00:00",
-    "ended_at": "2026-11-16T06:17:28.266507+00:00",
-    "latency_s": 0.211
+    "started_at": "2026-11-16T15:19:20.966624+00:00",
+    "ended_at": "2026-11-16T15:19:49.960632+00:00",
+    "latency_s": 28.993
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-16T15:19:21.041Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4866,
+    "moderation_latency": null,
+    "generation_time": 28947,
+    "tokens_prompt": 5627,
+    "tokens_completion": 1057,
+    "native_tokens_prompt": 20260,
+    "native_tokens_completion": 2625,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 2000,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003844925,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794842361-YpT8uA2pmLH8MJDB8B4K",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794842361-s23AP7fNm2EhdrfQ56Xd",
+    "upstream_id": "resp_0978cf95fa7f8a10016afb1ef939c087d1903361b7e4ea7e10",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_0978cf95fa7f8a10016afb1ef939c087d1903361b7e4ea7e10",
+        "is_byok": false,
+        "latency": 989,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003844925,
+    "cache_discount": -0.000506425,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794842361-s23AP7fNm2EhdrfQ56Xd",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"short_to_ground\",\n      \"components\": [\"J7\", \"J8\"],\n      \"pins\": [\"J7.2\", \"J8.2\"],\n      \"nets\": [\"+12V\", \"GND\"],\n      \"observed\": \"On the /Power/ sheet, the vertical wire joining the +12V symbol to pins 2 of J7 and J8 continues to a GND symbol, connecting the +12V fan supply rail directly to ground.\",\n      \"expected\": \"The +12V fan supply should remain separate from GND. The specification identifies J7/J8 pin 2 as fan-header 12 V pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"+12V at the top of the J7/J8 pin-2 rail; GND at the bottom of that same vertical wire (/Power/, page 4).\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"the two fan-header 12 V pins (`J7`/`J8` pin 2)\"\n        }\n      ],\n      \"impact\": \"The +12V rail would be shorted to ground when the board is powered, likely causing the supply to current-limit or shut down and preventing normal operation.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C4\"],\n      \"pins\": [],\n      \"nets\": [\"+3V3\", \"GND\"],\n      \"observed\": \"C4 is marked 1mF, while the corresponding thermocouple-channel decoupling capacitors C3 and C6 are marked 1uF.\",\n      \"expected\": \"C4 should be 1uF, consistent with the specification's 1 \u00b5F decoupling capacitor per channel and the other two channels.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"C4 1mF, connected between +3V3 and GND (/Thermocouples/, page 3).\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"with a 1 \u00b5F decoupling cap per channel\"\n        }\n      ],\n      \"impact\": \"If the marked value is literal, this is an unusually large capacitance for local IC decoupling and differs substantially from the intended channel value; it may also create an inappropriate load during power-up.\",\n      \"confidence\": 0.95\n    }\n  ],\n  \"summary\": \"The /Power/ sheet appears to connect the +12V fan rail directly to GND, a severe deviation from the specified separate fan supply. C4 also shows 1mF where the specification and the other thermocouple channels indicate 1uF.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Inspecting schematic anomalies**\n\nI need to inspect the anomalies in the circuit. There's a significant difference with C4, which is 1mF, while the spec suggests it should be 1uF per channel\u2014specifically for C3 and C6. This discrepancy signals a possible anomaly. I should also examine other potential wiring issues, like the U8 AP63203 output wiring and C13's connection from SW to BST. I\u2019ll verify the connections to ensure they're correct and aligned with the schematic layout.**Identifying connection issues**\n\nI need to confirm that U6's pin CL is grounded according to the spec, but there's a potential major issue with the fan tach inputs\u2014possibly swapped? I'm analyzing the diagram and checking if GPIO21 corresponds to FAN_1_TACH, while GPIO20 relates to FAN_0. It seems there are two tach inputs but no mapping. I\u2019ll review the J7 and J8 connections, ensuring that pin labeling matches and confirming ground connections through the vertical ground rail. Time to dig deeper into these potential discrepancies!**Examining vertical net connections**\n\nI\u2019m analyzing the image to see how the vertical net connects. It seems to run from +12V through pin 2 of the connectors down to the GND symbol. I found a vertical wire around 1372 that connects +12V at the top to GND at the bottom, possibly intersecting connector pins. If that\u2019s the case, it would create a direct connection from +12V to GND, which could be a serious issue. I need to review the image carefully!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Inspecting schematic anomalies**\n\nI need to inspect the anomalies in the circuit. There's a significant difference with C4, which is 1mF, while the spec suggests it should be 1uF per channel\u2014specifically for C3 and C6. This discrepancy signals a possible anomaly. I should also examine other potential wiring issues, like the U8 AP63203 output wiring and C13's connection from SW to BST. I\u2019ll verify the connections to ensure they're correct and aligned with the schematic layout.**Identifying connection issues**\n\nI need to confirm that U6's pin CL is grounded according to the spec, but there's a potential major issue with the fan tach inputs\u2014possibly swapped? I'm analyzing the diagram and checking if GPIO21 corresponds to FAN_1_TACH, while GPIO20 relates to FAN_0. It seems there are two tach inputs but no mapping. I\u2019ll review the J7 and J8 connections, ensuring that pin labeling matches and confirming ground connections through the vertical ground rail. Time to dig deeper into these potential discrepancies!**Examining vertical net connections**\n\nI\u2019m analyzing the image to see how the vertical net connects. It seems to run from +12V through pin 2 of the connectors down to the GND symbol. I found a vertical wire around 1372 that connects +12V at the top to GND at the bottom, possibly intersecting connector pins. If that\u2019s the case, it would create a direct connection from +12V to GND, which could be a serious issue. I need to review the image carefully!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-x8EtEc6qOKUMxsVoDKAJ0-wIK_tIr3pXcgmIXHJ9b8wxmRQNcAWMfoWeKjmAjwPAott7aNIEXQn6tx1bpqBrvoi8bno_dKvHZEib5aTlV-i4We8YgRxguyzmKTdihu9Cw3AVzYAhpdT-Eo_Te27tzBqRy2rOIHEN9zbF9JW2qOCq9W-l776dGp2GJgbs0xuQs1nirxZvHHCa3UREDbbeXMWHE2bcqQyz3oI20hNX_2vf43h56jf9LbRdVpx9HEkADewEshEdchMCRC7vgv04VYP2qzr4NE6B-Cx1hoUPF3Xl66xnuuhdktZE5hV1NYXmW7Znh4Q88aoBvs60sIhizE45nbxxBpDbjxMQH5npvWSY3W7IA6mnyhgMy29DHD79__Ue4k0wW1i7OKGdWAWx1FiPkzKc7d91AZZllbFka1xInejJEIEN5KHlPcND557vY47lMl4VieXdPyyu3wOMLGmW4sa1LDslDr1AFgHLbSVsrKKWsye2Z94GvP4tpMphgV9TIorhsz6IFCQanFlf1sCSU8UHla_Rt97umrBe_pi-6Lqv8U3NK8m7Lp8VGWkaOWGJDZ50xRqnAVyTaDv8RTj3GBESRpt0GsrbrLJFwk_SWRei9F5blU5umEEl7K9g9vwNcSbPcgD0P0jF3iyGuqkMmOEo4RzeIn5swCOBrA0RybeTaj7uPRAYNpOHTwNc80uStq3kDC-8RKKv2FIPQhODKWVxqlV6QqtCQfov1AHfYs8-rEiDzf24T2tsrIoDkryyzohZ6wy4oirYbYKv-T6kI2iZW_anl5iJi2akvy4ZFcNfz_zYP1Q9LQM23LOjzPMuE-KY0_7AB2KKAD0NjzIdGXp88MlJM6O2ZN8cG6wxyHph7wpO7a_gBr0Z413KsJ3Z7EWtoBbHQbkHC-h9jxtT3ZiHDl4CI4QwQOhIGH8YSjGY34MlFJtymPTkEJppBhasr7FMB1SNV_Gahz4DXITbNRtHZqkcPZohGPLv7lTWYMnI1k8Sxi6iPboW4kEms4qVB0NRWu711AuoJpMAQfwGYnaQkECC_oqJ5r_-JcI4roead_-eiL_9avwYh5onfK0p817KSZY14pxCYzaF2KVPXpnLpIoLBH_UtPPKvn1aPltdeqHpP81sRQZAZpSrXDhb-JE6LC2jqvB6-gUWPjFs38aTIdkIIN7SRKTOJLwW4BB_26FzVslvEjmUZiIJSJSZ3zEkkCr_sW91OInuAD2Jj8w8X5ekvBhpMxgqUrtjNQHs4_RzJh-tK-s0I8gvr4hMExW-kTNS3vlnh8Ys1anGT5mt6EuKJI-vLHrNqLshoL7ngR3z_-jrgdKX_O9TUjyowP4hpTOSM6hbuGbd0fkJ7GwhTqhpkgWJKHBDR2QIe5mRLQl7c8eQjWtsVfOEZ3GGhjLaStdpJ39yjg41K-qEiW0dj3cKbPasNX73nN8pHfz6vT6s6Y01RoXOpXsBtZmfr6XybjN-0Dsmd-WIo9BA4Jox7A3rCTT4FCAiT8YZOxvX4fdOivVb2NzTDrf8GRtyH7M-THdrpzAvBGqdFr3p7zGcRfv4xy3SVtlkBVkwwGdwKmzneMwOyAyvxF8SBdg3szAYo25FGCseVGgHmsio0d5_6RHZ00BmWPtYpTONZS_G1TM2JKaViRQiUrWxd-XjlTHY1xbGCrUA_A-Sg_9LzjXPgUsrlCBp33pINeK86_nm41Er05d8Uf9zsoOtrxSAVwOsW0MRVhUv5O9Esnaz-jZyCpDvrfxAuWSEoRWovTmvW9oVRFjSVm_9SX-NT8DxjHUIES8tOW28MTs377uSRMwkKRB8hsZuB4OhS7e7GTfa_I7xp1xYI1lGDooNw4_7gKHrSLyG4W3ns7pGsuZyWS6Xkmik5qtouSTAE1pJ455SAQ9Tz7EClYJ5wFNFr1cWAYNFdewT-6mP_QVhpOtpI1HWLBVcLeDhur3rPeRUSI2KmQt8bbH6dn6ntGectQvlbd9cDZFlRgnn8Uk-fxqzzHwSkM6AFc1RPlTPpSzxxElM5jRoOswD1WteJ3KNAd3E9EI_1L1J4-yvwJgYuEPBEpXFBsVvNXpDP8cusA3nRVmLBK3YZaf3Ml4Q4qTX-ww7jJAZIqYo2x1c8dgFpXdX17lPUbNF4RzBx4UJe2kYbVzO9h9uDQddeqf_7JnXO0nJgR6sO-Gw22QWEVtmqABgvAM6g2O1TmWpY89V1dfjPZVpayvD4iivPYHXOZA2NQAM5Y1utpcKmlrDrhAwSEwd2xDmOlIc3aSS_eQjPwXCpzJaRMvts-lxt2aHOG2sT1C9-tW3Qmvcq5d2SN-FqU8tNEcJ3S1Eb5r6sWk8EPaj-jgp8h4O--Z4YbP5vGPv4SkHOIz6o1SwCmIDlEze6kUQsj3pCp7zNfhWah_5MWjxUW2vTcK4woHPgxeI1B8ccbl1Ujv9ZtniZhe7Gr6X1Lny9C4PmlYoaldwpforNZHnlZUGsYtMdSAXMFqRquUciHM5gOGRBz0HnWHrFIUHpC_d5fXfsh_yo_87OucFWf-tWmuRcSlyCcG_zGlaCJ5z3SCfvwWX1dFLntDgWAxTI2csagSMRZzptHEg7hMK9zguRfKdW6PwsfjXKd0maLyRrTAJYIu-kDUrO4hRknKQj8rDMgQvCGXT90oBjIlB2VzRL_7Dll71xQMWWn2BNCtIggAKIMxvGIZJmoXUOOeJxtEIFFpNql3YflFeyvha6ZSm67M0aby_t-72tfq6kHDqSESrrZOlXwDPdUVfKdj_aNPJz9f5JGlc2MHxEa1jeYIEA7pgKOOJ0gxZaegIf6Fr9iNr_Kvfr6qELYB7-tlvtk-DNNCsUSwm7Dg-zKmlk_1gdhmQydPPxt0KiX2Txg4cuAtRXyHeFm_lZrQdj_cE7TCgGoIFxOV0UOkSTz0x8nYWqU36NLm7gZ1E6rNi9b88qS8xJJ32SlR85BhkW_myayaiP5LonTWHgYsvBFbI7wegh09aim9pT9D79Sl7hEcaipeWz4jS4xmMrj3ehE8Ik9JrCElJ8gLtOjK3LjeL9H0f8p_5GCcKW55XSJsgDwyIw_63g76uXOH73SSvLyJFizsM1VLJraCAeu1v1jWOkhylfLQtQ8a-szV0YD32N7NOT4G_5xGpqPUM0pCoOHPOtrRyLtLWhz0T7rN4ifhQlxnCbT9IguOIoO3BXvaiaBtfiDZjbgvUwHLW2LGANIiVC1Bh-sMUE2ZoqIAXWOvDuOb6v0TiMDNHLbqsotjie6k8xJRRB3859iu5M3ByIdcRoA5-wYBmBAXVdrkjs0EhnXyzHmy2uXrZarhOsDrzUAXqu5FWbYE6oe21mnvigN0aLq7T5WEpwBKWnrwBdH8_ExgSy7PVhR2AEG7G5qqadjFtWlGErUpPC9HRaLPd4FWbFyOaMSKRXZAFe7ZJSWy5GTG2rPusAkPfFmhwzz3d5vLtWQjL-UvlCNysU0e9bupgHjRgNHe8G7qsdkCP9VUbkFWD0jfA6fo3UV7-kmzeySWYbe8wEHZKqUSepwCaFwyWpGl04uQbXwiDuVX4av_FUaJL7odsC3zvbejeO1y7c3FYmJGDnL18iuKdigye8yd-lM6s_69ZznRsfkC6FL4Aw3OXm76Y_GXC1Hwp5gEeaiOARWe2GP2AiF9yxYOToolWkz_u-QjDmgMvZBP7ehNk58xV29cybvCtVJpJUgMWTJJ1sRJou9HsWOGvjAkTiYnQxrbTBSdn-5uSqoFYjXHuj_H3aonhDCn9SHhBZvkyI6II1eY55oWb_ZncGs5e_QzPnSZbS2iXLMMJMhnJ_Tm3rLyTZ_Ndc_S8ZQ2212con-KUc0NaTOBjIFTcX9Ob9zl2MaPnqTH0chlNABH_ld611YioFeCdOFctOfX8e4SlicYrD5DhdX_PA8NHcseNKtB6Ecr61FcnDcVMFPKku0xXglAIs-ImBRPWFdBfqRWi0B5Bhh4f1FVLGXMX5bicGHdA10D2cRIblK2ZSYd3o1O5DSThfEPFG9C6qLSXkSwUM66EH5hjpHkhxwb8Hb_CC369bUXBLv3lUDw58LInjIAK6g_mv6oEkKjQHU1hXp6U1FFATpa6jUNhaG-LUn1iKy7mTUnRn42Imm34HncRGwhQRfsLg2ZTLyOuHdWPyfXMFDuJ32wjgqGHdd480V_nqE1PFUC6gATbrjH-jaJFHwwK8g1-N6-RReUo-YNz78ce3vZuyx8Y_cNiLUqQvPNaJSTSbVry-graSqg1NPz_Q1Yhv2jFygucMq8e8Pq2aqgCBtxIFkCFp5GrHpLFzCzy6PqPJJqC_ikk2CL3mXsH20F-vps-uX112v67pskSpFLhe44zPZW5wGe5kb5HLr35sJLe5FQQ0aozrsUYzJxd41Sl6YosC834yxokzSB6-jaceeLhS7xYIz-7B61KYJ201oh0ijlEJAc42eKXwAlm0cl5neFyju6UPKs4tyf3dz3dj-nDvgA7oXcP_nn3SYY4XYBCVnBaHBwqeuAQYMuQb4CnTHRd6Z6DdQv2svWG70VnKoUdy7F5xX2fkarxCDPELpBTmii8KTqifkilyAXYCvFZY4lej3UnlumF2nFRPAoBDlvrAsId5H4pfABHYMep8FLh3T7W1bI6HfdxdgT5J-WqkX0egdrzI3TJbs17xwdNHzZ3E4r7ZHTrqO5JcBZK0dmeTA8izdtRAgVEHl1tSz4wiqAA3iu0LF7AswsLRAZ-tA08qoE4uN6TrteY-3tMjSX4d_GIiVUcXZFS2AxIcbskZr3K2EFVRdcPVUWPoFlF4ZLlSggRnjJiQ3q4uTt-KTlbf6cD-0ENDNlBnGwmmFnLi7KyTBFHsJDhxAPtOIRqZryVSxbC-vrjQbFVygZBooykE_svj9f02LpAWIvi58CPeHAXZM2t7qf6hRDwmyfnWkSD9j2Pbc0odmAWU1KPAtRcyjadly2UdGdFdhUTrg0nY8K_jN0exgv5FQUx7FBxm8EWVMtk-NPM78Kp_DRmv9M5c9kl_5IFqeBpOiizbZSeDM1WTPtb-WwRooPdXXod2BPVWo974KNCHiDr5v5bCY1idEZTgMWovtmrTUO6uGvw8yuoa2iy_lqeT0GyLN_s9BcTHyD_LmHKQH03wFJFYPbBYWCUKGwV8lu_uD5FxFcK2_dJwDl8w9V3LOQ0km7ylrswfvMzIzs45nA0ZBQKYzjIMY_78Np8Af9hMCDuQnWoPejYsnRgIVl5Bw_4NENLs4v6HOHVN2--7_iUtfqT14o8nxrA_ShXn-S0iyR-upZ5OnthPvajQZe6xymBVknmkcrnqB9fiTPwb2JiyKyq8BWCmeCZ959clpitkZrbD_6SNyybsHE-da7zasMVdqA-9jSjCXu56xC3VsWgI8ZuASq5qaNkjvTBtdR53habi3WNCAVZFCkT3wBjwS-6jle-Z96cq0EtwwuZEzLFzdVABEsAlBCbTfTdmOy25L9U9UyLh0xv4jxH4BMxJC_4O4HspgPQlnQlYGyA1Tu-5I8kpId9JwdWq67tutNXR8ITK6ISVwWTsYjGJaEOpTQ2gwaKTojwPbI7bW5xcIG0fA2qtHSOxU9MQMHbbPyOg4LPLgaPGNptxPysC5GRT7r2RTmgzETepOM1WJ04QJFPeFnGUMAgLaxTNS0IIFndDonpuJcojSeGCkBIxgP1wPH_RiTD9o7Uzl7ofLIpHs8GLcIzrLwSJnjj1cCrPIhVOE80wAa_Fd_blOcNfxDahSTJ6D-5sDdlmYH8ZrYE2HUChhxW_t1zKrSQZfa47rb2iikCMrO9FXYOMGKGUsyR6IjQQgkcVwJY3pB4MhDVUZa1aDxL6pWH52OEmJ8DzZS3gBuTKcYf-J0h4gj3l1EYFcOCqbTLkCXWxZya6O4zWyyXTz1yL_I_qzD8NtBI-ZyFl1VFbX_MHAyAE_4NkvVdxFKUXM8yBKaQ0wbmmLv0DQrJmX5ngSlEnWjZ2IHCsvX5hTLRmXFlYU2bygLyTVWYWSStfuX4M_jeN2fULsl8_DF1JRGoxZZNCXnUiYLcOdYhLxuaDX8flgOQgSojCwbjE6gKQF2rHkz7DpporaNUUrP26BDWzUYGTUYS7vJM2B0eBI4-qZuwBmche4-5B-Gf7cS9yS51CnIfG2cva6F7pr1uGYkF2j0_4DfOX8MxvoHVHF7IegyVGg99Ss8Z_chQPr7uaYVmILImCugqADjf1u10GhkLa6CAmsrhRb-kaK2oNQmVsui0hMec15o1vCOHRZvxML-XI4yzC3bZQHvFZ89VKDIDsxB1WedC1n-sbrAvgPwXur5PEoyItMuBRdTJBnphVA9rqawtGuzu4oQznPuB1cOlKd5T9VSqfnjjwWVL2cJ7UWTQu17wHu-9xuv-FL6nibCpzkfqLLoEjVg3tcu_RMFkVplJCd6Rj36AbYKMQIrBYLStcpcDPVphCAJH9epZCmnO0-2L5DbCXFUGMwhwNqlOn3Oz8xIiKl8vymUkQMjYlWQGSkmTpzNps3_F7l2EnhxLP-1gxKlUiX-EEkrRoSLfagRwtIXy6iYQuOGHnQqMIIkXhT0167tcTAQKAHov2Qp8WaQyCB9LWT_r2DHZkc55-m1Fq2yqK756sbkiGDzpooAzyyA4puqhFlT46xBSLNYIPVB7lpGMBTsPikBBMcrLCHnXe-Xw3CmwP9QLeYNA3fx9C7AkzAd-FXwMHpO6wO2IZnCVcEkJ69wKfo1oRrTdxMAhv4j41Rlp8rPxUiuw03BSRtak9OwDCDlNTTAylVuTHGPU1SCLcvD2ONpXMqUIt-eafNFDnImIITufAL0aZLSUmgx2VV4ncSW_1fheiztgczNc0VcXjY2ZkX9-ALELyNePUCk5qYcW_cduDp1dauLWJFGBQQ54tGWZM_1eFVko__Y_ltlo0rD46sDCj8fbS_IP-TSp6epyc1uqBNJNCKNMYtCONMsV-m_FYoAzls1u__JJLEn6us6DZRMCMvd7jyZuj6TxCwR_KyoiZhzvHmrJjxEQDbFzrFqEeSpwyUsKklyBqEVezAdNSswPbLlOY9mTAMKwcyZA73sMpoD3_XLZ8S6kgtBbDyTvXItveAsjt-791czvPOuaa-Wj4q5tAyXoG9VOo1KvKheNmQXVvUwVe4b3lXYFNfRwV0e46C9YUk2BmjGxNNXyVxXX2ThZalonzNxyopKANi0xDRAf4NKuv8VHPx_eKktK0RPlA2xHsI5NpilW8nZTua0EQCXF1PoVUA2Oq_buyEYhYzCz9cRM8JV8cGfO2jJeXNE4fAasdCApCDaWrF8b6L15jyC9qXpZE_QT53OBFOEfVZdlBQggA77dPGNtF23UK9Ergw-gPBF1YTDHoVyXFml02_uiR6tQaxYqB5Nmdi60eNNaVthmiG-HPIc8uVXfLNfSJ3JZMqibR3VzK4E2VDwe3VkjwLgZIXfPiPQ2v2MYKEKFL_x0K2oIvU5LRhH4Km5XcyEr4xa_BfMo0f9VldUKPu2ViZDX3v3SocM5sUT1TDebNOae0PFaR2mSRz_KOrQMTTFD4W_yqQE.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0978cf95fa7f8a10016afb1efaf6bc87d1b7d49fc778c64782",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-x8Hmzc5S9tE3Kdx4ru6mlXqnoSRrhXQ8PZ_qrvgm4MBxqmG3476n3o65GpsNQRbVMqDK5a7SerUkCcvzUynYddwjgeMaXfH4CIlJoAdMYORgpEtYamGlFTKoJB8lXKEtfrRDmlfaps8vLHVBHUumNvPjQva8w5hla4zXWvHblQe69VSkjIS5Ubgg17wrPoGJiPXjs3SvRdAl9nMTZ8ggUDgPrdEIK9Arz0m_apKUzmaTBwY9WKd8PHFQMrGsQ3BGBV8oW7f1BlH2ufz75NUW74YtIL1aFF1VFE8iVmeWqr_dzaAeXZX6JN5rQi4Aek01anqyj4vfiFST9Lffi-0JG_ewlHFeMX-2U4D6rM2bJCX0alMy4AWsbZR_Qn9V4r2Mxx1ZfHHkMiNTt96fILRJEsra_hiSYecudEPdncCOxfo24w3bxIOEO5gpWfhlNgZbbCijVrwSVXFlFjwhewQw2iN3dBZrVLeCSLDhVkZdRKNO-fl7fuK6hVdFE1GkNLOL1Q7_UwcyqiKfcVQB-vulCNzizXSDZw1pvo8QLvI7fZ-Ka9L0lzAsar-xXk9xfMbrZsn9baeWAql5CoA46J1LKJO43Tj_TtGOJd2UedRjHJrnxsPlRA35LIm1BiMNOZegzAAHC9m2UYbvCVDGnKUxwkYHtbxFaJJ617dy81_UVGtFYUPCmSeC-o3WJOcbPLw29Egzi_K8u7rrHj6AjFgYM7mdlGimUF6_qXZmOHSNq2lVv22glk44FXI8VLITTcp7SmzLFf-E-2OwPUh15LILcrx3xuMqpZRd3rMRMmSa210MvUUmAYLiSi8GxizBKTXbF4Z63oRvX5yHCxewhH7ZhfT2Oxz3x3bH1L_8Q_hGF2ZAdhy3hyTaAUeHL2W2opunFyB-i2nftMpA9WtU8bWrWASaFbfZP1BsU6OlhNFvqBA4DD5CwMiUg7Fa4LgL_4-FIKROm3Gb_hm2l5RuFToew7CYT6u44dLK7Ml3ox3uJZXlQb4yzgVntufcGrShn47QTlGrogFtFY9CCDcSmJt8P9UUmGIp4nf8kqp8N6CzYq5fOJlbDlHzp2-0mHGs3m3Kbu9ABGp2r57HR5BX7i-mg6PBYDhyxESjeBmX4pXfXq3ZEjqdjps8CAdDZuWGnmh6V1hdKmtYvpQLyIgiIqkVPYk-ipN1IunQpSULW9apoyyz0rH8Zcrn30MscLHMBDOnsv989aEafTMLlWRHgSOsjS9hJYnvl012zEMAXT3P3huYua9l4srJXcAbKsBoxx8SHOZY1gmyyi4pXevvZDk4hJDaJQ5RHVQ5SakH4AaGNeKLf3A0VtHzbEL31vK0izkNCZ-fesZ2BIbHEmUkzxXGc83f5voF9rXYhlfXA3Io5k9DZT9Q_fAsgcUcMVGbNKv7EdqTuaFn6dFqzyjLFcy4eRISuYHOev_jYROj76iAPhm946xZO-Eqqw3eBRBvdyUN666YnBKeQbVoDPWKNBfVDaUQJOoOqX9NlB9AphQTs4DTSi-BB4oS88jEaIf5lcNDB4g4ytA_dM0LqKCAlEwOmPJ0AjqfIh3ZAMwwg70YBu17we7SYyY8CmLcNFJO9YWl9vycQlK9Aunv6hiRIVlMeKrkhNh9nan1a83eXHUPHZR7CTSjJHi27TEFauJY_3kiC5p3rIjHx1ENPyHWrO0oP-5riOPBAoiOm1L--JY-scIpS9i3I-npAsihYNYmkyswc78dtsGphxvkxjRUE-TCQ23t3oMMG1k04qx9yvXVMVQXsGc72bRIHXDDZoh7dsvg025vdwt3qKnlsdEInT-SKpW8VRIGm1iohA43q7rOX0Rzsr5ZXrBNBCcZ7nZ0VWupiazv5yJ6180cAo1b-jJDbLxiQBJ1EtZzQqMFtt9yP11_887ssFQtSXqK7zTeXFpeFnauSpbfH-wBjwJBP-cbsI-IFbxd7jVF_ERVD-cmGNYKyvE_KI8EGfoSJHf0MdhP35UbYOsN3im2lDoRe5vD-Lkl1o8tRnYzW75PW45TXClHyEFXjzYWCQMCNbykh6f6tXknL7S0AIKAQL4Gp8SEb1nlE2bm6NZjxBrfuzSju1tEAOdPFqZXD-gfCIh20HMjOb9WLCZ5OiMIj7BMOBKXO_FOMbSYgSOlIzHLrqCw18IeFqHERZ4fRkyia6k62KVYbCVYbFNb2QB3MXdlsCa9xbZYQLNXRMsNEuVpKMV3OAqgtorByR7-YjkQDGfCfxxnX2buo4pI0OcE4CN-gmxEfdf9qcz8qpZhyIIzLS9U6--9q3dDWyAAb6AfpIQ-tIYFKxN0WlEF6MZOJY-uqQ2R4vQwt6mSezjEgwQoewUd_O5u3ietvtQk2Qk0ralMAlIXLVcNkCXPCY9JRWT3Dfa9B_9AZb8H_ZS8Fa3cRo8mtPPkQ69PeQeW87muv74A5iZJhg_kKSclEdP9aTwGkUYNetDrJhMxZ7eCbC77RyBymQXXXr6fnKvdtLY2ZLDtSkDzpMGH7GYiBaqzCbg55Z4OfldalAAYrB3X6QM7I7PM1wGUYZ7N5GoE5aMBRlrB4Uu_sVMl29BOAvRue5VUMg9wo2ojxGo7-CvXyrq8BHmYlwDFPOUwUFakR3tFQu-eRHrE9dgQfKGz_jiZm-a3vmwm7jb-NmtD0vM9mHg4CW0UMtPFAlftL4QgbtaPOvok18fhClbuNoQcCnwNhDuFlvFzl_U9UO2x6Om5SiGE9sjHt7g9-9ZFeTUFczwZC4MK8q8nJWXr1BG6lpCUUlu4A-f9_U1RCwxUKe4i0Pd-YRDkHqGv3Ov1gu8gmg1Ky6WP9XmKAN9f_B-3seQBjuwM3azxSyo7yC3WZqbGewki5nKF6N2OqckQ7568tBg92kCfrMY1yrx2YCT7RhYmvyb7w_dSGIMI5CoIYhDchd1gLlXOJG6dOWi6vuyuPxr9JTUpx788tJBLSiy4WUmxsbBRSrAMoIfGunnPTYDVwEJGAqiKTGwj4DeLAyCwo78RB74Gp2XJeOe36zZ2oFtkPpCBVByDgFQt7zRZEEegO0t3Pl0rLXJlQ-2o7v6PQCo8_Fpg5X1LXvRSlXYTJCdGtapjm2LOLNFg1vqHUHhiOpxkmKQ9OGGo9ZIt8X910mVKvZiBAAiVi3dNvyeShy1h21b0lQvicw1KukEx-JhiAkAC_SyK_CEZdu6BZxM6jTRUTvZVpyIbIFWXMS9c28kBA7XdSGYu48e6axX_zllyotijcYrE8VGYwLcVVYtyjhzP-Uv0WIPFRJKHDJ1SWXYObVKRKJE0wPm40vbv4fnsOywENTaHsSFnZDhCnrxPrl6TODH7TDoIzMch6bS6v7QXoCD-FM7HFlQTtIJCFEfB8qIBs4OwXVecApY_AllDotciPvnsiHfW1amPiPizJDIiEcIftkVULMFvtSS4BxdxRdvkbFSt9ZLnormwr-Xm3o5PPmos8VyXSH56eeGCioGAHYqfobol1HJSBBCZ4OzopF0ezL2OZN6Mz4peupTApvvuQxPFRtXneEl6Ivt73mj7nHZZZosEN2SDk72fq5nFNVGNAohpGW0cww2_IIXutl4F-uuusTtv_3Eq3J0AqW8nm2jjrCZf56OKEpA15dZwkHpbX36pCSKfErcJBX0fXGaejDNJJQRWhimQtPZe8Yt63hPjyGzi5s4TjyMhV6eCGYh2FF2NuyoOTApxGgtM-xlQmRceEePOLYqDal_AIg0JFcpA65JgfijXoZBJPlk3lguOq6WrRawYJ7-s0Oh9n56AF03JjKPpSgqj7rBpI5bs2iZIdVYyX1dRmldwz_jaGcVRDewUkQoco-EguCBPtPCTpoJxR3RlpXBvxMo8cbYlSwbfcdy3HdW2WUielvZJeQJWzxzU_FdcyZJztkbSlUW_GDVhKmWCRorTpIjsxdFh-4ubF8CJd65RTNz0GSme_iZ-KfdVhsm94btAba_gosCKHPjR27YNRK9aY3eh4yhXX0_--frYETJ9zBS_3iNiMsnvh0DqMC7qua17FmJEuBSY6psi9TikTjiPVAEJ3gIFjl2Ju4fwisuNKaT_dGOAth_MoL4n0BQsHuCRyyKiQHuDwpIATy4jUFkkurCecCkjl_LV5p5kPGwg1TGVksOGx2ZDrtzKZa3vqy0rPyC3lLIVBKYIfk86w6PlMNzP6aG_YcR8eSgSNN_jL_QBZV7x5E2EfPBEZw6wBsq_lEWzN0gtc-ff8XnWx1lTaj6skGtImIsx65zkSkme2mfiGTxCaapxYLWU8rEqmblo_vZAMjLsErkqDPKnTKGWuV1C7bthsdXKiwyax71U-5_PDLIWRMNKKHOD8k2OsF1hLlk5yvPHbgYw3r6-q5e5YVOkQ4-kF1B-fwO4HASKTC9SnpxTLM_3hJBp_YaIq8LC50T2e0F3kWQzDvqTAcEdeVo5M_Pwvbo_NMCOGNgHamip31rMwEV9CF7PWHKr2w8GjQuU1AlBJ6knR3kPDMZ2oy7Q5a1NhQKZwO5hOnKtLEL_Sf4VSoFFO-E6nBrMEFkU5hou04_5pUi9VXjOQBKn5mNAUWFsqlmGnT2AzS8eVuq2ewnHy_4dQ9DH4XN5BuN-D8qWP66E9T90-dio9MKQz_aujp6x1aYY6wZguSLvtPvyWCGEC_c9GrMcQtAxl_bg5Rb3nwpbwbVAjYIwUZXAQXkzzn9mv0FdJJ30qbFLmGXETm4tpNNN9_6WAX2HvIa6fLgRUfcD-U1qqhtlCw8qi5n9QZ5lTct2UeZ488sktwHgJJMhLmofuJ0mZKERC1VGFZOJzhssZs11JUEhm1eQ6Shb-KWnR9-i0rILUqWSHoRmG55OxYWUf1ZLSLvIrkIbYqZuGJXfrdfZNaPQxAnTWHI56y9FL4jDK3S3qDQcZSvTecpkMgs5Fp8ZT8w7WLiHLG08LHKnfSPYCQB16mREVkJXH63httJnI2Kq4RaF_At5S7apwFTFPFG81JWc7CTNDApou5Kave42pUfLTzTozgkvjYU99PzQo-VsuuyTphKqPEFjaZt5X2ZEjiaWfIcp7YewJ6-rZSUuuYJWNo3nG3Hq7w1czpI2Uz038Yy1SOA7zwiUqLPh8hqVH1FrUa7xEz3nXMJP66klO5SsMH2JqqSOYWndoUlLSRDAiEXa3oCwKDgXb8oBT35hpEaIXCPWu0xjPacBT0xQ8XYZ5er2Msu5-Qfns2_UF9fEfrWG01STTc51HzwO39M617WE3Sf2d_495DZaNchBOvbQMFRHXGNt36DhCYTKZg5yriuGqDTjbUhKgT0MAS1Ia-UVGdhCyJueoCLbAfhql2ey6d1jG7nUZ3OoCYeF0IsptRMVzJNURQkf1vceYXrax6gtkTYN9O_E6_EAKQ0Jct_zOBHUNs7ov43sg75MmjQRFk4NkK-psnLgCLNJeypjo3EiKu9WKdmTzWE3i_0S1BPa8x_29AqZ8Cd7-HveoKUMo4tz71zTWnhtmmPFSkjVzpQKeUSuMRQqWczQNhgZWEwmboUyy_jnG8keSSMEh9ZNdMM8N2AsTzfVSvdsz0lzJZvQhaz788RV6BHH-xWzLos8wVrdSfwoEB-B4m5HY3AaD5xetWTUf6DsMJaGe5Q9k2X2rnoFLS7MMrgvvI14WW_2ChjNFvxIy8NjbGps4LtVTbE09AFYUkx6fFkEN9XPS3Y3wq9DOfmqMhFxeG7HNY6EgtWtdCTR_XpXr881WBsCqxmiTqLcdn6kbIgoxeg5vZX9b9hipsm3PgUlvtvk3qPFzvMuPHckcvTJGcm5QUmT-KF-xce38hlSi0FzP7IIAn18FBa1zrjgH_C1R3LO2SzFktxHaiq8ukKB4odsTyWQ77Bd4ceJozfyciOyctzC6Nblh2QNXCSjhJtUWWw825Ggy4UQD6wAeWhaIofD_0icVcvpTa6y4iwbgGC3npvzdqc7hOowUmViL8LKSlmnlntI3TvS71BJfcDhOU0aqeFs7CZzZGz87Z3xTczJW7gNP9KtjUV8-eQGQuqotykns28GLafPdpfhssX06FFbuf6A0vN5X1F8T_Wm58n77ohif9IOEVolp-ovENy7rWpkoMeUngqdadwgYaYqWyvxBOUrqv6Q1_J7qiSx5zqGzBYzLWHjO5fsWth0Pv3oxEmHT8fENeJrQpoVRCmL8dDgwPQwWRaXtp13jYNQETRJRqmtljniEYjbEigNtHZQwA2RYGELbx5IXUZn4itNvrZ9rIpyvhG4RYWmcZ4rbPKpPneM_QNpDFKHU7pLLeUKZ8buV5FXX7J87jyY5a-8RU706me7Vv-WDPDzx2ySB-UVnThsEPqCnTtSefdD4g07k70J2llxjXIEQSXhFsuPEQRAj_OxPpCBQoyqefuK7BvY7hhoZMW-0MSpAI8NkRRob-6UVRKVrdeSaOaSscZllcvBJr77whkrFe-fXwdrdCPwMeCTLASU3qF3FidlpOvmfdwr9rjrSZgpWqrwIOWLRpBSg_XbsCJ8YnI_-_dwryKww1lOyJ7hDAJy-yX_crj03E50-p6Fl0WxcNbtIH6sSxqKjCw38wYjeHebkh4SqhSyvSBPyMBUxJz317IAUTxWl0hd75aFr6TeDpzsoFLNRe87UgYObwgwRbK6H2TyJSFx4DZXG54iPd1PsNqmSWq4aBFK5HF_6ZJ22cM5Q5Xnuw9zHPRQFr51DydZt-ryB1K9JH-1LzHKpYw5U08fhVrtW-LWAFPNbK_oJXN2jwr7vs0oBDIBxjMZYsChmExu1CJF9TJjFWpiABZQiSpOcBXK3Cyh_N7CmT7-XjpS_PF_5Ba4664WigCkwmI7XbqMipcolhSlLltQBKycCGAVT4xAGkTBGgtDaiGFVIUpgqDu0lfx3bznp7br7295F2ZpnC78xCQF0pXnf8AeLXLdYXbr8RlllhxDtwX6U_c1XCCjN1fFhHHN7ditLFJweyhSdB55hRTai5DS-Xmbc0Q-oov17n-_lh-6yEdzV04feMaqrwUsuVm5uq5q0prFauuLLKSZnBnrSuaFU-Zy53nv4Y_9jvXLCCFZRhTd5LNGbbWhll4rgUv62ZYAd0hSI4qCTzwubETQTrUAK1Q6T-FTyEtkeN_rsj4Zu0PXvuB-FgkZ645zfYHweBDa2Qi13eB7ow2Sy_qlYLsaNvxtH3uiSE9dx5OWvanidRjUviqXdGoSeZPGQC_hsbYYIlh6-cKnZPS5ciwWtMvCiHCiUlnLKyHxR7YVxI4dj07T9PAlsnO2nwst-s7KIMwwfu71kKxuzqL8LH1wmsxE0AYJJDwqPaNkYcIdDi8aMlcdPW6PUF4ezMzq751N51ety3_FobH5uBgIl0WHm33b_Xiit7d8NtU57h1DE7nzEZ3_yjPwMdN8JNz210wLoLEdDBVTKGkxtBNmd87zvuLEbmqPA9UPzti1NEUxevVCndvHmd8WkxjJ0_OADLL57YH3CZ5kjIlwPufFtZ7zCrQ4QrFtUizr_irsmX4cOFI6_fl8XCVacWxdDaktIVmItjg3_OE298-fsX1bxIqWUSJ8_jTYXqLJ7FF_nZri-2FIzC4uGEK03yP9BHT8LEjLRFHaw2xfYqAhS8072AlOOpok5ITZN13XjATRmUcM5-Ksj8K.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0978cf95fa7f8a10016afb1f04323c87d1bee0ca3f80fa4bd7",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating diode orientation**\n\nI\u2019m trying to figure out the D7 polarity according to the specs; it appears that the cathode should be +12 and the anode at ground. The diode symbol seems to show the cathode at the top, which might mean it\u2019s vertical with a bar. I think I should confirm the orientation and maybe check the potential pin for TPS1H200. It feels like there's a lot to keep track of, so I'll proceed carefully!",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-x8O10pz8-2mnOKpOU-ogXwR7nC4F00lt_aB5WOdKstZ9B8JHq9Pi1ICTT_DF9JsYoOQRan5_OMW5_Xl87VLfktozXk7dJywMfwbfgrslakhvlrXVkiN3rUTavxNQ7kyJnXB0SnpFxJxI9y3SYHFEsQYv0J-3kKd8BOIDh_1HgdZX7q4O5thI1sX0MU_WuprmWDc3QxGFUUj6f5iyrmm4k3yFTsZ_E2N6OCnFpCJpuNMDDYkhkRuPCkgaAkd7KVruMnEWwsZ--3zVM3hFiDBe2fTZnqqYxasHbWWVdy4GGIil5yN0GOaJo0aI5bh9jhBsEi53WKVS5IsKijseksvs6Una-k5sqztYnb5EQ1j7KpYkWklCLAejykAF_fYIfnPKbXz9dQhOatXsbjMO4otIlaLxODWgZQ4KXU9RS2zAqNeVCX_Ux0-2YWP2yRJBNZSm8QU79Z62cukk7xwAdHxVNCR9Tgre9Dvt0aCj497U9IAnEzo4FfFCJLeyCILS0pzikIfFKhI7pNXGZP6tSgXpgu3lZWDrs3LyaOn46HC1who9oq7__jVyhrbfoKZcZQ6ZctHVRFKoXswQsYeXdSjh3Q1xoq8fiXSFEcYRT4Lq2vvvXs32rD0EEv4hmpjj-gNH5Sf5jillbkY1F5NuoydqYGadndKEI5ZM6yVz5SulXsCdOa0xc8aN2Uxit9v5wsqB1f07QIMi__TPxbNnZKRKcKK3QCzRHGGHOJv5dvY7NlMKW7Fp2OQaUtgDG_Y_wyrFXpyQGUG8wNMyf7F2PjEezxm8WlNT-3nfWODYqQBHax0ku6Tj_NBZ0elT_yWubobyvA-0KkaWClfExalCUS-fzM8Lj6x9HnlRUhbVDLVtOWNi0et65XttEYsTYHwgrBO1srMftbrCykcdhTgoSEOes7q53I-q1IPSOE9Wg3MWhSDQUjWiwO_O6uNMf7FE2MnbNm1IyXpRKFvMVNTeIO8_bNJLW_QNv8cCrcBItEYSjW7bNcNHPKgW2nFhuwIBV3SkCEuRDVNkxr_9wzprwb18Bim5qTj_q53G2oK7x4NyyGt4Fpat6pL6qCqsLs71Ji0Ry8uouNSLlSMtAuodtZOZfIGmMh-JetQAXpOk3aF9P1dzvXkQugOdafEPsmPX9DCiLqoFpSfcemppRgO7pWvLILQZZIy_godVHJRrHHfN6fkzKT-h1-2r-ppUy2BZ6Os2D02CKTUsAnDZG8Q_mQlXaL5X9WsxzYg59NhY449TWT7myW9HjwTg7IuMiw5GrlH352-LSE3A-A2jdPmWFTatcBdF29TEWenWZhq5IDXb4XHnbiFA-ZpBWz7vNsls7xD5ybdoqqBApjFru4M-HB9j_frnfU5Wig8iq1uMXQ0G6nQI-eU_ug9ip3STqlrzy4JX_fyX9B4VYl3VDK_f2faHHvwLkg5e4LJ3Ql_3dIrWSErXGG_q3KvItoMQXjB91N9TCArX4ZMuiQ_2PMG8Zarb1jZhehsizSzCCj7cONusxxxezRa_OJBiDbLz6Z3l4QHcMfAblE2QLBGxP9YKi05jzSgejpyLexIDbFz49PxDTvS4nrzUafYgscgBqxv_P0moXqZFxN302sIb2B0cLWEaBaFdCySo-IA7ZdplLoSn7vPvbC5eUs4J9yObeCghXlfqfSFbW-wVgZPf66GY1FFhz4lBA1cxAa_DF41-ifAHKgCXNcjFXXZRXUW5V4FP6iooIFSFA8NCkRiflosNgGxRHo3hDHNGeYynZFyqsUULD6WCNhJSVYhqY4J4_Z6NjoSwEAkzF4SZRVXSVKY5vyNBNzvxrpulzcP0YruYaG0Mzlilo1yf0AzH2ge9UGvyEla1UQNM7KOmtsO67mUmbns00GqKxDQ-Ii1jpQ9d5jxDjWpD9HcMG7Mu_Glpp4nyzWXqptTU9XZ-kP8ffZacM-yb6i-kinMp6guoZwJfkprx16LFsOK2axUBVc05OrNKN1cOnqr15tXxCL3DBSN4DynunwZ7mjbYXBxkAP_0CGzdHmKyNCK7Y6p6jrk6D5aL_ie61RJlJ0zB7dN-jc1Mtq0besOuqppHJvVEqy5LIL6pAvyp2FBeQAMzHlTDfB9ldiMy1HZng96CsxfNJLHqfzybD4qUDtmNgn7wUbmIGhS8hdFOCb4CYr-ufi5qg_VX5T9APUhDhyRr3s_rwG40Ms26Ze68ifgutZug_ueZVBI96g4gJGffJuyrhTf4d1vd1plA1M6Tcg0i1XDzBSh6C8u6gHIRsW4b471APncSfcJMWz-LDngkpQ6CKamZ6TVjqZaBs_6TDyyQY4TvCbjn-lhe1hFCXQFHiVZ8Aed1CaINvHriLFEUa8c1VtRVSVpkcCs2f7uR7q4j8tsjnp_XJqph4s1Owd6jN4Or3004P7ARO6mmpcgRFyKCPuS5BNq_B_raldnNOanqNfwv4IIshfZHbN91glCEqsyF9h1tS0nGlKKMQCY3cTVkAW_5V5pfrbl2UzS609sYuW1qY2K5Wvr-rRAIS8EcZMq5timCY4pDHy3Rx461ig0dX6dmxp1fdJQoVxdoafLx4xnIfPjQMG7NVmnolV0chpr-GVgmuBMHaoFSYkQgXImFbCVojAb7pcxjPHJe2vA78nuLMDFkVmaql1LPhhff1R6rqA2qcyzfvfdsfi3V-3C-LhN6235MaI7zUNYiTNG-V03Btws_IvKmVi1inCSU9ejs77-JG39MMBkOojMzfXPe7xm3sBpQR5mm0CVg0rjnD3X0XYQN-xYrISaaR9AFB8PUwmQ4TIUWfR9F4VjfB8Nr8v3vRSMmIajNNrVc4TFLPKbjHdRhOuJ85DtWrGC9cHzh-fdwcmDEJE513mEBrAgo4Mxq9y9cZlkdWM5EjAGAe7keD9eV4CmxieG2SiQM-KOefaQGBgWlCfHwVxjS1tX1TLk6VmGJUeF8sfS7-2sI9PHJgtFGz8SlXARSHnvCfWYnp6zzx9hfkPeEWuZ3osD13d_d4m-q_Obs4cRO4UezLpeKXAkL4AZSlfe12GcrnDDJFhX3CtqsnUSf7y8dFyxLaT_CfXu4jyCR0iTen8pksysDodi3pAYDBnvcuJg3Qw4As26Sw7nvVGZBHm-1-h4vxzKnV9CX1cR0CSzN20SahSTrIz9_vuyvWSkKwn3VjHE27ESlKoUXn3_ioVk7vrAtcQKUj9l4JxfFP9XMZEUzhmF1KoBnoHN0vqpgWzNylz1FTRJ8xNodnNgiaC8qoxwbcSCpwg1Uu0ouPi8hKnYW1gQEmvGc7RVtNsqmnJ-CT442mFF0kP_SOxqsDzdAf_xDSeW_5COT7cUrdPYiWtTY-FXl3RHEWnHmkjDBJCAHvi7Roa_1BNDY2cIJEFDSBRlRaThMMRSFBCyth8S5MHo-BO__-7MuRxMTl4OVQtVNHe1RxpTwRvQTnSU9muBr1qx4qwqYzEhQT7QtO12vQ4A5650HTFistRT7e0sSYM--oGxfQ94MGDH86WgGoBf1YPib-947zNzZcDjMMAeumohi6ADodQPx4M2JYp9ilygUSP90VEZvA8UEtNKZC5l3oT1a5bQi1ydnX-UzDfR-xpyrkxnOcbEWXutKqozqUMK-RpnUgTKbOSvd8Mi4qkOlniBbved7jUI-rmd1n5s4pR1y03r7uERjyQ2sR6NBiyPf2ByrwI_QcYu6RC2NEzp8NzLVLoae0MZcqI7AUaQ8CMclnxLIw68C57PrJ-Dgl0QkMd_6XDVGXOwuBfelX67HSdG51TbsPeg4RvamiO9r1Mfcx_EmW0NDFsIzXbqMK3Fbzi_yICpCqbVU1RB5qog83-lDaroefX-WCv8unGa3SLWo3rstsdKjuKIFNCgNtyFBrXSGX1wcN1xWuhS-gbrzIh-gvf3wm0npReTQUfDkJBVKasD6YHfUoufnPKFAVScrnCuQKhvg9JaD-MZXmy-LF-cI1vdFhG7ZV2xLSUSooJnBvHK3vXNt0sgi7kVq8WB8gkmQVtQlnoKu8oCanGCpQ7r2nxVbh0FuhLdVjBEglvIUq3v_0qX5-K7g9FawgJW7xnltEJJsvGsGRnlTT_ioTwgKx-m_EVNVcbBE_mkUJXGxHCKcBe_0O7Ba1DqSkDdPHaSW4ZUFBUYstGEFa08gtLij9Tgsw_515T3do-Z_0n-51_M9xHbhkJBYIMelDfU8i6X_riHgOftZHUtzhBu-l74pygQV6kh_dOTAHDFYJ2MzmFsabDvk8bzWGMySeZlNQMkGwCFqScGmmwRN2N9rOuq2_4VMCAmH9rt9QFbDOdkjwNhCsmqdw0FLiuFee2Gay28p1f_4ecb46VYNICkrQymte-UPNiD5QCzuuuDg9c6cq60Omeka77CURqVASPN8mpOjZD3xHvbv07hTV5fXZAas1qgFK7uaIfY9i1URNaviwnq0BdxC4zNrcOr-FYkn-N2OksGxuTdWulONqlswzJbKDL8Nz8M5OqSs7AXwTVHY7E1ORfXyqLs1I5UopTRXKgv4iaVDg8imwe8knIR2KZfiauYTTU6nmuWzxt1RbJK8uVLrQBTIBd1NtP5fQN-mX6TW85BwgGVXOMLT03NogtVQmg1W9LTuwy5YxZ2XVjhHzD5032e3HnQWE8WG1VmRl3u8DYAxihXksTTQ6X1KsCAuoM2UiW3Rr-eTf5LLwNrcwV_MAluOpaeRQ9uusA3PTNjy7dZ4tqKANyPizpT5u2jSECXH8MogvQttu7sJLjgKqEmvJ0Yil2ea58iIN_FWRsVUt6pA0zOXv4XFusYqR4TKZfQMLX1yLeBmVUHmxBllOeaqpVVzV2R8zKUN93AiXHH0eD22REfFZu7BMwf-smZ_tLHWhcGjjXCcQHYx-cvxK2ZHypz9b4WV5bPw7lmhoWBO9uLBFA308v-f9Tk00y4DW7nX2mfytRg42cGPZHp7hpiFie59qeAZH1l0L8ec4aBS1_9PdX8klkNI1GxBX9zwn9tVW4xPZMzpoxtUpgrUvRGQVofa3hX5LoeCvWb6fWXGXIAXP5ZzfuTUVcJyaMGqmyruw-VeVNgKHOpk9F3TyASAcwTKIljIlvJJVjbqnv9Miw2Uq5KFkGehG5LCiAmB-Q9SPOp8dJOpoBDtKWlcGXIJQG5vZshQsTggPWGxd-bPurLcJCpebh-mQxVJzTtjBaS7XFNkJ9SlcxKFc9JK3La5wdCZ-CUDmkxekXHj01vMVL3CxSWo2SvNKn22oDBHiESGTMu8igzLlTr3q4V6BqkaaglkdkhryL3cormyQZntNm372Ip-ujpVS-ecco_XlpIBLBFpKPp8nQgKmgPXxR5dtAJY4nq8Jz4s564JMBaiSUl3GVOfKa5tKSj3rY3wM2epJTxIr8VqCxdSPlq18iYIrpjUkJ8Zpw5Tzno4jJnIbWs4BbFQ6_0js0RXA1VDfnyJiUps-6bU8NsnP0BcVorgBBE7Vye94gxEgFUnjTwXsww0Yg5uSj58X8CTB-HoFnxTkLA4czB5yWqwXMjCkrXcnbW0ar0ahqSizCT8jA-VSc9oObUfyl0svIhYdhishdLsfDqnJG9Z_Jo5RgOpfmdPYuBJyeISHakBTAYKZ10H0vHdTm5ND0AKfij7BjzMdpQ9LCoMZT8jyS90WhuHoCia78jMpSChbE78g7VpK3Q4A9VyZ4YdXcpJ1MReFdV7VLOpyeLew8nSTSOo3cfITnFTEHHy6GWqKCAoPM-NRc5V0R8jTlwYLficfnM10znmqCGQTnfD2DmO8FusNQ-ZBktnQjcQkM6Hpm1P7BIoDLr3CGCDV814xrJFPqi89QNaSROKIFBDDsanrm7AQRTTCCcJ3CPc0hhRq61_EJqCiBl-6hMqu_bMg2FdwSbW-WMQNcUEO1PuFDrMRSsm_Lkqqq4xM4nsi7p5_8D5OOvMRsPi3_V7HYqPbCjKBxr8rAXQqrQSb4Ri4IwcDv9ZZVh6YfQVYWwaVmJKBRY1y4JKEYZGSffkuOkqqArWNTieXQMNQ-fW_N-mtCxWbK5lt_u_uaiQ-Dul2t3pedjTUiF77LINUr2VT6fK-kD6XoAS-gIUuHbqegTBU0SVPbMbZlg27UNcXSb03cC0KvuVRe4YAwrU5ZQQmO2IoqzPqMj5Vspsj9ThuSXP0_N3R-aDpXsnauV8qVVX-soXMt7pXdB8jQF_piVMlDxRaaBCqbE4OMWTRX2B_08bnFh6zXuRYsUkXaX6x_YD62gs96nGBEjDWcjzhioh0HLKHplMh5OJGlpgZH5i7qHCBqIUAV2pzCbZF9cupbDZIyBMcXJadx3xOlkJR_BRqMhjIJU7Ur212XDSygH21R31G6gD2K-QGJI_xiOZVQTUSLzAb7NaiDGYDsO4zeYZ4WA_IXMNpqjhYhnMsrPgpK3T1xyqGk5vD73WkSS-SdeS6XE1evf2nn2gdOfFD26Yfz6bnIrfWsPJMb3MRb-BtArPylSz6fQl-IVWTEDk17E6G8GzaUY_RkSBxGTHpZSYATFS9G98KB8WLJb4wZeoQMK8DAxqd6IWYwn_1hU_EDABEpVH11CLlBkd99d1KpRfcJLchXFxoRrDe9EadEKmA2NqFRwwZ_B8u6478-WczgouP-1snEhf2F1BtmetVlr72iMG1ZYpUQiM95hQzN4kuMMpFRNxbU5r2wjoxFe6w0h7ZFZpUutqNSHD_TNU9Q3q7HHOsDwGBDtsTVDeod33-h6I6CC3k2CYUKMyfSNfVQgqsrd-GUCJb1J2Eqqj8SthYdeYGibf7hPpo42Ht5ZQ3kj1dNPz9E9B5z7_xt690AdPlUKhE3y8Ms4ujjjC2R6xcWfDFKF-v8kGi2Mw9nv-fIubIYUe00X0bRcfHHEELU9PatNbsdSEzeqLVpuC2sV786K70kHIDNltwOVN-IvIMceA2o8ki0MZ-LNbVpmIZl1eKw0i9wascw20VKUN8PunJXkJWGYRiOb-qfAifRMyTB7T9R0xx_jsnKa906gLHaAyuo6IaDenG3ZGXuA2PN_Hq-iToz9-k-z4u_a59aWyH15Sf0OGuJAfOqsb0swpR5I3645iYfTVL1w9DTGPzvIJM1Atl8rxwPt5JChH8-SJJcRofxohLvtMh3VR0I0RODE-oUySGrlP02qZ3BXpDMmnFJ8GNJ3q65qeOwfRV4EMdBfbdaUQD8TrZE2u4HYLyrkDIayU-RYgkMX3hZYnl_43oP8lqZf3E68kpUP5_JjOKXz2KX1ClT7rxSuXazwGZvFFCd5pplUcnitka1zCZp6a828nJB4Q_LlBT_WVVEU8AftTlmX5D0iRZrsGoBAhV4vcjcbuo0vFnEdXOCzEar9r_RH5j-22aDLhZZBUSrTxFa1nkQmXSqLttlmd0kRDqqwfu0ISR-fSAoJWlYF5FyhKC33Ifd5uaFrPKwQI0Wy0NUu4e6VHQV51m3e99l4E-FD7CSLBZn_36j4Vv86HYL9RM7BBaSIpAYfZvdCWGhaSXBa6okRVJFNKoRYaM2jfVbj4qLq2lGMd-DyuDEMR2NhY6gRziuCI8DhmPzpNQUIAuVHxOZYGK2MaaH5DJdarjip5wFwi3z5K9odG7TR-QAEvz_8DUm5TRNl1G7FHcVxhpYttdq6IJnpRyJ_XbqFo0Wm06h3tL-B8vrEDwz29n7fjG2sadwfbiVidWNRcjiLekFiUjbMibSmq_ITPos7o3IivrCmUd2J4whWlcbYEh1h4OvQrMXgiXEUsN5LQAoLZslBu1KbVFd6JS9IH-8BmW4vARUtBiWdXMwwrvmba7wTjzLpxv20f_g8aUVn3CoiCCOrTziyxMBQJY1a2sj9-IrhK1GUX9ZOmDdcAnsbMKvI9SiZ9zaagYjzDSkvh3BR21h9WuwGfxVaA4egPSejCVFRbwOgjnu6M6YaRa05VSoccLC5fQaf4t9RmbmiaJNqx3djgsWhUBClZEH_mnYwMLIhOBMV3E0toT91GcXFf1wh2Ktl8aGqz5k=.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0978cf95fa7f8a10016afb1f07b3e887d1af051e2265bfeb31",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-x8RFMEp_QtJeR3a_dHc8l-eNFmvsj9_BUrJS5LIfW6x5FxUOjOvrpTQIq_4oTgYWEX6zFcQTjBb6EBoqbNpjWodoxpM_sslrQ9rPe2zDvOibERrhAJg09POmPvFQZlz2bGu9h04x-7TBLw_zT_Tn1QrOBeH_PnLE6kEs0vqAOCMUzn8BvIdMv0S7sE-wpvlzXx00vzu-Laaa46mOpbeVr6-107bpfBjnq1KH7oLmNtWYlgh89h8vntuq4EWffcodMZjyNJx0YyrJNldDNaVZwy838vPEb9m9tu07nAJ_mQrJA-WtT_uT9GhPvdepATrk_F29E-8gGEbee1xCcdJqSos4XYAc4sBRSYcn6xY372UNKUsmbf1X9eq5Qk_mhnh7UcR97VGVFMIs975QwfaqSGFeqUDJ4j0YV2XCDHg50x_M8DBeBaXO8gQteIODCgw-DfP3rVyqXnsdTv680srJ7uGEfgC7JyMQ_sLzR8XBArthVa-6POzrzfV4ubcPLkqPw6DxaZYYTKXTs45mh7k3J-bzLA7Gb1CXghqZiSv_9AztNYYF6Xua7j7AZmCQESC8ATlEneDGSWxjnt0mR7La1ADOko3m_VEs0NNjGpWjDozIn4kVu0UOG-QdJgJBiVWuNhjEsI_BI7yWzchrfHjvfzMR0LGBCgtNQf7_08EkMgyeoiBvNU9VoTT6czPdSMJ8SPeDAR5P0GuDpnU5Brpck_b1boceLITp9xtmviVGH9HwWuQV8YQ4QpyitoZzoda8B_5FGeUajXXmoChFMhPLWiJaINQBKkgKnRuaqnEjnZtHHJsjyCVJPT3e5jAHBMk9qriU4UBHV8Y63kZ5PADAFGCnpQXMs5muOG66tiqztjKdn6OgEDOFgFRqg1wAgqYtzWWu31G39GfSqIejfrDFBElhboEs5rqUSPzO9uefS9Gf8tpieZEmceVD3TnkrBLlOcsVfzsfCuLnYh2_sTobPHZ1Esu36f5EokmqcLZEus-KbuZJTFrPE4WiCAla1AzKwcwPNd9mN0NO8VBkiWEIX5V2xb54-G9tvTxS3rfsz8mU1mwP1pihGeISFLqs-4lBJ2HmxiK1Ja0udmW7d6ZedH42fsQSRK5RYBCWH5R2xphqSgxgB7_jE0Tij8-WhtSbpYMTZyP7qgJmMXV_AyIv8LSCObCGnzqeT7FAXg1j8q6QnEAYZPsRLoed4JcjuvWRSYN3bGbeQOP1Jqf2wpJS7Q9N64aY-Zisvd9fkWHfVtA8tBM7N_sPLbEIlaYjJ9AQMpT4SGz4wDOvWHXMLRsxF7uYvvHCkPGypp3_1JRjgezYeeMhjgz5Yo0t5IaxstFRCPdmG2nNv81MB-JWqqf4Is9Ne64q8vgBa9-6DJGd_XPm89aRz8nNbHwlIgSYmAzXppLAG07SQfnfJfhiUt3urevuENEcA9O5LZFJjsHDIH6kGVodOJ3m_ifKVptGclWi3HgeyXS4x9rnZMl-Q-h3TGcT2nrTnUnvHA55oSoC-yjES4iTCY80wk8j15rDMZq-u0V0m8p3GTcKnoqQotHvDY2z65Xe-pdav_wXQ6NcJKEldj5zxcgGZHA5-tZCG38kjeWpK6kSAb1byaeLzKHzvpYaEPXH8KzFdgMpl--nNwB9gvX0G2Xjy4LZ_mLA6sHzvM5LTMCW0uvNVnBCyVdmxT-_4FHf_f3V9LEOvJ8sU78e-ETGNGaR8EQY2wlWsjGbM32J84clEATZLJP946WH6QMIG4YITc4ZiwD0VuXBlSseHGh1RcjrhwfuQeRAklVc4LK-0SF2i7iHygnz_01OPSz3-0VCM4lc_SWcCZm9WbFBG5C1jiRf4u4DC-Axy_V1VUFOJyRxpNZKmuaPqIIajfiPRhmejxxMTANUeQbkkKN5gTgjP42sGytlrcj9by0aPrxmBS9PGk7auX4fweWvdRu1Z1eoSeXQAG3-nNZs5gBUpMY1fCxOZK_sLRLDZB5b7llvv8MIP5Cj6LSvzF-qt9-lDtjTaiwKXA3ZSwxE3NKgC2zXYKT0nZgwTHnXugorM8nxpWGr6R3LcAYB2SrVN1qOHspvxfnDQgqK4uJTtlIyMzZtKlae4tWm8MfXjVVKiHnH906dlQU6YLkwdWqzztax6Y995Eo9Hv-X7INVAmbZE2WY2fQVLJLXqcIp4PI00AkwVfCTeoDmWIUsWaprgGRahIKj-rVm1Dk5dzWveKgVC4OD2YnsfxhkxXZ69n3ac8EI1rgg-ospHAMD9ggmlmcZhcLSviohkDeX5Dzop6IXXu0423qVn7v_Ay7huCHlrWHUYwwD3bKdnv4l6yRZT5z7aiKYpH-pc7wMvIaJC010244HEyAEhcvcu-PAUxbn9P4WML9nbDwYO_2MO1dstSEsqX1t0WBT_D2cLa6hw-y0LvBPw-QpKSdFrM1MrKtqP1Qc3Wy_zlkchNFh5O4UudYREazpxb7xIe7ClgWP4tzz_VTtnttx2TjW_Cz5PBNFIickvL4m4t_bGrMOYJHggs0YkkSu4nI4aHvF_KHSY1KyQKu_VGli9FKeXwK_H7CSosOPSM8gJq1Agq0cSWvNn4AMPLxZpBbuvx-YL-wilPnAR9MhnAXIyEvznHON0MjSgpYSch1kAqIYE5L4xY-L8FowBdkJxcy6IsCFipHuMouVsg9T4_vnMwURnq_88RMLE6aJpEMWWSNBwtk2vTyJsJgYy5tXhWtMk34k-IMuxI-0KnP-vjqFEZFuMp84n9JTLtJZ5dDTmjCPCINQeAqMeddRDAETjVb60aDC-eKwbEbcBwT8IGwsQof915KEAwfr0Ot_KYV8UCYJljdlLT4EQq7cIrntapWMBieZ381I4tvz6wgSDTyTd16kXQBD1735envdfZE6PvSUrZReGmuZluxM650FD2TwrmP6-NaXm3vo8OBxHKE3bEpjlVAxa6VXSCQd91H44eZH_bOrH5iDTvmHN5FRqOId5va9pvQLnUVXW5SNuvoDYAbVCxXl8S-aqcht0hOeyvJ0aSPOrMkGXEe9IUemiInjzVW9cszOqoQJIbVLn9tTDCyKRry0u_bo8IpaMiZde7_Zi4KSwvDdJ_WsD2JSlslQJhm360BI2g3x8nu-8h236495hP6NjOtSX-cXsQ6Eig7euN91cRt7-9zOhwF8DOCHPlnenpg6TeZFeqV67UfFcu4W9Y7ylLomuEAQ6ONIREklDK5yaJP3kqX1OC087_0kiL0aS2e02ju1wyp70curjbehlch7WZmJvQmm-NtzyMtu9egOoI5kWSf4VgtAmDIH9gflwrfjPt0RvzWqYXpIIqb7AbfVjmu0M8rgv6A-cRdE5e71ehbHG8txapRnq_78kpRnXyZyihia7ORGiSDIlFs7yIh5iRPLEivdKGll0JHxhU-y64AYdeNYWXhAe52HLLfVgecL3jqKPrFErcF4k1QmFPRbSEH8T154WNn2QRK6xh5GnWXRtr1HDZva8eQHAt8zMTQWuPNZSv9cIjvXLdiNLLakS5am3j-lY-vpNwFTpT2FxYrS-h6BMOvxWIo76un6EK7wwsdNaux7Ch2GPwf3Gqf5KAOI4afWx_itFYWlT6s64vW9zhKl7E0xOiDCg_6588efrfgykp4MeI3hwV3aHRwrYsYb5VZO08L4ALdvWn0rSwILEF3dN7c_qxIYk1aLrQhdvOPOmSpR0Qh_6y_ZUPpM9ZSI9RGMIvg7NsT9m1mgTUjsi1lGXMJSVx17FeMC1BiD6jlEzSAjv8hOOfBO9jeNhxxEj7Iy6vN2k4GVVX5yeyOCNzBENZ5Tq9weWESdnq_HWMJe7vlLP61coHvuqMYovJwcd7CFOFsj17NFbOBmwIICqYjvCtpHAE7HL8aoCZOtmj00HX1Xc13zd7UFyHUL-9jDTWiz-niBJXBwifbozQ8UZNaaJyedws31hv1WaissgCT5_ykSy7i0mryw32mnB9F3DFHakT7Th_Dcaw70a2F4leOObQslyT8gIQwQFGRbOY5290gVtdFv4-xByNjvIJpYNBUahb_C6EOUrcFvG9K5kwd6ACdonn6P-ba7qoHx1i6NH9Z59pjaIXJGPGkQV9AsK0diIuo87t-XhtfNnUAf1bbcLwe2GzDO-5rFGEmjjrL4l5tMQt6mI7y4j8OoGIXhWtyL6T6SFn2AugPC1fLwfzSjEDW_f1KnwWnQ9xhov-S2E8zvOey_X7UvXVM4bOcUggZb5GbURe4RjDuYvXR0ZePw2l7TpgNMMhFgzc0QR2NxXOtrgmaMR7zh8u3dERmZ5JK7dpu04PQAd8eEaQs41IjZDO1Kb7RSODc1jxw_os1aexzkwaKH5KsjiQvM2gddKQD5K6lLrjW7nSYpBYZqxjmoaMuWmuj7D6J8RUnR5_V28NjnhEgAUGA_tk2ruehpGB0gbvJ60JV6g6DzFd42i8VCHbSGggqI5HZF_v8EEA8kDwROvz4S5I6vdFRimURsKf1ZGK_IvUY24PbSzorv_U_x5Uv3bHSamrglPashbkdtrIZ-qqRmY_yPwZhxkqsCXG3BK1xS3yT1nW0v3RUsTB1sNIe1qHVcv66OEqMuaBGo7R-QSQIjc1YVm0ysGP_s5-PyDZi5Jo3J2Nx4-bUDb-53tYoTAa1MJ2nUFZF57Fu3v0SKFm1VSyAXKoa8Vfnh7VssfCd5qcyr3DPhNZfRjGQXbL9-pYcBPEJkwW3xZiQJif6UkTJumjUG4bT23Ee3WMASNyzxTDWG6bkLJNOdV6A783wmNiIe6EuI0TkffYkrPCwIUtLr41rOVa4BiTLKVdPBVcdb2pN3njzjDJ7Ave8cKbHHWGXF7pD-JvzNqdE00wdL3NZ4UJkxYeEke3radelBMf5tufGuBnn9vhVySmhNlot0PXnblb7fhm4SDWDqvTn9cFuSDuO7oX3cMP-h5Ef4F58K8II9ux4_Q2q-69ZUtbIjukzMGMrd-FQPsjgaJMYGJvoA2wggg_2IvifJF-f00F9-UjYvEHuB7p1ea_3YTTagMAwuTyuJeiglK0IGEXabzxDaVEF6DZVeq3AxO9odJK_rG_FEmXjikVlKqtucs2B_cEIFpO1ABfexcBXZqz1Ng0Ajod6ks-X8yPMV7NCbRJiPmR0dJKl_gQl-TN5YNihLcU2JIES-myyrGNc9bEPYambywD8kv5kLKH6O31JskfdC16Bh-5WIoFzjHMPcfORFuW3UbrVV9TKUexnZzougt1JXhp9vNOUvBqZh69ZnxUL0bqUHDC9w06RYSKE-2mKg5ijbze7Vlkw8rWdahZ_h0ER92LPEXFiFqAd4IvbWK3l-X5rDeBNr5o0fIzoUNV4LKL7-erSuxT3DsJtpCwes72UdDBzDaAnhdrVpGFPfo0uVwL_5sdVgRej_uPwPMRAgCYozKEMrjOUNBOzS_MwHL5Zg7hO2jTlf3vo8K2sCd4GShNaG-d8Ff3UwPZRQE5-w8prqldq-HagCaIdxd-2VkicQzXgDpEE947HOftgLxwy1ZtMgmKTfNhD1ez_WaSJ-1qWW4eL0dg3d-55E7j55R8FQ4poAB7NH5sKi6T6Ekab2WK5CuPRjIBm-VEB0ehruZVD9Iw9c2y3_jpnK4scOCmI8L8EuaKUzSFhVzl7MirSaaEkppqTu-5tzX6YKCTjkedS3pf10OpSi5n3T0MdcfHNkPFOgnwYW8Nh8e6XrjGz4WQXFX0QTPG0sF4sskW3dgF4VQL_sXQGY5OeYYQXVl88aCWajE25pYNJ0ffCTkg2sFN4Dr1w_eHtIpUxjisgmgKQlWE8mAbef4muORUbX36g4603WdLotnwyMqCjCKmSDwuhZqisRSQxCLk3RrQyDoVCG-EAwwpRvlbdFloKg2vqKRgR13zPH1VbPOc6MslfaL-gH45IeGldGlahC6MvKOOoxr4BATiJaqM0Y6L6v-xfScLq0L52xu85FPtsHAn6nj5MP3mvoYire8trVB1Zk_k3FEnokJVbNz4zYo2o25POZ529wFWQYMOGjmszw3jgqSRV_ItX9mecOOXrtpXIUd3RCuUGbNi8tETTdiDI9stpuFrZABzmiN1nC54kdhvqE0lKKuZZU_HnYk4fGITb53WmY5_Fh__TtvXIN3qLcUklfXOEUOgu_p6OLwb6dCjvKmmbZ0j_m8UsfWoKAZSnFxQJNDuox7bSNASfDWHJeLy7-Lu1KlfF4sRc5LxfZX6YTcZBioA7_UpBZZk3TsvafWTmIPLwzvqlIYytm0BvQzMcc0Ra932uYAnzZxGyYSMcpj8aYbwQ6CiHu05732TrI0T2a5lfZGvy9nu4Wa46WugE5svB8gR9fEoMSTVdoOd_bhOzkSm5UYGH9UH_zJcOfSX7FHoBCifpSaUUI3QtGZHDtk2u64E_2KR62uT9m0e0UaUpMYngM_p0JWYImabE0knAN4vxsyAAKWefkQgrpQfYVoOuTjZytYdMMtwk_ipPGhcmrqgZ1WjR3ZhquVWzvizrUlKHiCP0WvQKRAz9Bp2PsIgQpC1ji5VCw2d99N8u3pi5LcuQ-UUzkPB5imgG7l0uEQ9n9EEO2BwrAeo2GQnl8qt6Jl_8YQFtjx9Iyqkpi3pzewGt5cuV-MJ87y26xFTb6_nISue_PDFaoQXnJGFDUG54YmVKQS7r1tuP4us9KJCGUGRkwG_ohVQ9BcnjinkyYnymeArW3z5ghXKuuXwRjGnGWm5Jglos7VimM3ULbHM3zNqlu3D9BzVdIIQNKGFC123_DpEqkvOs3QswRV8zcaNcSEOkUBnQ8OWWYVhoy9dIhZmQsr_5FFlpFVLNSTR7RU1XGMAMDAP63izsefdvPla1liTP6mjOABH4n60E2kmmp4OpEJXsPAAeJ5lq65sMD6YdiflEY1VkgPH_1Q92Tz04VgW5j22PD5jh86hqZ_hL-uFTCyHVHqjDYsDe6_sQc2SNSkA7qKvSf3AFNw9Z0wnnvaa1lmfgdZEBmC3PuQ_04vvPEfQrNaLxK9u-m85BuvSbu0gcjDjW8d5oY4si1bCC2cNVOn8jAW4gy2DbwYb8VM6LfH0kRBLWjDFL8GHM8APmASDamQ6ISw0jJzUDa_X1RqEd_K3wIZi28A_prFC_HHFQEumNCTULuOGQOsV0AOvvb-9g0M4c3OL1FmfQHPZL0TIjvjJ4bxmJYg6AdVGgpOobV-CUCqSjyMiUG8OGyNv6wtYFU2FC9yqJGuJa01D7BQqjHl3a0ykb.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_0978cf95fa7f8a10016afb1f0eb67887d1b4fd8393b329d184",
+              "index": 5
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794842361,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2625,
+      "prompt_tokens": 20260,
+      "total_tokens": 22885,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2000,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 20257,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003844925,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003844925,
+        "upstream_inference_prompt_cost": 0.002532425,
+        "upstream_inference_completions_cost": 0.0013125
+      }
+    },
+    "provider": "OpenAI"
   }
 }
