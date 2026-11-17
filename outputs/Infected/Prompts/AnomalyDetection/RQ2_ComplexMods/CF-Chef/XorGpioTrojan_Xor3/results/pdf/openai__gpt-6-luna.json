@@ -1,0 +1,250 @@
+{
+  "id": "CF-Chef/XorGpioTrojan_Xor3",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": "pdf",
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor3/prompt.pdf.md",
+    "netlist": null,
+    "spice_circuit": null,
+    "schematic": null,
+    "attachments": {
+      "transport": "pdf",
+      "files": [
+        "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor3/schematic.pdf"
+      ]
+    },
+    "chars": 22183,
+    "sha256": "440f326efc66e6ac24f374a7c6a40b800e931041b8cd652f5baffdec4f4097de",
+    "attachments_sha256": "c829c3846f024fc674e33031e47441eb4b5e5db148bc6c53fa495ef449596ab7"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"other\",\n      \"components\": [\"U9\", \"U1\", \"U4\"],\n      \"pins\": [\"U9.1\", \"U9.2\", \"U9.4\", \"U1.22\", \"U4.5\"],\n      \"nets\": [\"Troj_XOR_A\", \"Troj_XOR_B\", \"Troj_XOR_Y\", \"SCK\"],\n      \"observed\": \"U4 pin 5 (SCK) is connected to Troj_XOR_Y, the output of U9, a 74LVC1G86 XOR gate. One XOR input, Troj_XOR_A, comes from U1 GPIO8; the other is Troj_XOR_B. U2 and U3 instead connect directly to the SCK net.\",\n      \"expected\": \"All three MAX31855 SCK pins should share the SPI SCK net, driven by ESP32 GPIO5, as specified. U4 should not receive a separately XOR-modified clock.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"U9 74LVC1G86; inputs Troj_XOR_A and Troj_XOR_B; output Troj_XOR_Y (root sheet, page 1)\"\n        },\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"GPIO8 ... Troj_XOR_A; GPIO5 ... SCK (Microcontroller sheet, page 2)\"\n        },\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"U4 pin 5 SCK connects to Troj_XOR_Y, while U2 and U3 pin 5 SCK connect to SCK (Thermocouples sheet, page 3)\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"SPI bus is shared across all three chips: SCK ... are common nets ... tied to the ESP32 (U1 GPIO5/SCK) (Section 4, Thermocouple Sensing)\"\n        }\n      ],\n      \"impact\": \"The third thermocouple's clock is altered by the XOR inputs instead of following the shared SPI clock. Firmware polling U4 may receive corrupted or unusable readings, compromising sensing of that zone and potentially causing incorrect control or a thermocouple fault.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The schematic inserts an XOR gate into U4's SCK path, unlike the specified shared SPI clock used by all three thermocouples. This makes the third thermocouple's communication differ from the intended design.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "other",
+          "components": [
+            "U9",
+            "U1",
+            "U4"
+          ],
+          "pins": [
+            "U9.1",
+            "U9.2",
+            "U9.4",
+            "U1.22",
+            "U4.5"
+          ],
+          "nets": [
+            "Troj_XOR_A",
+            "Troj_XOR_B",
+            "Troj_XOR_Y",
+            "SCK"
+          ],
+          "observed": "U4 pin 5 (SCK) is connected to Troj_XOR_Y, the output of U9, a 74LVC1G86 XOR gate. One XOR input, Troj_XOR_A, comes from U1 GPIO8; the other is Troj_XOR_B. U2 and U3 instead connect directly to the SCK net.",
+          "expected": "All three MAX31855 SCK pins should share the SPI SCK net, driven by ESP32 GPIO5, as specified. U4 should not receive a separately XOR-modified clock.",
+          "evidence": [
+            {
+              "source": "schematic",
+              "quote": "U9 74LVC1G86; inputs Troj_XOR_A and Troj_XOR_B; output Troj_XOR_Y (root sheet, page 1)"
+            },
+            {
+              "source": "schematic",
+              "quote": "GPIO8 ... Troj_XOR_A; GPIO5 ... SCK (Microcontroller sheet, page 2)"
+            },
+            {
+              "source": "schematic",
+              "quote": "U4 pin 5 SCK connects to Troj_XOR_Y, while U2 and U3 pin 5 SCK connect to SCK (Thermocouples sheet, page 3)"
+            },
+            {
+              "source": "spec",
+              "quote": "SPI bus is shared across all three chips: SCK ... are common nets ... tied to the ESP32 (U1 GPIO5/SCK) (Section 4, Thermocouple Sensing)"
+            }
+          ],
+          "impact": "The third thermocouple's clock is altered by the XOR inputs instead of following the shared SPI clock. Firmware polling U4 may receive corrupted or unusable readings, compromising sensing of that zone and potentially causing incorrect control or a thermocouple fault.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "The schematic inserts an XOR gate into U4's SCK path, unlike the specified shared SPI clock used by all three thermocouples. This makes the third thermocouple's communication differ from the intended design."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Examining connections**\n\nI'm looking into the expected uses of the C13 bootstrap between SW and BST. It seems like labeling B likely connects to the U9 input B. This could mean that the XOR trigger is sourced from the switched or bootstrapped voltage. I really need to take a closer look at the symbol connections to ensure everything aligns properly. There\u2019s a lot going on, and I want to get it right!"
+  },
+  "usage": {
+    "prompt_tokens": 20356,
+    "completion_tokens": 2037,
+    "reasoning_tokens": 1458,
+    "cached_tokens": 0,
+    "total_tokens": 22393,
+    "cost_usd": 0.003562925,
+    "cost_details": {
+      "upstream_inference_cost": 0.003562925,
+      "upstream_inference_prompt_cost": 0.002544425,
+      "upstream_inference_completions_cost": 0.0010185
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-16T23:54:52.989519+00:00",
+    "ended_at": "2026-11-16T23:55:20.156020+00:00",
+    "latency_s": 27.163
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-16T23:54:53.066Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 9733,
+    "moderation_latency": null,
+    "generation_time": 26957,
+    "tokens_prompt": 5627,
+    "tokens_completion": 721,
+    "native_tokens_prompt": 20356,
+    "native_tokens_completion": 2037,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1458,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.003562925,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794873293-N01CgBd0MGcX8ignujHf",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794873293-WBVeYEFGF1gMkQVCHrAu",
+    "upstream_id": "resp_039af58a584ad04d016afb97cd3b5887d1b9a68f7d232b9359",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_039af58a584ad04d016afb97cd3b5887d1b9a68f7d232b9359",
+        "is_byok": false,
+        "latency": 2046,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.003562925,
+    "cache_discount": -0.000508825,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794873293-WBVeYEFGF1gMkQVCHrAu",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"other\",\n      \"components\": [\"U9\", \"U1\", \"U4\"],\n      \"pins\": [\"U9.1\", \"U9.2\", \"U9.4\", \"U1.22\", \"U4.5\"],\n      \"nets\": [\"Troj_XOR_A\", \"Troj_XOR_B\", \"Troj_XOR_Y\", \"SCK\"],\n      \"observed\": \"U4 pin 5 (SCK) is connected to Troj_XOR_Y, the output of U9, a 74LVC1G86 XOR gate. One XOR input, Troj_XOR_A, comes from U1 GPIO8; the other is Troj_XOR_B. U2 and U3 instead connect directly to the SCK net.\",\n      \"expected\": \"All three MAX31855 SCK pins should share the SPI SCK net, driven by ESP32 GPIO5, as specified. U4 should not receive a separately XOR-modified clock.\",\n      \"evidence\": [\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"U9 74LVC1G86; inputs Troj_XOR_A and Troj_XOR_B; output Troj_XOR_Y (root sheet, page 1)\"\n        },\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"GPIO8 ... Troj_XOR_A; GPIO5 ... SCK (Microcontroller sheet, page 2)\"\n        },\n        {\n          \"source\": \"schematic\",\n          \"quote\": \"U4 pin 5 SCK connects to Troj_XOR_Y, while U2 and U3 pin 5 SCK connect to SCK (Thermocouples sheet, page 3)\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"SPI bus is shared across all three chips: SCK ... are common nets ... tied to the ESP32 (U1 GPIO5/SCK) (Section 4, Thermocouple Sensing)\"\n        }\n      ],\n      \"impact\": \"The third thermocouple's clock is altered by the XOR inputs instead of following the shared SPI clock. Firmware polling U4 may receive corrupted or unusable readings, compromising sensing of that zone and potentially causing incorrect control or a thermocouple fault.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The schematic inserts an XOR gate into U4's SCK path, unlike the specified shared SPI clock used by all three thermocouples. This makes the third thermocouple's communication differ from the intended design.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Examining connections**\n\nI'm looking into the expected uses of the C13 bootstrap between SW and BST. It seems like labeling B likely connects to the U9 input B. This could mean that the XOR trigger is sourced from the switched or bootstrapped voltage. I really need to take a closer look at the symbol connections to ensure everything aligns properly. There\u2019s a lot going on, and I want to get it right!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Examining connections**\n\nI'm looking into the expected uses of the C13 bootstrap between SW and BST. It seems like labeling B likely connects to the U9 input B. This could mean that the XOR trigger is sourced from the switched or bootstrapped voltage. I really need to take a closer look at the symbol connections to ensure everything aligns properly. There\u2019s a lot going on, and I want to get it right!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-5fWM4kM74kRH_EnE_Lr3BbTwZKR1w6x9SLmMxjUNEBtk_yjQc_QGuPnW_3hxziuO-VMb9gU3Fo0IpJOPs-f4Zmzi9PQEb4FzBBFnO-7C9sh0jVx-NIlrjkYn3aNYkf-HmJaqikHNamSfWSLujqUzXPwUKS8_yBJZlyVyce5nCjZDGmpF4plTG9x1KjSi0nJ8od6_WKivOOnVBJCVbqsO_N_MW7uyzsBR1Dskj5xGw1dKn3gHVlKVjvZG2Lw5fSWNo4OBtv6O9SUBlPuw23ktqkV0JkdTw957NH1b8RpERqHCJumgMQz_wX-nqVDDjkLInDW5VNRucLFcpDXKXCGTuRmuNXblYUpbYQHmdqC3Kq3uT1ZkITcgWLKNps8WHbMA_msI5mEWn4-QIlrZqKDQ1aDV4OKJ9NtXUV1kwOwYLOvmZavBadrHqT43d6P4gCgiZoPKUH5wSC83YhRRjDDL0O4sp6nMkrBBiXvcedCE1CdFnH5yRqEgCL4i2vxeCN2X70iTTX7wutVdY20fW8By-H_NY1IYVpWVNHdTuo0ZorhF2-jRBp0QTlNVzUdJYBT89v-rW7RzzJM8s6iNRjmI-lREyK0wZEx1KnH9WBeHqzrnOdB_gFW6cPxwWSfz6f13z2_OiTGN3ReRv633wQ3wBMtwWX5ZAOX0hGpz6Y26v8oDOIonhk395Yzy5DrPpnD-Rm3cUUVqnFguNv0UpZ8AiP3iYWGRF7rStFLkE5Dbo2Hq3r6q7yU76t00p5-LEw15NH2YnHTlpDMzyKQI02PnlxM5SJWHTW6I_rpGxc0eh46ibgdXrk0d11Pr9kkJaZGQcdnERVgzaS0Ghv8-6rDmxEs8RsfYlz0PQA6wUtMYuDY4pUUr-zOlFjFLU5nvOZB_WbIVpohMWENFkYj-7ZRIs8R6aWvEkcHZjSziXMA0wtC6VN-jH2mVXaWImOSih-jsSmy-R928k8Qz5qBIfynGIRtYfLwVjR-WUAP9Rg7d3IAuMwuH9ivdTy4Qn84p_1aYpbAglYbodEV16eWnI0vGGtEvnqiuGA1EfXjUuOlLY2nSLl3n_oSvzJPKCinrpCLvsAabdKFyhvjNqIF50tig5D0CxEDQJrhtEIc9b4cfZnsh1A1eQ_K61RnzYBHQduPgKrIwa5b2n-tCaz6t3qslQ3BoBB7eJfU3mKP2ABntd2sK4mPff44a_MQLT9w6_fdPqm5TKtfv79Gay2vnTMMWAn34ooUCfd0o7VgtbNPgn0lCUhubSifV3uPsHvjDbgRz2O8kccsDjRUsSB1cvSUPzV-53fQ65WHrLUe8WwLwVgj3UfA7q6JPbpbs7OY0uCpnINNslYgcQ1lEqYjWNnxfTrAuGoXxldC8S8nm5qsHx6uLedSx7YOd4FvEZIcw6lGxFxaang3eDm76QOZ57GiGAUl2zu94nmm-uBDrNKIgyIGgRRSonqJBvMmTxIhQVl97dvih0kA-5S7lZ7Bid73dTtiU0qGTRbPhKptGU6aF_Ja4BclV2cz_6O2DeDPS4j6C0X8LQLFmCpqphaoF9ab2NnXOB3EKqXO588JxGmGxEfoCA_VeMFG3Jh9GYWoNQQLMd0qcLX_CXr78FeP0G8metz7l3zH95STQKykNfKaoYj1evxIiVd4WvqH0UiFKe6xT8gfaSgezB6nCS7OxHF1ZSLK7KWzitQnzmyj86Nt4MSMu-tW7pEXNJYiM9UKj5Sur1LePsNztLAM_ZzcL6mJ0g3a_EMRv9veKkjsxnnL1X4jSksS9S_WawMAReWzi1XbNTe0wKRNImdvkMNmzrv54CmFlpPPQJWv38dWCmT_zcehFTMRcjYQIsYiXFDntI3mkIiSwLjX6POXp2KP212uvtklkwnBWUlqIAixr6hYS9nfLmxka0tstOmlPtLzLVVSAgyNud8gvtvqbmefnwQ9g_OTIregsMhD5KWmT_-IZtGQ84SljtVYw5xmRMpkKmw5TLHQVl_f7nWqzXVpweLAicfRSF_LQ-pInPlhtNoVPiES4VIljMdfdP7I9fIeKFL31ZjnNv0ffgAsrn_HO-Ko9oPPELTsF-TPUXsDFazUmD3lTQ-kEzVKXNkyQN31oZGWGfIIpkkEvSJuuGBwP6gk_8LznQESTNZ1XF0sZMaiNdY_yoxlqy8xYeMJwdzbdHSi5n-PiTola6mMXxZWjQ0WagxaHRGRHVOSl8gYIn8BstG-3DuFOugUZ42YrxbINhM5WICuorh8dBhZhMnSC3bEGvJYP-AD3W3N4WoT5Tm2mamwodUvKId9WMaY5Yeyvw80e4fBj_U674aWCtQ4oAXegV9ztlxOmWHcCHFgxwEHlQv7ZeHHRHUC7qtSOI61EHPkWxwjd0CI2gOYwrhhzaz5gVg31iLk_3MOn2aXe3rboXnC6FvFaBW1aUM_7v9oeht20fjdDMN2OFDkD7TDiRO3SDAvf1v-OVT4Rqpw9-hb2e432UZqVG88hQWy5y86dMRs-caw7FqaLF1dgM_-4qf6kA8cx1-Ie23-L0DOs-YFPRgPH5zwLqIbeb__D9GmyU10n4YMGR-8dx6asmgho_xSWHBCHeJx2pr0ohvuAmEmiTS2UUovLEiMBwR82zTdHECgCbOEJcbBkMTerRlD0AScbAdil-pRBVCCBJGD1yau3l0afdxikvjFKLyDs8ggGTnMRi8dGtFOBaz_qiJd3Xu7Ei0EPFQkM1mYlasO78n6PlNrDxngCUi5CbHwB2-iWmg9axj55khYRKz8OJ_DlzC1ToM1dIDXBRTzzbL1Lu2MdmIwNuC_ixyGpYLXMbTsVE65EJqquRCsBFgC4tLZfCXciVrU3kXPeQhJV7l3NufPfUCiqqJx9m0CN32QY2gbuVtSAOcH3K4l_jreMjI2zUKwjYQviT8kjyKEoJ9uQhgy2jXWzC2oG2mNVLjeY_nzHQfL_VS27pxZktckdteOd-VIaGUbeCLMOgvNtZ6kNDQaF9zSejJiS7yyUmrp9_CykdBUVqrzp3aVg_byLwpZQlAXr8YG6TUJbEeFGoY8iI549eD4IihqleSCWk-Ank3HA6n0MhX9lZyasbEy2WRhboClib440NNuqM0yNxZ8GZnx90bpusJm19vmYXsehetCEXFOkTQ6wZQ4VPGpEYxXqhnmYOVXIiHHyhDyYnh0dSs4CEIWgdteOx64ZRZb1ZUMumXZm7avQru8yZ8HsxWxzDs615cTWtu-DoI5Y9_7X69CFDPOLZbZvIL_VLomy9GW8X1i4iEMhiwTLvzln-f1XvPoUsBsyQ8_bTkKdPlTMFfg33fOki5JImGoRY_EKLlNe3xNlbp9JoTrwKaymy2EavIZkPr6Dyjg8rniRZWLEFDh1mYFovjkMCpaZjmIByF0DNAvoneu4QzsaHUMT7rIfJByJPyWDTU4w_E85yLJnMWzkg7oGJbzqaOaLlMjNy0GA6QYyHudkw4w9tEuPEL-JWE3PdlHyJPGH-tvMi_K1BMuIN6GngwkIrxSOfoIUOfZWLqk2mrif1kFFKz7oULgpBQQGPEvSh9575_cijrBbbvrLcAT8YAL7LSqQpN0l2fM9A9Mal5fBbrTN0zusfiIVXMd_AE_GN7jBNrCHdLDtFXVdp7gw28UMUtsXWqmT96lq0-WbJQKco47kLyNEY5z89_b5nC5tfhnTGtsV4WgpOdx-ViicEtIe7MhO-5iSO2EUMYl2j_y-ENKb2cV9UbBoE-rRw_j7sAGEuJs0QYI8MYQ97WTX85JOexylWu-F7D_qiV09haYS3PNKSx_xBcZ6l_fwJLdYCZMUlDbICy4KDEBE1LnInmtBiyx5jPwQEd3ORb2Su1g58-9IUZsC5yFTM09aSqjM2_ICbRW6iwSqezwdBooJcag-Y5l02qDB6EJ8qTYrE8_m5hXmf7KOkOAjh9MHVBPhBBvc6CSp2V-g1W58n8Xb4N01l_RdAWRUlhCDrt2WsNOaILA04mNBr2IFjlvvuV9s1W1YiKjApB6PCvko9SLn4WNY54UrL0SeQWbxbUP5ugzXRiDO3iPZ0JCMetgzhn9VahK3u9mCe_TZZ-n2TsWw2LEYuWYmiOhgK1yE-7STkjjm2o9RKuo15swTY2CPjmQ6UckRmJYtvyGjNl2lW8DX0ChuFi3i0PIrpebrk9sOoeTAYlrUGjpkIgCOXkIvVY3jrm6l5fOvgLkLu2DWHLdJO4rPrNSAZnld72XPizFrJffHrXrvVlkLHpzNnaB57EW-6VaRJSVo_A0IADGNDucK6LOlA0cE1LT3Wfk-RjH_RngfRd2nxkLndLUwCltUPIUsPVJfFGcYn63IZEzlwwqgUB3GadX6yK5OiuZeM8RW-exmw7vfuvZC07CYW_2C_LJPZH8zpBp_gGDYFqjnqLMznV2IiK33GI83xb4DRx8JYkjpSf_zNQVelA7XGrJsTAlSiJ5qUe0gxD5A4utwVICdYwIs4sVMxwKZJPCCkb6W8paJEu_q3V2DXqcYXucLH6aZsrKUG5g0GzjC66TM6P3Y0OxYjTS1gJQ-QlkbwRk2MN9aQ02dxklWIVZeT216oiXu4nv-iTr0tgDtkVtMvXIsekOqpinbuntlitO9qJySE8_CLV2cYDTAUZ1UX2Oh7FLVUQZa267e0E3s0cpy4OsL4reVVeCgVGpyUoiQTEwvefGDoZeSO5T2bsZ21HBggLzJo7lCF5pqPkf1BBVBWS4DnvdYxS-uQkYt6sH688qhlbglzeCWdIexxC4FkhaGLmTIR8Cpx593CC7W1tixUgvfRtKEsCtsLfxONENKpK2k1PWGLL8dmWQohTPaTscfYVjAxD2WbRylHNd8CuostqdmpxoYLmn3Q05ivghSL04HtjiwOYa-1jrglxCOSar2KW9HvUCUmHh5d_gpjTFZ3PWxuUf4aImZWqcvD9FglYXFN53fbBSQ1eC4nuZmEVUsgYLK_G_LtM1PvLgcOhdwUcjLs22-zd4hRVUJY98Uw7Au1uwBoae7nEmK8n7DVNovMqG4KAUJ1SLRd7R810O5Xd7e6vDRJQJejY7HmMlZ9Dia02ql1pXPvBD2pQaBPSF-fy1scHLqv24kiXCfqtO7-YgsC0y4h2GUi3_hCiB0XwOhSPTVaYA9qAJhxBM5DNxa-1vv_Bx-agrysY21xwT2oRhwk98srGZEtJ8o6TSv4dTKiDf34L0SBdN7dRREh0VKALpyJLVanTt5KxFLYRDLpCaqQFywCw8u0f1WRCX5Pq2iFM_S680-w4GI7VPHDY9wTu-6pQuuAIrlXRyMx85_SYtTDoG1BnnwljqzKM6UcxZCZIufh5BZIraWLPoC28lmEahmv5_IVT-zaWHG8O-C_iN78PZX-dn6R157FTLFTD27CJKQ_iZUIm39Szf0KWvHp_IsSLQ5PAyRXsjSxXKOUj1TizsCmU0g-sfZ_lK1MAjyRUQYSnoEkHsXhF5i-0ym4SiGTUs05swFhzG8zV7uTN4Y8ngcWQOjrdttutlSIuYxIlSybYwidUZDaebn7wTDC9m2yDZ-lwe8OE5tVAYIhA8zEDTV-ki7EHy2Tf20BQKDn9HSvrKdfGDHLTOqHXhj7LCzjyTWKLEUcFtZTtCdGzlmKVapd-W5EEDhAHGnMB0_1ZuedRoC0uipLaB50bOlsCfdS51zch2UFI_HDk5raAtWk9qcZJ5sly25RA5xlVrNvpGqJ697BWsPhFJceTZP1dxocH0GvSVSZ6tNiCkeeebM6YueMbk4bV1QkrhqYJZ_fr1gM32HCx9nEwLCCrvpdEukKvnZ48rkvDgcGulHR1ZgxVQU9SV6DHHgybWXQ6KNHn07P4Mh2va-ft4D10hO-VvK9C5ueOZ7FOhyj2EYD50UgjPDhTJAFbvfx1h84AzfxfHJL5OsDsYfHPz_fvOWD1geVe1c9-bC2_Ciutw5oI-LUjlPz64AuaEHww8FX9cCM3YInJLTo1Vk5GUI5Nud8x23ApAwhPm4AME6aeVy6czUVpONm2j2azDJqMOkTpeEUooTpJ23GXsNWlUi7SuAqW_Imqj-K4bVMqO3m63xm271M3ihyPVWvsdhiLoCEJMM6tyjVCP-VOLhNcdYRyz4zMqwOtyQ_Ot_XUZ1I2yD0brGzx2dKCtr2oGyE7HoCWL9qH-27Z7dgprf-Y7S-Lue61LNA4S6ka-E15YHcKeHmkFZIiP7tElMGNUW_e6VzSRDlP_o9mYVpLUtfQSd88Dvqe04VabybWzTEvbwwX0qzEfA_jaEwnXXJZjCjUTJPuOshXe186r-V1TXLYaTa9VOcdG88WYUAB9JDpFLfPfQGFGf9yimZqAEo41PAuG0JWedTUWia-lTfIMf6K3g-VpohVOeMRbBNUphk9SCD0ZqrmQk5aLNhPpE0Pcf0ynNFU-o1lVNPZPD_5WIAinXWQy0UqPwzaB_huRQT1iXpO7cP73aNSAeaZ7qrMIfP5mOlHrKlM6IcRnawC3KVLtZe5PtDJgZ6PjJR1nfrPI66hM3pGxzhbUHqwVDiSiOovCEvQFwOtgmtFj6vwTBxzbzWiFqg3r0epyK5hD1kojz01CtYxg083wQhUsgox0Bj0bi14PbS2bMKR5r8eXoCoiSJwTbbZQKK7INRR-9kqnRi5ndmQcy3rE1ATrRrhu1PxtixcEGXp-JjNUogGQhQUwOsLgvChl9Hf8NeivQ4moyjK2pZlaEmJ5cYy-jgBZoXJaf3x1USM_feJ6jxO3enMOHsHLC0i6RcH1Rc7TLP5Gf3T4tB-T1uJLoZ3FN2VrolY5aBiSoFG9-JaXs9MFjY5SWdnjsIQDNXqdxtSqW5hmM4Dz0S4moitxTNfW_0wOP3PYCyHThOm0_vccYupfrPsT-LqKFDB4TyylqPn8usOXNZxzC4kf69byzdRSyujpVbfdopEun7BraHPyfbD7pwM-Xq8MmLfI0PVRu3EBk_4--Dce7o2ZMB7EQVRvvNmeS9cvkEzguv26b_S1nzBXgfM8W0c2csnBcBfota9LOttOBzWCjc98RfkHOaO3edH5IBBPQY24OU1tzFE7Ql9VeY0qzPshuUGXKa1mig8_wMqkfirfZeeitQpXjKRDT53c6TADtF-SDxcJxbwaEN_WAFe2JQ5cD0Tb9-lGJhYSQgdHqB9HtLtVjQGNHuITmXJgFAGJCCx_yW_ey8C5iBNk_PHY_rhzN7huxnCZX49TYHmGzKmC6gIi7onn-B8XJr5iV7H1-c-V_CH7oNDWkHh7DpMaU-qjD7nawNHSAWwmD9ma-6jPX2NAZbKoiZNRsrWSwFmmFOcV3pD6EV0UgPKp4cXXBxBIF3Q4_aRACsrxO73lL1OeWLDWi-WHn-uY2hMO8FE-foyBIhrX-AgId7owER3OBlvl6glHu_GelOFOK23b03EdaulH4DipX2abd57MmqZtwMkKGo3eCQREFZpOsOelL58pPJfBGKiQ0j79Ya-gWx6A3owAFXiJusJ7nBa8WQlMcGJXea9vpzOfEb3JjJalj1oFtCiWfkeb19j2I0NyNQLyS73Pbq3JP6eX2YI04BpTRlXdofQtiMiUsHDC9kPsd28sPz6mRrYvdqPb-cGoR53tUABe0yqvQUyctcDjEz5angAJtWYDE0tO0RftRX_Q7KrRtD_TK0UZk4nUsFPrybYw6TgLRvrqIUtGVmXD2SJRThbjj2EzletNQYZVbXiInr_P80R4NEk1MIoATGnf8jyFPCkC1sWK-ATyeWX1gMUlEaEKqRQ67pUDdPpQ6WQ-x28UTqongA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_039af58a584ad04d016afb97cf825487d192b3686d0b95dad1",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing connections and outputs**\n\nI\u2019m considering the best approach here: it seems like the Trojan XOR added in SCK is relevant, but it wasn't categorized properly since it shouldn\u2019t allow for malicious input. I wonder if bridged_nets have incorrectly wired to the XOR output. If I report \"open_connection,\" I'm expecting an U4 SCK shared connection, yet it seems like it's connected to the XOR output instead. This could indicate an intentional logic alteration, which is quite interesting!",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-5feBy2juIuaHIsLacr2DCDTLVjwQdckYolqU1otuc0qZEbO-KBIItY76EoPe9JQQ8ADizDtOo-uK0-SiBXiOdNKPzJnOx5AfY5uhD-akdWFnr4I2h2s4WlHnJaatuaQKPBkw0Uyf9KHkM_AtkEKKDg8PaeMg9WKPm8tu2GO9IDrN-rz3-RjC7D73GPmma86eA4HGLQc1hOkZkYqIOBCwQQ6USCr4bXn9FauM3lXz-hAoO0oXqvnMrpWPU2UxxWOQCto7Ec6ZoOfRPX9jZlHzeYxGrD2Wkzr_GfBUaDdUUmPlS4SPdR0etgj6IMZDLCLxIi8YC2RUDOasFbdus2qzrrU4v233tHwMzC_2pSjooDKszozZDHz0uKmAnsBhzYaVfBpIVD1fZ5DPfWJnBHJpCP0r4buIt6MQ3lab2g9l5uudshUiDguSibL0JXW7_clfGX-g8MXnlnfCJEJl8Zdo_xKHeAHnAaGhY7GWMBia4EQO12gw6v1C7Tq3oEbXxbTPWxUycwYVRHRovMOiCtNFEwCABxRoHsypQSJHTUCow5GHE_EvHgxHm5RTY-Hx1XyRuTS5_5_q9TLf1umJ1Sdm-lxXXujBzJlwe8o16E_7r8Y09q08aKjpH8jk4pC0nrkq0oVMteVyEL2bRcYDpfQd-sJQqRKgwZQi1Q6HDnsAoqhAkVxfP3sccT1ClKSE00FtwFeIjQXmRsv071_9g2BNnImsiycPAoX5WgTMozLqRx-AJ4fbtJYEn8yx2724zIY2RG4CWZIrFHn8AhoN-YafROMUTwYcRBFd15Owy37Ipu9k-8yiTq8ReaQ7rsJz4J7eTs2J0fL1LUuHs8qNC_WUD2EYcnER61jOJMQgN2v1T8RMcb55FG7Bd4lFUZTcZ5tX-XBKG_ZlMUXydLqssUeLP-3J_PoqMX0Fw286WDsE5vjR-RfG8KzGdeevkhXg9zF_8HV10BIQioy0YP6RoIdC1jz6ljl8XVcr0RWKcOCtk-EMavk-H_xtwEBElvvu2_8_4hWKWEsh43ijvpgn3xf2-A1AOpZYfOtVD2UwcfVxR7JYvWj_jkovaoXq_Nv2g9_rikN2nkh2SnuTL97xPs-5PhYSfMwlUmc8rb15Xo1gdSFb0KMwV_2MFK30ee1T3sNnew9rrB8b44G9XIYevwEl06Q-4QkWP_P4aI2vYyRRkwO--Jn1m63SRRbRiM7y9i5gKDj4OIZBmoscjn-vdqI-q8R8Ev8bVwPdXAmz_FioCiU0fNMXpLpAeHV3MBir8CDrEqC7NhRg-C1ZFjOuDPps6NcXVQgJArPrNPy7TN3GKV3sqjnazXHDYm7nUr3n1LHvTk-dmlcaF1uqcg52DhpTj2iIBTI-I-fpPasyRRITcQQ9MqfGu-HDgrxJ_A8HyjJjcUbDlgRViX6GleE--EMXr4CKfXWlaC_dmlvHEz5HsG0Fk_9X0yiGEXEYK8_Jz_toxDV0XdIM08gxvpq8rY9ndjaaqNBwWbG9OYXfDtF8Wy5cDmDecawbLtOuUvX5msx7yAWhvZWQDRHaAQ-ZDRHWvt4R15NDexyn3X9bT117cwpsfAaH1d7u61SmljPLoAfLTIr3C2Brxh-qbOBW_6XDTmQtOwSuCjkFZIgz-eoDwOzcydp4h0Fsyr-35Nm7BKRhG-D3_svivV7fDGRzfG5baMBFu3NkTWhozc0-z6fkrBJ86qcM7PfXI6ltsfIhU4sO5kNI-gvIlg2IoIwUQaey8xewTmzrbCVwwoZ2P4FKFmyhLQIkaU1UvNaSYMJafB5NSYGqK6RZLq9IhGp61uWQdZ0tQkCOCfDaLI5A6VNZjPIGRTviwbWmOas3XTy5mrt_LwL8akp0juPTQiQeUwkER0abFHajnse2UEVuajkuN4XlCZ1v6xv7ykwAotFjXtgV13y8mRrdL_EOcbu6ELMafBYRX_NefblxgJiAtFRuRN42SqNfmTQoEy_i0N7-jNnqxDX7MbQXpjunIscdEefqDZE5l9XlkhWQqEBKkykW4nIymDSAok6F_lMLn_BWswczgZPX2Mu-j7LGeCUCWZpHyWjKki_-gm-H8bJpVxJOhQ6-zPl3sFmYCI2PX8VyIMT5F-niVbcBRyJqQ6CR6Op-1dslQtfmF4_hsRPszo5Nk-d7q0CR-o0UXtBhN3VHFQM8Z6PUsy6BCIylJlHWfQm4vSSG8GSC74njn-ozAOC7oy9hYtbUOUcrNzJlgCof-ET0MHA8pSikb1cfyoDZu5wOfyL-yLr1MIBcWqqp7cc54yRVcLHOA-sfwbnyA8Rf4iQYNFZadU2eC00z1MhvlDleZJ6oCcO8giTgT_wk-8YZSpWsDufiO7nhnbr99ELrTLBt6-xZlCpUpxlHT78fLR2TyIyM-sNy9-0KdpKK0ZWLrswg0iu-6xLnGzjAznmbC-eD_TPw48K8vTJZZ-ysmW1vbNrlts0TPw6CXQqg-mHuQyWix4pHw4-gzlonSOOlX7LwV0oPmnJdiyUXqZk3vz9ayBCxggpCEsKOutCqw-C5be6gBUNDdiTLtj8gFiscpSaiPdn57FrWCpI0-X_oMTLGIAxoRxGwV1vH12YzkvL69b_On9GddLYaqzMVVhAxptFVkCkwYK9BiaBoxTL_1JCkorgj14b9gjt2TYg5C5PaznOQKSQ03Nd0YwkQW08h0m6WKcPkG6eGgJKr3JBRZckiqMg6ImBv-t2md0DJ4tTY5QiEHHE8ytIcoaAeClI3g61KpZzwaZL-79Jb3UKme469R7qHtmYMP0FIdTd76re1tzQ6Zdxo-SeH-yuIu425P7fttBiCt_JSY7Gng_4_MybGo2Vw2r2D_YfhTcxVlAjhjDmFZRA_Oi8QyqfHOGRtFu58YLDD_zlts4mWB1BnDgHIWtsrh8TM6OQhq3nlBgm8WgGXcCoQjCxO8d1hyj-eRaLP0EPiKiI5ndYKhaQr5D4bCWW9nGg9J3wUa1FBpWPUXvAkjxFLzjC-r8k5f6ogHiVxR13xxcIzEnY9gy-MzrzGq53bHXqa6Fiet1um8rAKgiuFPgUgqnaqAmuHqGKVzEP3ixkujR2LsisS_JA1jvmMT3w_s24O2O4Yxuq5m-1t9DgIOLX9UdYK7YTHdYSiuPBCwWza-JSyfvetI3SmoXlV-eGY55g3_lQ6ZJ05i19-P_xgNJNg0KHv1_ASlMvIgOV6wKHGw8gZjABxiJsHkkb-HLr36kCNXcwrL1NOF2eYgmGSBOArWwj2b9kcDx7meHtUPH7XHtantOxmkDB-BC2KwiZy9ZQMVtyBNY0Ta43t1RMiObDBz7sh1BQCAjdOrKDFSRlJzpEYwgapUCUJ9_bRIi33LJ4rCK0AsIPYjhTPh3IeAwsXmKMlPEUnA7GOyOAu_Q2Dt2g5DJZZgjR8KqL833tjrwA3M6pnqwu11lyWm2xx6BphImYf_R7npocvQ7fQ0Jkxwerpyu7K2_nrCXcPoOoGgkfG3owQUoWzoI0Pb5BLECYMi77cLhzeoGjKVsWezYOyv5aQ-UsVyfOuWsiVIrHx_BCjBWAuAqFzRyTWCp6YfOQjYiZMnnFzw_aVOE4Hthg3QvIX8Tvas_YYB-q4ZBIEB7ibFitQXvGl8sb-X6ocR0XDJQvy9a4RvRXD1gmHls8VWKgXTJI7F6RXfKyfo2387hekuyn0Er_-wWthXAzWwsIZbq52A9qLI8MbqX3N17QsZqHEWiJUsIQNqOytrouFlKkH3F4wQjSTJyYmKg_CaesawKM51fDexhu2smWqNziZNg8JrAkAqfZ9iaxm0wNn1ycYId3Jo0T6rQ-AB09JOE2aVw175aWI0kD1_uvWOB1DFtkH5GI6AlwPJoRvq2WZy9u1arkGxSuGgUo1i9cjgcyNUQbndU0p59vtNwHi-gQf_wxmMMo4DIjBMJASLHt_ioRlGkVJ6LI2E4UR7il4l7Q8bKG86AhFM5zUgI7c7XjdH2J43yZSB-7dic9MIFX1IzxMc6C6b5lPv_c-pQXp9OtvpNCbPv6TNzY_FRkRkj-wXRz0mcTYJvjPAyFydpIV692fmcH8O4vl3vnDxG8sxZq_Sr7XQCA4Tk3DQ8hXkUKUhGSzqS27aexiPJgf8Q8I6vHIXytlfgZoUgo91VnO8uq4mfhAAjdN2eyO8erlEdr_H0UK5zfq5qEnmXcn1aqysneKjx-eIUmth9206l-SgHoVVnu7WJq-rfk086mA8t-2J3Nj0pfuIhdoEUw9P1ZxZg_Ue1Hnn5lfpVhjubHHo8lvARv5_wduDzhUTDpJ_GXdKmx9x2qs7HRBnQ5qMvtF47WJWrd-vpYpG74NThe_H9Pzd72DLvKlAgcIx4NmkErijqrMwesyxEd44tjuKYsTn2H7PjqiyTzU550WJfHxLqL5qUjCgUyOKi4tQyepnl2tDjdzSkD_FGpiEtERtr67NWoWKcJHdTUvvEU7hPIwtkToppZ0pu-hmKdojGVbR_XksITSBGAA7MiCE4BV2u7Y4i7Rkb2KrBsBzhgONyEW5RH4LOxPIEzElL6zrFzMHefCbv7dAN5yoZOoNUBGJoTyhR8lxekfb0qKpgaitLAubcLo-3YlSo3cs1Ut4AZChv1r2kyYDh4xgMu0H8sc21oKVeCgJaWazc5t9u68Izw4xCfJGzPC8jAvSqTJyDtqZ_wG0LIdNP8B1w_luN3MNtzRvFHDnOvrTPDQAWnQoKGSiLlZCLHUpEX-jCl7gq46cSJlbv8xpGlYCCi58UfoSzibEmNVU2KU4rCjHMkEEwtspNDtkYTOLgg_Erq0CIHgKNu3eD5Wou6Qxc70uHPVTomjVqA51vgfIWIhk9cJw2YS2KsvOAIfldo3ueW6mD1RAaq3n6oD8UsH3JQM2RSl1F78l_wvFKckWLSaG9g0CYRZCC7C-BdYA8ZqE_yXmIwfi8nbilEB1cAUZ-mwAR6Uvpmk8KvYZVnY3zFhce3D31UGiq_cI2b0JliEWRb4jPg_MdWK95ZcgP5JayFc9MpIEykB-QB1AwvW2GxmW9sukY7F_guU_Bb1YTzJqaEb9cEPiIvwca4fDd7RKBcYlZy52xgicBU5kfruxHcrM_smYTxK3IaiS9cMSz88QOwNkRtbYeqD8avOUAauZz_APChoOiJQaK7FI8OJOLk8NUcH8Skj6EvoMzs-LDZs3XuedmTqfmFzfxTmKCu0KI2j1M8wwUz0bMFqVSBE3vC-toMgYJGXWIPWC0nYAdWKzkiOCTVjYgYnpauGa_B-YwvCfgLHcs-6saHCGTDG49lomNMEGcnPKAcyk-ow9GAJTCPC75LN580YaIiFw3V-p2ZgRJ29zio3CaivAZYMYbQ60YVngnLYHqmy_TPYUAr-0LJzvHh-RWGhw2cB4ku4uEjUghwK37xQeTwzDTg5bYRVEK2IiznWixnLpsJ8V6Swhfq4LbNGxHTyfzU4nTWRPWU4-oVQAqr6WxfACCqBew7pi9FahDoAWyrX_MSLxex0J2Rx__2p1RHP1KdXu9E1UKsWDickGnNCN2o-HUv2ZWOv5WJKMLXCWPSR9tMi5fBABgVYy7TOMaJNYDgDVtW0xQ10mNF1bwiZ5FZbhwYZzQoog8cwcdI3na-wfYHDnzB-zRiTtXHrpt6EaKYpmBISkrVjMa1xA5ELdRj5bMrt9M3l_N2c966RuI6WDmrqBetBxjTouiqOf-KgXOadL5kPxDZ5d34lHCTrdwz4011bMtYCjbFrFsByR1rQRNTeMLlPI8y0uZs16T36Mfj6AndTMYof4hvb3ysnvJ5g5DTTzkRp2ddlEahEQACL2RWjDf5cW3210IFaGmpiXMbpQR8nymm6jBl309ESubUy8UwwBMyt3tHi3mKswtIVSsWkYtoodxA2MYNPmz2trlujWimeYaqxV0GOvw9tdSIE5Gk6xGY8gOz3SLdi9pNQXyPJdNjazfwZH9jHYWpGBEoOQ5um64x0vsw-dikCUYCVhNTo84cpVImfzaMEJV6hBuFwdNi2u4dvsuayozsy2mQfVif-PToig0dutSPH0GOWz-HNFLAewDpETqA_SS1pGm1CV9BNPYzFLUDFPS0h5M4JieGIvZGZArReg-kSCplEl_XzkI7vUpgpZd016k8DuRHWPCnKaDQzm0bOHvr9NblnTu3CfOmSd1UCHchvufudtHBc2LxUNdikXtTDIwyiA2kL0VTmeE4-CzUzeIT5o4Mv_RY8Kda8l4YPz5nmqGr_oJAxdOCot6oAtymH_3pm3R8kOcCLSgoecMkm_dmr3XaIR_k4T7btd0LmqfZ8ea1MBsGf1fDwUju5DM-DfIpjvPTFsG1foD0c_w4T1yPi_u49LMr3sI94tAa8Uw35UtRcC1QlsX3VAROTJj0KUo8qe4U6skNQEYePPEIQ6eSSfC5G7HLuf8hlf2clFxwNnAEBKmlJb_3C_IJZ6CY3DyoQ8N3NKEEqORn-fbpfv3GH1iHLF6_q28oqrKwUHmcJd9phbNCh30c58k_QTGpRpv1C20dl1Oh6ovg0oNYae-3biG44_fqtsEUxmIjJvpYQtpj0hbX6MGsgQ_0iL6IB2UcFJ0x-L9arsInAGLz8xY2_hZQuSPQykzo9nGU0wpsxdhXhAlVXEly_j-o_Q-CExmMZeuOHjnFT79zYZsHizBnWDfHoCDnTlBkXXkogonYo6ep528jjcJioP_TqULGhCdNRdFc0RGWXzE-I6rM5l06UQK4aOVVGopETAYim_vLvNooMVdtVFp3BEe_H4aw50I4N5J5bTi7LiA-b5IwyJxFBlliWm3iUZ-Jk9wMNFrDxhaDlYtkJNI9ZIltz3LauUQE-Y3AbvpGnUADB91rK8BOhbRFaMCZHz50TU-NStxtd6xIuFn-YpcN1zMecXie-USsE8SvC8AU6I5flUANUwIMQud-uHPW8ZpyJV1Nc0hI4lTcKSRmuw8MQLRvsP8vMeIzgiSqohFbPywWo4MltSg8tt4LPZ0gWGp6y9FVaB17SezIrxGG8tWWiMYqnz0wxETSZ30vBOH0yH7giygiCtE7eQKfkqe9fnBEVnDI_brZqy5HJ3d6oYEMDBfBUNAMci4MMnaYaln28ZaY62DbbOjl-0bNjc9jLvZsVSVtYvA3CEH5bYJB3jX8BpAbJPAb-khPpPfdyxkO9VfUreI6YwNKwPAn4hQMl1pG6Pl5Z8h-zzKFsj9oVX5tx0791ZN4Wln09UrCE5Lb0OOGAcNfGxhWfU4l1sL4Un0R1YiwSc6SCoIQjn3OombsXGzQx4Fl2bdA1mzizfMZbTRvgx61eHT5aw8WpDjw97kGvR8y3hUkVJTYhGRlfaLCLmXOzz3VuDiH_K0BGTNGp5a3FpY3SektomWeDoXT42iLsWuYhKexdkT6GJm-w8Q5oSU94zszBHwzk1VVPBwt65UZdUehMlou1s8fOeQutj-ahdteEuVE_1CZVmLJ_n7qQG79BrKZtcHJwsKtK640G29IYGXCk6ubaqbZLfl_OqrugxEkVjy6Cj02RM0I_P5tne-CEIO_voRTFXBcMmkNi8KbetiqbJsm-6x9HhtN7wDniJYm-DzchHlFRf4QLQpparn0oc8gljbC6mzNil7VO4Urnrea7E6N-ZGC-T9plQX5b8KNCWJDuKoiemH-8d4VwIUtvY4zYyS4Wd_MfEVheT32fjZGVqT1Suj5jMf3XcWVvsfmPky_YgjLphyCMh31BRLTLGcj81iY44fsIIvYfMbjyrJm7Ww4sbUcjcjzifVUa70_UbsNhailibZGgOPCVXGdYTQhLvHTBt3e4A0uq0g0JO36vB0X.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_039af58a584ad04d016afb97d6f34887d187bcc846297fecde",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-5fiGIhKZ9hzulLsaBeWgXG5hvmy17sqWqh6aDDczhRkUWzL5glVm5FziLm4qntqEXljI-w4yBLEFW7mVaM_uvE-3L8WRIqjTJ5BvMN6p9lx9sbN3CyjuaXOELDmUosXHbLSTNWJLND6u-1sKhAbheOPfepMdrrazmHqg30yxVk0XMc43_2y-YubhlCpQw5KcoK6w8jKLoUm3cFj098o-zk3hBmKTvTKHJY5ZDWa4_cMxF36JnG2DCcZ8MR8_svJjdDOnDgDXAAOq-EShMKfD2kWz27A8j9ePfbEm6JemWYebZZ3aIoKS-vgOIbnRhfNjL5Op8uyoJPmGsKDAMY0tBYS4MUgIVk9EtsRZcQqKpIwzMdDsf81pYKksVCR2lEk2BC3lvh3ko4F-ukVHy48lENmydvKAssiusZRd0dwhhxlpYipD26-gSTc3rJPYJj27oEAQA04DwqrG2fquAlctLKM9Xo45cCbRww6MRXqha7_xtBFtYRZvg46_n1nwt9GHHUu_MrTHKJcG3S4Bn-Kcdf89OBNLb_JkEAdwR4iTjGwyj3APFj71riYMqqwhJeswCzJpIT9Guayu3nODAvF4292R8Tpaf4O9iQBh05t4fi7zoOSvhgN8kk3bE5R4I3_d1imQBW4JhQmgkA9YhpqPd_QDrtpMJExCpNiTYsI9oTzBeTJcy5eCI2BG35MuKaZ_Ld7uC7IweY8ySJfFHOUNSI414OYvB4xp6DPec1FGr62CgjVaEn7kBnVksgCn7oZavKRlvfgka3P61d6qQgLDzBGKf6DiF59YlNk_1RiEMXKHyIh2lVIrpGVVrZsu8s1diXzmVJeHOViFota_XAWXJw6msU9AQT83-jIkkvjNMdu2gOF_jSxd0vYZcailgTk49Ty3XyhKmh9sEov3Iihnh15Z2IXMz6stIhqfNjXqXnMueEqkGYzCG9e96wto951t-RZ6-kTF6PDx4aoPOnreu1BMtWodwKHUUIPbEqNEO9-Sa2bznBkjQDdXhdwJbzP1_KO3qXPbkS9lPGyN-1q0CAfO_htxIkrTFpsHNUKRfCOuikft82_3LLtgc6iXjAlYNgAh-zMXSkymxXIBLN9nVXS33fU0TjWyN6CZ4-7ZX5XlSSsFxa1gAEEkHHHotff1XRH80uwTrBHAuwCWh4vz4ebDn7sIT1SpybFgTpGkfwfTBWC9GF4iJY60l8R7QkRjlRxxs6iPoXHDOf3AE7GQaSp4C_YfwAxT6lpELcidmVNv2j_Qq9seAPNlQFaI5d4UGXtjE53sHddm_adrZgmitpeCLF-OB_nYKujZE8O3z5e3Bv0qlmVk1EyMGN61FJWoTyLLS4D0SM2BQFybB72VGzQYmKwpJa_h44VUdq9WYL_oYc5JokLUKiNQvxLZWVb1iNAd7GhDiXj-w66Ykb1WFYFzSDavi58iOInB0gvXH4hoRa2RgnSIJX1prtMdooOmeH7wAf6jjZFW7l8Qg4KcjbbFDzTTGTcUaoU5-v0gxK0iR-UAOevG-IMJxuY5VMuYSYY_q64davWhAnuv0JnrjPD5S_WWu6dxsxNYAWb2QxtfA8NMiuWWuJyuH6fHb8kLA--B26GvPLOLd64YHVH5nwMI1njiypDMvaGxUFsrgB_TJCEwNA_EtHJ2H30L55vseODTYavfAP0s_i7Jk5lUWrwdZ_6bMF3Cqq9h9D7R_G5c_OFb8Ruo7AeAFPpXcvgvhDDxZh_eTAZAPSi_EWAztDV0OnFye-7vwaxDloeRlBjOWc7fH9TeOtD-41OMkIlwDomxhF6DXmH49a8PAXjaO7kdEw6EypNyH97ytkzXhtZWuUpIoixQubcET367EcgWh11RJWH277fnGgd1YAfML-jTJ7_sjAoJ4FWpwHl5l-SF_L19zVLzeugYitiNC0UdM-uAp4GpitcaGaLNmmPuk1PeUi3gbMrrPIsEWaeH1bvkjYidOlcwLeWlaw5SQNE_rmkaaL78TzHUW2XvcYKG3za7BWObZI7Ob2Oekb43EUzZEnNMT529UpJXfZmSuLUSgZUkKNozKqx5B8nCBpe22wuFZB6heOmhCQx7VWChdDI4suTwtUsd33DnnbMSJ2CoagR3WdKF3OExtSDUOBmf4iuprUMP2Q8mPmoZp8YpykH64kt-5WexDd1CdBCYsly3eo0bLFND0G3ctu8JOgGCHCwGTayV9kFElDo4hkShh7cVUkdA1oYsO4oH7f2uLrCJlqlQ-Hj63pA_j67R4LTuj8O3FnkTFPQYakD7v9NRMdXzs_P582XON4yCo_qiJf5kJViRi3m-Fo42lNh30cCyhSxHXHkS2V2PqkI8It4_caMaCngS_H6Uz42Cdal2e14S38c-HWLpC18aZJEXJC7o_9ccZXfGtm5xcZislRdtIIMbPT-2RZcLcdByRd0I6KIxpJFZ9BKkg7-B51VeQ4aDadFpHAStH8g22IWMk0fysUSJqgB2x4pnAh_Mtffz3FRTtebnF97fmSQlR664o663m8vq8bEEUaHRPPpkxgHRrrynonl5OTNDgNtKaxVCy31zKhlZNbwY92f7f4FxjnuJKzJ1ceBR193YT7cW1a1zrofOlbQycO-ObMjxiTRZZ64IvNYeGk15JKfwVG7_HPk2_79uzV20OUMPmg_8IdL0P_ErBhoxA4KF_nlW38LEpaYS2gRmc7jjWUruMimC9QfWiKlnWq773CkKoN1h5xTMg2WkyyVM5QtNM3GPE4IqiiPbjtjV3KHL9OfB0ATHDQ4X7kMdWXZuRJORaIUyWiCmmW5ctXkfru2rGfwOz2pwX_3EjLhohND-AEtkquPpbCH9y9nvBH-4dA-JYlkL-zYe25ZS3Blr_euP9BLz_OnyZjFu-lt8yA4OG0eoQZqlkQBKZn4qeSB0SFCB-u2vHM1gBH6bVF8gthSouO_S4fr4jEp4iiXImlF3fk0hyxr2BZECDR05jGh96FMMyjFyN3JuPqgZGc5-B5yOahhynIRlzxTHRVV92kNrrVlmZ0rrYy71glUfpqb_6frRIR29M-kLkT7THjXsCjP-RraPOawQrgckOTE1llYU4Pg4C2SHi4GaBCGaHLQymEcOG-2cGnnxp2NInO0V8BbQG5VJlR9GIICa2O-giLC9CA_Q2Y1xlPU_t62anO2tIeY6L5eM1QPRRmw4XSPkwkN1K2q0M234dufOF8dZvmWfS6z3UZ98aqwddRHXkvKMnB1ZDwufebcgf3aVQY1X1xGfepCVq7jPJqFtjTx_4VLnVwmtD4sCzJNpvdv-IhxDUIiCv_5mq8Xs63MJn_jF8Ymah9ubKU4-k-RfFY0pCiLXpaHxKRhu5dKEiNhOAXEKFGPS4z6wgGqgnbFOsrMbDePQ-suglxuPMQJxHcXm4uOdmEjGXTbPBNZdIpjvExFWmPqGuQoVuk_IzCiO2vJRLS427XX7Q6fwsHHj2-dngqOQ4vfgNYPvS7ckiWWYjqbQagUiGrmxMEXm5dBO0MA1h8DgD-TM0joKlgxBIEJRR1vxAsZ9xiblu0FYKsFOznOQmZ-b97ckST125ymOX2g-2uVB11CiGzmtoDR0SHdYnNQxBtxtLoUPUp9rKoWTwfr_Q-Ym5UiYX51YRlMOb22PPJ9NW6A7vWISnCSjTZUW5s3qFp0QhaiLT6909L1IvQTUYPS0hSGX3M8hxvQmjC-W5GQPnnuA-rnbGa4LpEDTRFQSvc8tNLBmdihT3aLZxNBkWFqsfFjHe3Q5UcKbmJ7-usA1zu1ZuoUp0wuLICyVjG0LjUR2CAdHMt17ppJhj0fngfVV7KusEkg-BuEIGifqwPEHOpjMHQE0jrP0TLu5sWn0TeDNNZVLF63qky9xB6k62TFBOPQNwv3C1hv-yhGSw6FgtAOUupIL8gEaO0SOCV4qve2YCTEYs-2sGq5PZ09FTi4TEFWI8LVP3WlKxcKM7jlBaJqh8P76HGNwQq8iLVFjWWqBqoqoqJC4P36n4GqvfQ_GfWUeTYotw24dg5SEk8KK9hkBnk99J41WRFJ8cgMiqx3FfbdMOpbYJrAdbV8t-KyKVKaN2tivOXdKg436u4W9cDlzDgupwKT0AQRlzF7yzDfd8etKSKncBuhIAoEcrgzJWsKnvaJuOmscCVoFt5lNRuJ3xKoELegJv6WGRR5-W5kOVJ6_lfExfIrIfL6byKa2-A1UZACjd-S3HwOQ5LPz01ielhhD-OKx97pUj_FKurwzySsviJg9hF20mOPW3IaMrh6uZ4B8DzIpLmtlFI3vMmFQSabQBI5F6XEgXv8xPq6vfG92LW9jPR32kz4HDOZLc8YFEaq7XulFmpYpNZry_Cks6KOx210-OHvLbUPFfOhYpGSxVLYPsE1qpmqwetkNLSUaoxJTvFWKRXl37RiwDZt2igKJBrOj-alLp7LaOB5GcPArhHTVRWaYdQavp5-FFPJQvtPL1fra1Sf1xqRa8q_Nipc2UKlOMrvIjTGVvtnyLpPFPfVISzV0qZ2r7DYIZWPs4F4w7X4zf244JkgyFWMUqWE-qOp6EugqIVoioLjHM-R4mtaWItBCglZTxHLs8i0YfFDE4OolDKQAJKdszLLGAQCH6DwDZHvUGB-Xomkf86meaZoNKqZhlDRkj6yh_SizSDhk4FUjjwPd51EqzOrQXOVy5M-nQQMdBLGa3LVBw0CbesI4s3fx8SJeLkQxi633J-pPtBUEIhLh1_3w7PjQjjMcet1AQg8s5l2Tvqm-uVSneNl2z-5e64sqz1WEM6oYkilMpExXdY-r3RDv9VRG5l3gWJIwuN6PhsyosV6i2u-b5zpiEnHs1wzgUQKkyDNZxs-PIpcQnonVKTxYldKYbFycPXEsjDg_9EiyFWAVOCTn4fu0uO7_3SfqOQZxDmudgRmISDUinWCU-lzIO50PVSWuNOI1RYYfR2eZEQfgE2oTScw8JocN1Cjyblg_G614Rb7wJOQdvPXyGPxsPWeUrBneD7a1K4HPLu0gpBT9rDyPrGWDDSaxBXDCrIYPiwylR1T0lPl4r9Poed608cZ1Kp-G9wBXJscdRz7UuyOpqiIAvPO1If2aVv0DlhccWKJQ_iQ_sZa-DvZZJ_FXRXnagQrcZk4kGL1M0mm2V-t8SiwPN_nB7K4viDkkpuvzpsewY_a5ohKwQRDF4N8tnz5oKi7Esb5k-KVKSP65fwcXn9x1VD57sqGv5svp2wOY-7mLQ7bHtTvbJJE8JobqWnxWb3sTxrgTjFzbOvte_KybaCM4_YhgOj9NUDqXUpAkKVI24pw_PZF89NccUosEjcfBq_uvMa-VqbUScZRHEJ0xoYgC8btjedoJmnn_bA1bj4hTV7Scyyh6W1vU1PcdbTainehFgs5uXOxaaP9g1BXwZCTZATpTkI--TUTTs7SHo3xvzm7TRK0WyHKxkqvyoWY3BmG9_XHnMMlIUAJKUbKBppVa7jCQKdvHbBURCqDTdAW8Eo4_-pfPUw3hv5LNOIm9XrWgSjfcRwf0ZYkv7ReDErQe8u-hXbNgTnVvIS810cSQhWhMvtE85Q69WQ63MqKbeIQn1FnJKkrO0jcZlbNHorDbWRAqTxnzQKXNblyKlYn6zzYWQA5wvPF2t32T9ZRk0gsTaX7D9wOLa_KsEr96h9SZlPEJKpddcELeGyZJ_OIC9J8qk1RncpbGBJSyczfo6uLU1hmfqcokhp6bZTQ_ahoyr1Tm4XkF6uB2dt3QVqSFhDQAhK0BrrehqIikLze1OT556yQ_1U14GQKa5QxgJ7JW-tyFmVeOcSwZAN_KwbIYYGmGBJVzPzd9yRaZyd9m3OpdNSPfUSfgeGjuAEZJw29dtFCcBPi43ZKajdEhbIE-UqdP_Lg4o4zYW_nZBuB2N3hcIjUOOzvW9VsQGUGG9J474XT5lc-jXqo3noC-p5NECAUnOe5gJECrzI5COKjEP6FLDEXWwRQqm91mW-1fGCrvo0y-3Fkmt66UD8sx9d_Azq6nEn0Ty4S6c72HM35unRm65ODYfrpUlJ0TSW4KJYE9yHGLgXurBR5ZPhDaWP0WCkJtgxoJv-kdB1PyOKtLcY9sCJdy8c4hnTrCIpF10P2rEDXriF6w8ke09t-TJfqSwXrH7ZrMDuelGSzcPZp8oMt1fVBfOmGG0aEpqQIoZfP-xG_hVDl_7d7Comw3jk2yHW_n3MkCit5_QQANWmV6A6cqfShc7Vr7vdi-P65TktM5b5PFHx76Ji-tukWmAp9XmkSfDLD2m8IW8mYLm7Jywi2-SxbPPQ5eVrQByv2V0Na0WmqC1V6C748SV9xuQDGGPh--MH8E8jcPNGD7pbfVtcyjW5AFXWQZqOy7GM-ZzGoUBbEqJuJf-EFIt9vDbEStVUBk9O0mAwpVDOE9OyOAo81sFKAtCt90iNhfSkgyh8b3FECn2MJfQ==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_039af58a584ad04d016afb97de411887d19a7b85b2953125dd",
+              "index": 4
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794873293,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2037,
+      "prompt_tokens": 20356,
+      "total_tokens": 22393,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1458,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 20353,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.003562925,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.003562925,
+        "upstream_inference_prompt_cost": 0.002544425,
+        "upstream_inference_completions_cost": 0.0010185
+      }
+    },
+    "provider": "OpenAI"
+  }
+}
