@@ -1,0 +1,343 @@
+{
+  "id": "HadesFCS/McuBusInterposer_I2C3_SDA_FCC",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/HadesFCS/McuBusInterposer_I2C3_SDA_FCC/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/HadesFCS/McuBusInterposer_I2C3_SDA_FCC/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/HadesFCS/McuBusInterposer_I2C3_SDA_FCC/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 320492,
+    "sha256": "682482c9765e417ad90b8290214609c7f5bd5541a5864c58327e97634e506016"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"FCC1\", \"NAVC1\"],\n      \"pins\": [\"FCC1.11\", \"FCC1.27\", \"FCC1.50\", \"FCC1.75\", \"FCC1.100\", \"FCC1.21\", \"NAVC1.19\", \"NAVC1.32\", \"NAVC1.48\", \"NAVC1.64\", \"NAVC1.12\"],\n      \"nets\": [\"+3V3\", \"+3.3V\", \"unconnected-(FCC1-VDD-Pad11)\", \"unconnected-(FCC1-VDD-Pad27)\", \"unconnected-(FCC1-VDD-Pad50)\", \"unconnected-(FCC1-VDD-Pad75)\", \"unconnected-(FCC1-VDD-Pad100)\", \"unconnected-(FCC1-VDDA-Pad21)\", \"unconnected-(NAVC1-VDD-Pad19)\", \"unconnected-(NAVC1-VDD-Pad32)\", \"unconnected-(NAVC1-VDD-Pad48)\", \"unconnected-(NAVC1-VDD-Pad64)\", \"unconnected-(NAVC1-VSSA-Pad12)\"],\n      \"observed\": \"The MCU VDD pins are explicitly unconnected rather than tied to the 3.3 V rail; FCC1 VDDA and NAVC1 VSSA are also unconnected. NAVC1 VBAT is on +3V3, but its VDD pins are not.\",\n      \"expected\": \"Both MCU VDD pins should be powered from the 3.3 V rail, with the analog supply and ground pins connected appropriately. The specification states that 3.3 V feeds both MCUs.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"1\\\") (pinfunction \\\"VBAT\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(FCC1-VDD-Pad11)\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"11\\\") (pinfunction \\\"VDD\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(NAVC1-VDD-Pad19)\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"19\\\") (pinfunction \\\"VDD\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"3.3 V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"\n        }\n      ],\n      \"impact\": \"As represented, neither MCU receives power on its VDD pins, so the flight computers cannot operate; the unconnected analog supply/ground pins add further functional problems.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"HSE1\", \"HSE2\", \"FCC1\", \"NAVC1\", \"R23\", \"R32\"],\n      \"pins\": [\"FCC1.5\", \"FCC1.37\", \"FCC1.12\", \"FCC1.13\", \"NAVC1.5\", \"NAVC1.6\"],\n      \"nets\": [\"HSE_IN_FCC\", \"HSE_OUT_FCC\", \"HSE_IN_NAVC\", \"HSE_OUT_NAVC\", \"Net-(FCC1-PH0)\", \"Net-(NAVC1-PH0)\", \"Net-(NAVC1-PH1)\"],\n      \"observed\": \"The FCC crystal circuitry connects to FCC1 pins 5 and 37, identified in the netlist as PE6 and PE7, while the MCU's PH0/PH1 pins are on separate nets. The NAVC crystal nets do not connect to NAVC1 at all; NAVC1 pins 5 and 6 (PH0/PH1) instead connect to capacitors.\",\n      \"expected\": \"Each 25 MHz HSE crystal circuit should connect to its MCU's HSE oscillator pins (PH0/PH1), not unrelated GPIOs or isolated nets. The specification identifies an HSE crystal for both MCUs.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_IN_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"5\\\") (pinfunction \\\"PE6\\\")) (node (ref \\\"HSE1\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_OUT_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"37\\\") (pinfunction \\\"PE7\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_IN_NAVC\\\") ... (node (ref \\\"HSE2\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_OUT_NAVC\\\") ... (node (ref \\\"R32\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3\"\n        }\n      ],\n      \"impact\": \"The NAVC external clock is disconnected from its MCU, and the FCC crystal is connected to non-oscillator pins. The MCUs may fail to start or run without the intended external clock, and the oscillator circuitry will not function as designed.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"FCC1\", \"UART3_FCC1\", \"C13\"],\n      \"pins\": [\"FCC1.48\", \"FCC1.73\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"],\n      \"nets\": [\"UART3_TX_FCC\", \"UART3_RX_FCC\", \"unconnected-(C13-Pad1)\"],\n      \"observed\": \"Both FCC1 VCAP pins are connected directly to UART3 connector pins: pin 48 to UART3_TX_FCC and pin 73 to UART3_RX_FCC. C13, a 2.2 \u00b5F capacitor, has one pad unconnected rather than serving those VCAP pins.\",\n      \"expected\": \"The MCU VCAP pins require their specified core-regulator bypass capacitors and should not be used as UART signals. UART3 signals should connect to functional UART pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"UART3_TX_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\")) (node (ref \\\"UART3_FCC1\\\") (pin \\\"3\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"UART3_RX_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\")) (node (ref \\\"UART3_FCC1\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(C13-Pad1)\\\") ... (node (ref \\\"C13\\\") (pin \\\"1\\\")))\"\n        }\n      ],\n      \"impact\": \"The UART3 connector is driven by MCU core-supply output pins rather than UART signals, and the required VCAP decoupling is absent, potentially preventing correct MCU operation and risking damage or malfunction.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist shows fundamental MCU power and clock connectivity faults, plus FCC VCAP pins misused as UART3 signals. These are direct connectivity deviations that would prevent the board from behaving as intended.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "open_connection",
+          "components": [
+            "FCC1",
+            "NAVC1"
+          ],
+          "pins": [
+            "FCC1.11",
+            "FCC1.27",
+            "FCC1.50",
+            "FCC1.75",
+            "FCC1.100",
+            "FCC1.21",
+            "NAVC1.19",
+            "NAVC1.32",
+            "NAVC1.48",
+            "NAVC1.64",
+            "NAVC1.12"
+          ],
+          "nets": [
+            "+3V3",
+            "+3.3V",
+            "unconnected-(FCC1-VDD-Pad11)",
+            "unconnected-(FCC1-VDD-Pad27)",
+            "unconnected-(FCC1-VDD-Pad50)",
+            "unconnected-(FCC1-VDD-Pad75)",
+            "unconnected-(FCC1-VDD-Pad100)",
+            "unconnected-(FCC1-VDDA-Pad21)",
+            "unconnected-(NAVC1-VDD-Pad19)",
+            "unconnected-(NAVC1-VDD-Pad32)",
+            "unconnected-(NAVC1-VDD-Pad48)",
+            "unconnected-(NAVC1-VDD-Pad64)",
+            "unconnected-(NAVC1-VSSA-Pad12)"
+          ],
+          "observed": "The MCU VDD pins are explicitly unconnected rather than tied to the 3.3 V rail; FCC1 VDDA and NAVC1 VSSA are also unconnected. NAVC1 VBAT is on +3V3, but its VDD pins are not.",
+          "expected": "Both MCU VDD pins should be powered from the 3.3 V rail, with the analog supply and ground pins connected appropriately. The specification states that 3.3 V feeds both MCUs.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"+3V3\") ... (node (ref \"NAVC1\") (pin \"1\") (pinfunction \"VBAT\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"unconnected-(FCC1-VDD-Pad11)\") ... (node (ref \"FCC1\") (pin \"11\") (pinfunction \"VDD\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"unconnected-(NAVC1-VDD-Pad19)\") ... (node (ref \"NAVC1\") (pin \"19\") (pinfunction \"VDD\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "3.3 V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs"
+            }
+          ],
+          "impact": "As represented, neither MCU receives power on its VDD pins, so the flight computers cannot operate; the unconnected analog supply/ground pins add further functional problems.",
+          "confidence": 0.99
+        },
+        {
+          "category": "open_connection",
+          "components": [
+            "HSE1",
+            "HSE2",
+            "FCC1",
+            "NAVC1",
+            "R23",
+            "R32"
+          ],
+          "pins": [
+            "FCC1.5",
+            "FCC1.37",
+            "FCC1.12",
+            "FCC1.13",
+            "NAVC1.5",
+            "NAVC1.6"
+          ],
+          "nets": [
+            "HSE_IN_FCC",
+            "HSE_OUT_FCC",
+            "HSE_IN_NAVC",
+            "HSE_OUT_NAVC",
+            "Net-(FCC1-PH0)",
+            "Net-(NAVC1-PH0)",
+            "Net-(NAVC1-PH1)"
+          ],
+          "observed": "The FCC crystal circuitry connects to FCC1 pins 5 and 37, identified in the netlist as PE6 and PE7, while the MCU's PH0/PH1 pins are on separate nets. The NAVC crystal nets do not connect to NAVC1 at all; NAVC1 pins 5 and 6 (PH0/PH1) instead connect to capacitors.",
+          "expected": "Each 25 MHz HSE crystal circuit should connect to its MCU's HSE oscillator pins (PH0/PH1), not unrelated GPIOs or isolated nets. The specification identifies an HSE crystal for both MCUs.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"HSE_IN_FCC\") ... (node (ref \"FCC1\") (pin \"5\") (pinfunction \"PE6\")) (node (ref \"HSE1\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"HSE_OUT_FCC\") ... (node (ref \"FCC1\") (pin \"37\") (pinfunction \"PE7\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"HSE_IN_NAVC\") ... (node (ref \"HSE2\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"HSE_OUT_NAVC\") ... (node (ref \"R32\") (pin \"1\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3"
+            }
+          ],
+          "impact": "The NAVC external clock is disconnected from its MCU, and the FCC crystal is connected to non-oscillator pins. The MCUs may fail to start or run without the intended external clock, and the oscillator circuitry will not function as designed.",
+          "confidence": 0.98
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "FCC1",
+            "UART3_FCC1",
+            "C13"
+          ],
+          "pins": [
+            "FCC1.48",
+            "FCC1.73",
+            "UART3_FCC1.3",
+            "UART3_FCC1.4"
+          ],
+          "nets": [
+            "UART3_TX_FCC",
+            "UART3_RX_FCC",
+            "unconnected-(C13-Pad1)"
+          ],
+          "observed": "Both FCC1 VCAP pins are connected directly to UART3 connector pins: pin 48 to UART3_TX_FCC and pin 73 to UART3_RX_FCC. C13, a 2.2 \u00b5F capacitor, has one pad unconnected rather than serving those VCAP pins.",
+          "expected": "The MCU VCAP pins require their specified core-regulator bypass capacitors and should not be used as UART signals. UART3 signals should connect to functional UART pins.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"UART3_TX_FCC\") ... (node (ref \"FCC1\") (pin \"48\") (pinfunction \"VCAP\")) (node (ref \"UART3_FCC1\") (pin \"3\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"UART3_RX_FCC\") ... (node (ref \"FCC1\") (pin \"73\") (pinfunction \"VCAP\")) (node (ref \"UART3_FCC1\") (pin \"4\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"unconnected-(C13-Pad1)\") ... (node (ref \"C13\") (pin \"1\")))"
+            }
+          ],
+          "impact": "The UART3 connector is driven by MCU core-supply output pins rather than UART signals, and the required VCAP decoupling is absent, potentially preventing correct MCU operation and risking damage or malfunction.",
+          "confidence": 0.99
+        }
+      ],
+      "summary": "The netlist shows fundamental MCU power and clock connectivity faults, plus FCC VCAP pins misused as UART3 signals. These are direct connectivity deviations that would prevent the board from behaving as intended."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Identifying netlist issues**\n\nI need to detect glaring issues in the netlist, as there are many apparent errors, especially with MCU power rails being mostly unconnected. The +3V3 nets have FCC decouplers, but no FCC VDD pins are present. The netlist indicates that multiple FCC pins are unconnected, and only one VDD seems to exist. It looks like the NAVC +3V3 is tied to the VBAT pin, while many other ground connections appear odd. I need to report these likely open connections for the MCU supply pins.**Analyzing netlist mapping issues**\n\nI\u2019m noticing that the netlist shows the HSE_IN_FCC net connected to the wrong pins, specifically PE6 and PE7 instead of PH0 and PH1. This suggests that the symbol pin mapping might be faulty. The library states that PH0 corresponds to pin 12 and PH1 to pin 13, but the schematic reflects different connections on PE6 and PE7. This could lead to the crystal not connecting to the MCU\u2019s oscillator pins, which is a significant anomaly. The NAVC HSE also shows similar issues in its connections.**Clarifying oscillator pin connections**\n\nI can identify the F405 oscillator pins PH0 and PH1, which correspond to pad 5 and pad 6, respectively. Interestingly, the NAVC pins 5 and 6 are shown in the libpart, but there are local nets (Net-(NAVC1-PH0/PH1)) that include capacitors but no crystal connection. This discrepancy is important to address, as it could impact the function of the oscillator in the overall design. I'll need to make sure these connections are resolved."
+  },
+  "usage": {
+    "prompt_tokens": 107605,
+    "completion_tokens": 3243,
+    "reasoning_tokens": 1504,
+    "cached_tokens": 0,
+    "total_tokens": 110848,
+    "cost_usd": 0.01507205,
+    "cost_details": {
+      "upstream_inference_cost": 0.01507205,
+      "upstream_inference_prompt_cost": 0.01345055,
+      "upstream_inference_completions_cost": 0.0016215
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:17:52.997239+00:00",
+    "ended_at": "2026-11-17T00:18:19.816427+00:00",
+    "latency_s": 26.818
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-17T00:17:53.064Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 4833,
+    "moderation_latency": null,
+    "generation_time": 26732,
+    "tokens_prompt": 81552,
+    "tokens_completion": 1807,
+    "native_tokens_prompt": 107605,
+    "native_tokens_completion": 3243,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1504,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.01507205,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794874673-IYEUEvO0SP4ODaDQ2Tvv",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794874673-9SV3JsVRGf18BHN6VsWa",
+    "upstream_id": "resp_03582e87e66f2254016afb9d313aac87d197ffcc34c62e2634",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_03582e87e66f2254016afb9d313aac87d197ffcc34c62e2634",
+        "is_byok": false,
+        "latency": 523,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.01507205,
+    "cache_discount": -0.00269005,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794874673-9SV3JsVRGf18BHN6VsWa",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"FCC1\", \"NAVC1\"],\n      \"pins\": [\"FCC1.11\", \"FCC1.27\", \"FCC1.50\", \"FCC1.75\", \"FCC1.100\", \"FCC1.21\", \"NAVC1.19\", \"NAVC1.32\", \"NAVC1.48\", \"NAVC1.64\", \"NAVC1.12\"],\n      \"nets\": [\"+3V3\", \"+3.3V\", \"unconnected-(FCC1-VDD-Pad11)\", \"unconnected-(FCC1-VDD-Pad27)\", \"unconnected-(FCC1-VDD-Pad50)\", \"unconnected-(FCC1-VDD-Pad75)\", \"unconnected-(FCC1-VDD-Pad100)\", \"unconnected-(FCC1-VDDA-Pad21)\", \"unconnected-(NAVC1-VDD-Pad19)\", \"unconnected-(NAVC1-VDD-Pad32)\", \"unconnected-(NAVC1-VDD-Pad48)\", \"unconnected-(NAVC1-VDD-Pad64)\", \"unconnected-(NAVC1-VSSA-Pad12)\"],\n      \"observed\": \"The MCU VDD pins are explicitly unconnected rather than tied to the 3.3 V rail; FCC1 VDDA and NAVC1 VSSA are also unconnected. NAVC1 VBAT is on +3V3, but its VDD pins are not.\",\n      \"expected\": \"Both MCU VDD pins should be powered from the 3.3 V rail, with the analog supply and ground pins connected appropriately. The specification states that 3.3 V feeds both MCUs.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"+3V3\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"1\\\") (pinfunction \\\"VBAT\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(FCC1-VDD-Pad11)\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"11\\\") (pinfunction \\\"VDD\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(NAVC1-VDD-Pad19)\\\") ... (node (ref \\\"NAVC1\\\") (pin \\\"19\\\") (pinfunction \\\"VDD\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"3.3 V feeds both MCUs (FCC, NAVC) and all I2C sensor ICs\"\n        }\n      ],\n      \"impact\": \"As represented, neither MCU receives power on its VDD pins, so the flight computers cannot operate; the unconnected analog supply/ground pins add further functional problems.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"HSE1\", \"HSE2\", \"FCC1\", \"NAVC1\", \"R23\", \"R32\"],\n      \"pins\": [\"FCC1.5\", \"FCC1.37\", \"FCC1.12\", \"FCC1.13\", \"NAVC1.5\", \"NAVC1.6\"],\n      \"nets\": [\"HSE_IN_FCC\", \"HSE_OUT_FCC\", \"HSE_IN_NAVC\", \"HSE_OUT_NAVC\", \"Net-(FCC1-PH0)\", \"Net-(NAVC1-PH0)\", \"Net-(NAVC1-PH1)\"],\n      \"observed\": \"The FCC crystal circuitry connects to FCC1 pins 5 and 37, identified in the netlist as PE6 and PE7, while the MCU's PH0/PH1 pins are on separate nets. The NAVC crystal nets do not connect to NAVC1 at all; NAVC1 pins 5 and 6 (PH0/PH1) instead connect to capacitors.\",\n      \"expected\": \"Each 25 MHz HSE crystal circuit should connect to its MCU's HSE oscillator pins (PH0/PH1), not unrelated GPIOs or isolated nets. The specification identifies an HSE crystal for both MCUs.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_IN_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"5\\\") (pinfunction \\\"PE6\\\")) (node (ref \\\"HSE1\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_OUT_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"37\\\") (pinfunction \\\"PE7\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_IN_NAVC\\\") ... (node (ref \\\"HSE2\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"HSE_OUT_NAVC\\\") ... (node (ref \\\"R32\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"HSE crystal (both MCUs) | ABM8G-25.000MHZ-4Y-T3\"\n        }\n      ],\n      \"impact\": \"The NAVC external clock is disconnected from its MCU, and the FCC crystal is connected to non-oscillator pins. The MCUs may fail to start or run without the intended external clock, and the oscillator circuitry will not function as designed.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"FCC1\", \"UART3_FCC1\", \"C13\"],\n      \"pins\": [\"FCC1.48\", \"FCC1.73\", \"UART3_FCC1.3\", \"UART3_FCC1.4\"],\n      \"nets\": [\"UART3_TX_FCC\", \"UART3_RX_FCC\", \"unconnected-(C13-Pad1)\"],\n      \"observed\": \"Both FCC1 VCAP pins are connected directly to UART3 connector pins: pin 48 to UART3_TX_FCC and pin 73 to UART3_RX_FCC. C13, a 2.2 \u00b5F capacitor, has one pad unconnected rather than serving those VCAP pins.\",\n      \"expected\": \"The MCU VCAP pins require their specified core-regulator bypass capacitors and should not be used as UART signals. UART3 signals should connect to functional UART pins.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"UART3_TX_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"48\\\") (pinfunction \\\"VCAP\\\")) (node (ref \\\"UART3_FCC1\\\") (pin \\\"3\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"UART3_RX_FCC\\\") ... (node (ref \\\"FCC1\\\") (pin \\\"73\\\") (pinfunction \\\"VCAP\\\")) (node (ref \\\"UART3_FCC1\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"unconnected-(C13-Pad1)\\\") ... (node (ref \\\"C13\\\") (pin \\\"1\\\")))\"\n        }\n      ],\n      \"impact\": \"The UART3 connector is driven by MCU core-supply output pins rather than UART signals, and the required VCAP decoupling is absent, potentially preventing correct MCU operation and risking damage or malfunction.\",\n      \"confidence\": 0.99\n    }\n  ],\n  \"summary\": \"The netlist shows fundamental MCU power and clock connectivity faults, plus FCC VCAP pins misused as UART3 signals. These are direct connectivity deviations that would prevent the board from behaving as intended.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Identifying netlist issues**\n\nI need to detect glaring issues in the netlist, as there are many apparent errors, especially with MCU power rails being mostly unconnected. The +3V3 nets have FCC decouplers, but no FCC VDD pins are present. The netlist indicates that multiple FCC pins are unconnected, and only one VDD seems to exist. It looks like the NAVC +3V3 is tied to the VBAT pin, while many other ground connections appear odd. I need to report these likely open connections for the MCU supply pins.**Analyzing netlist mapping issues**\n\nI\u2019m noticing that the netlist shows the HSE_IN_FCC net connected to the wrong pins, specifically PE6 and PE7 instead of PH0 and PH1. This suggests that the symbol pin mapping might be faulty. The library states that PH0 corresponds to pin 12 and PH1 to pin 13, but the schematic reflects different connections on PE6 and PE7. This could lead to the crystal not connecting to the MCU\u2019s oscillator pins, which is a significant anomaly. The NAVC HSE also shows similar issues in its connections.**Clarifying oscillator pin connections**\n\nI can identify the F405 oscillator pins PH0 and PH1, which correspond to pad 5 and pad 6, respectively. Interestingly, the NAVC pins 5 and 6 are shown in the libpart, but there are local nets (Net-(NAVC1-PH0/PH1)) that include capacitors but no crystal connection. This discrepancy is important to address, as it could impact the function of the oscillator in the overall design. I'll need to make sure these connections are resolved.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Identifying netlist issues**\n\nI need to detect glaring issues in the netlist, as there are many apparent errors, especially with MCU power rails being mostly unconnected. The +3V3 nets have FCC decouplers, but no FCC VDD pins are present. The netlist indicates that multiple FCC pins are unconnected, and only one VDD seems to exist. It looks like the NAVC +3V3 is tied to the VBAT pin, while many other ground connections appear odd. I need to report these likely open connections for the MCU supply pins.**Analyzing netlist mapping issues**\n\nI\u2019m noticing that the netlist shows the HSE_IN_FCC net connected to the wrong pins, specifically PE6 and PE7 instead of PH0 and PH1. This suggests that the symbol pin mapping might be faulty. The library states that PH0 corresponds to pin 12 and PH1 to pin 13, but the schematic reflects different connections on PE6 and PE7. This could lead to the crystal not connecting to the MCU\u2019s oscillator pins, which is a significant anomaly. The NAVC HSE also shows similar issues in its connections.**Clarifying oscillator pin connections**\n\nI can identify the F405 oscillator pins PH0 and PH1, which correspond to pad 5 and pad 6, respectively. Interestingly, the NAVC pins 5 and 6 are shown in the libpart, but there are local nets (Net-(NAVC1-PH0/PH1)) that include capacitors but no crystal connection. This discrepancy is important to address, as it could impact the function of the oscillator in the overall design. I'll need to make sure these connections are resolved.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-505T6unTQMaqhSG8a7XgRbzfWhH-aFGqRJxcMZoUeym1MGUT0BmOdkbjVZ2SzPyRvTMEvkfWGuSA-VIJRtwEyoTkPDLvqzYwN8-I6wMkZseDJv6_mWZg3AXW3FYqJEXlZ6YuhfRsGyWwsS0T7Gyg9aicY1W0Pw5cYo8eGqXyNkf5W5zYGtAPvHnEu_z-3nP8xmnEAvcWT1BCoNVPxo3_GiBogt-P8TI096pu_TL3ReShuBcGT7O3HD868k0Yzg_cAIkkN0HiCRO5KXquChOBzvOugGLpbC7gdbqOK9sCgk8_IqVxV9JwKKpSSg1zaXdWoL7wBM-yGKZuAb6RiJ-0Ik7PGySulxu7CWlTO_Ij04D3IpSnoBf2qUgT-cctDqTBQakivMSEEZHO1kXw2kOzKdvcPrGlHXjsHkkO9bsPY8SQBWVd469dIYwPuCy-j-YvOjGZ-60iCjeDyUm6I1N9Vab1eIaIL-kSr31rJe9fVm_06pRdK7AX4a6Upj8fFQR1CVhk0mmn3orc87igaXHhWUPrpiMTVY-rSMeKAWrAcPm--PzToseOwVft9D23sp8EDU96di36dgYU5hKTFq40qYGGtnojM_DxxlRlImcJ6oDuHAaRa9GKdEt2dRbLJyzZSs771MYjseWOQAS1lZr6my8w8jyJ05Z4e27j_Py4nTg_hTJbZrtIoThg9jxC7ANZZ3ATxlXf5WWRiXUHsZUq3a_lS-Zx2-KHK6EknHU3vkxXGRYHl8S5FmuM2cDC49BLsrMsdRgfJ9UmnVgLM_ikCCK9i4Iyf8gMQhDAHIzGZHPpDeWoDz8cWnxkFh-6_U2m6f1aaNCH9MWeu8GRE2e7-m-clHnnre5d81JBv6s6jhdaEVAk6ZFKgTmb8Uii0OQaJNUs-cAHWgIuzQ-6zdwb0MdGmrdcm0UMkH-IgVgvxLGguVUN9UqdSZZ5emuz4itO7z0ZtZyB8NJ-4yXq43_bk4G46nQhRYpjbOCz5EDcsqU9h5yITXgnDwY7aXGNH-JBj7FuJQjIW90Y1smQ2z-FCmJfZIdTOdspGDuSpaWhfNl0WNsbkp3nkcr6A_4SZH8c5WwS2RpvzgBCfrEGYLdLuq7bFTz4NUM0GlkKQH2N7JYvnxWNCxgvRgI4W6ViHeRGxMVaIQMnQl0P7oIoOW6Pg1XbI1VvVODUL0U5w8gKv6KF5KvxBW79YIf8ErpnPC6evnANZPyFYCsmvswFd01hD39YM4VIAUce1pdaYB87fhbkl97XJnpjzW3n6wtJ1qXJgVT5EWhUNUEQKECYPJ2jgBg-WjWhXkBsPiQSlrFZ74fUQl1mJT_0gNrsKQjgeXY1AjfKDFetxEyA-4K3HUvon8TPjTPEOsRWdtETbtqoKO2M3RiMc6jb-n9vAf1dtB3Vm4tk7NzIYAx8BzKij6_GX1KxqA-T__8YmirHszKLjeRy8nW1b2BwIr3Q3xxMM2tIWnhKHUyyaLhzV2qdp6JR1u0exxYmgZcDnsQZID0B4tZpIhVsH31YhQJQREstUJgog8AoEq5RIC4QBq813H5PxhpEhqj5j0UB3QJ-gBPIXztUuZTOKEs-0Bylio7MIYbXHTeePvate6YTZ6gG2lj5kNgVtDFQfdPsP_ZGwhMbruaUMIWpLXLpxAvf574Gf1IBnmig0tKXHsC8Wgil_BNSkXbiwR3uv2jV6b48wo7keCiUxhF8bZDBBt86NkojyjHN7eMQP4_UbVi454vkkcrsK3NAbT5LJiRU0FDENWjexCEwTLioNpE1QTGkjNqIwZT4K104nmYs-zph9UlwO2cAIYgPodWgKPdlL1dqHueY7KOaKykMAFC-Ivaem3BlvnXCRH7VB_YOeKvDZDH3TXrHg0Ns72Pjl9xb5zD322G00VB2HBYjPt73mqctSte1xc4lc7ITGLs52QvoZpW7GDjYyLQ-l0xp3GvHoa1j4cCuT1JKlbbEJE_oUcYZor_FrFoN2OdtwnN_ACrPeYH4gpxZQAERFj6KIeOSbilWiFiXL52-pIqaC5xwfkbkiGKL8LOdymEEXsIksZSC2JO-7acXWKDqQkx_bQusgNf0NHSna7NY-VwFRnmbCR_8snup9Qf5SNsmswE5a6nkWJlquiokDuKWChEq9Wyi1UfXQbPuLywBxE2T6KU0AuCyWbi-T1-eU8nz-dGBjMz8dc6qu7x4LArGYtNedSBOycqS7wTcQ-uFWOomIlO-sWZz_XC9Hden_eRtbjYkKNUcalugICAazEE5bG_pCkpYwPD1ZX6_qHBzm2PkaOmss9aQJOtkh6R7bxW1dnZ_iACga_SpjeiRMbR8h1ntHL6hM4BEJjeb6r9CALuVvuXKrOR-IV0H1-xxVD477r6yfpj-WUeU05IKl13f_YQtbQIttQ_Dc7B2wHDyCku_YYvRk7y2RdpvwpEWXNEo9iavlrqgr7qfZKY95S_70mGtJAViiUcxtRdUbZ22t3e79WPJsukwl8vC-S7uuFlBY95x7csrhwJTwIiyll1_bN03OamzBbshbkzqeMXTuyKx0_tYdGJ7FZ3tYe2mxTIiRpWmqouaBR7klFWBvzwRnl3OnWvCcHY6233hX5eq7Po0JBtUH4dDPEhz0DYo790XhyqNKbpF8CD7_m8roGoQmNsOKWpCmwrkaaX-m1rblEs313CD3AM8eqw4v6AITXJ9AcxL5Z2L1qqYNCsA6-aqC-gS4Y_km-YVALFl7FXluaKZkuts3k_T1cTID-aQ2bUbhsagAg1GMRtBxk75ofpPnCYgCPhGRq8waS7Wc7hHf9cwcEg0fG0vl3RHv6_S4rhDcGevk9gsPEIcm2ESRsL8RkeN6krPIfJMnHD-dpFgLCawZzzOsu0d1plMSq7NM5ktYzitB51b-i60ganorZ8sd8b0gaTr8C7d0rmMyHxl6S1VZnoSwE_I5gIp2ctfyVrXf5uWjz9XJahi2AImj49v-gzcYWIgjpMH9vOrf_UH6Y_wxyD3Xj8dv6ZRkCsO53QnOD4AH_Xexna2w5EMILjMLoouf8pGCMTGCUvPe98CunbB1LQat8a6u9pxe6CwTFwXxmrpT-SP35HLugilp0gf56Ku8s89fnfGfumNBZFSHdHPWsRlhbFKqTVuxPd7HMWG_3187FS4BZHhpSYYKeyL_TfB5GDVpXhianzOacS1-BVlsEUp8BQSKnbqXmiYYlitZmrt7Z9wPFyDoNxgHqYCXpa9_SQ47Kqbnbrc1uCnFVBIYQK1kdWMqUGOIe2J05z0acFqVWbacZ_wRUubQcsv99ocXYBGwB6sGHtvtOnoh9JTlM5xBtcD_YJcDR8m-DA96UB7aCnaOWOTuUiPVgNDoBtd_-l6V3R4U2S9Q1I5blSsrR1cOrTGSqAStFC-i3W_84i1fqw2d9iVmaQ4t0CbeNo0yCHL8RWisI03_4EPi82-5jagfB1nGFSYvkVUSDAl0To-ipYJs_MGjfmVlGqu0zV45pEEdXghAReuwUBkZqmypYSdcU9xZkgsYSVm8GtiEvIjDnVnyejpavNnF1NFD8b2J58L_CPcd1VHd61YljuzDNYQd_kvwprEv2QXNSpvs8d5HhLUq22VW7mQIuneT8v7_zUhdcKpuCZxHUO9txbbjeJrA6IfV8e5NP7fvLW1G_fCyi_oOJDAgZvguNlZ8lz9Xv6YECJpWEjuDAWCfhTXnehhZxR5TqYot_SOiTZBi_d5Q_vGZmzSL2rQIBuePCcgDwcyMYjZXmoXw8QmBSBxjONLvk-Qfkhdr87IgS3a3YDkZ1m2-wPsyKqYv8s-vzwPmXv1JCo4dOf0-J5ZgHrW1frBxuOXFWfTew3jHi1POioPml5TzEDJP0uXBOAu_tQ-xbiOECAUroO_qwU9DSY4RUIr-aj8j-apByhjOKSyDg-uCPIIF4RaIF7x0pegoJntJ-LvUhSfLOlkjv5aVXuDMF2CCJKQNiMoX8RnCl7umINIdSTJiTtX0MnaRRNIvnE3R5kl82JB5hMsqP_oACesBMRzua0sarL4syGToaVSt_Zu15i85dYI6ovhguF7lbcVZtnlttzQWEqFqifthAh5-CClsVXqCfKvSs8tbyfccSmkhgojKSwEzWfd_YcM8yLulOyuB4w1FHbF5xjkJoDsA8A21elMlzPxVIxXtwuUciv3NGmF0QdbRNCed7G42cyfpufBWuyx9i6wxGIuph1RVEkWQBUAcqgDB69OuXw_2BtX4AZGQuQxauchh-VfQOY_vNYUv4mB8AJZx7-c334GTfNDSNOpj7CcG0NP945O14n28aXtzvU6xEyhT8IqLKOmgo8GFv6jVUZVdY9iLNSK7lLrRmJ_7wrlSTJdrvkZoBOMo06U_4OqpRImNDBbS7iEJjNFpSEX_biXBvlCqsbxIgFlOvUPyjo4igbYRiXZ7XJhOmLrbnfVPCm2ZYfU6XW6Gb3LKNnd8AVemAEdbYMm0TvpEUZUpbvcJyvod85zex3j_MUPTxceqoVUbkegH_ocYNO84_lLDF2WyslvxKC3VWwIFkTcwSm8RodqId1KesIntnrwzMYaMlCDcK21675rWbltIWJm-dccD5oAj0zMOtqdQ2iJg9iuI3Be-MFjZLhpxkWYMIY0AWkSpuXm-MH3qxcW2oK6eocffj7MxdKEr4hSQmQPzWi1W-nhyNkg-Et7NPqEhczNzWJkJtm2V8VWrG2MZk7R7LOGShFRIJP0vq3NekrnriXxju1L7tRtcw4U2Ef9b6eUdueLv1588_5CzM0T35-jzQ91f8C8kpG6qee8GF0b1y8qq_I6QeOH6pfwdd8uFQ5gJYWdeCMjHl3STehT1iF-aiC2FCdKMiXHdvSGb797sqC-mo_kRjzKuwHxJmPyLh-KFTcvaW_U7BZezeIVJxD1vQjzlEH2wi20lX7iCPYxSvYYZhd9nEsKcf_KCcqlSjRRkpMP4Nb1CLt5NR0KbLbXDBeues2xvn8cKNKMYM7G_ftHxiwipjDL8uNcTggBAiem16Wgbz6hUfIGANKkDI45BHqHxnQ_DrUnNPXGIxYEtvgUcbgWXokq6OGZ7i1sdxVl-6OA5Qy7-xnIFXW4mPe1TQNrDDQp0toXnK7KPLhcMAhbV3_2PCx0KRBVyXIsUjQREFUPDerWVhXpaTe_OVuCcVLtQft1-5qcv8VDwPj7ZnkSBQ-fAeLeIz2m5JVj6HnXme3HVm5t4QnJLmT_8NLnrkmQzVMQCGcUtRTNxo6JMx7KnTF-6GVfn4hEAC4cyYPhEm7gsIz0gYLtsbrJ2Eq2pXs10axObUxJ5ccxxy_4JP1jp34Bt8meWbMhyjFqz92RyU1Mrsviy0F5oD2fVyg72-gLezlu-m0S4DCgbbNCYYoCokKaTrNhBvzun3drI2B564EwRqjZUYQ0C0QPV43TTAopBfmvw7FKqdpe7vts-guEOnQDqRRjGFhLr7BhGGALJXL_tad0AD6YRAlkFy7UOdoYlPa3jxJfhFRnu2ghUSezn-we-ckqewzR6ZEhqi2fdobUKZT6JVnSamEj9Lz7uA18zW1V6pj227g5PK_xSE9GhkmDYthdmbx_ythlt2m_jOM40rH_CsxymPaMeYYKP0MaC5MTAALXdGEmQRuUThW-rnbyLUcebMg7ovgqssHDC_VCEUUqUlBAXeC_vs1uVVFK4i9QQ2_R43G1c4Bo_5_OWMfhTb10qExK0KBZ8mjxQWO5SEES6mnworq1iDNpiTLK4auP_eEEZu7oF0JP1OPBL3Qh47vfoZHPyjOblibtnvU5Hn2hDn2cIyT8ouYdbWl8Uocq1oeh1lHn9bwmvhVX7UbWQUh_YfH7AMTfFWWVrCTEDKkwYoT356A4CWGz7EugewCA-Mj9OcKmHtwKBKkgRB961Op9u828XKvADnlv_UhixfxMh9rhZk2Mfzn-RS_opTVCi2nPs2afmHvb6X8tK66GTPL9DjJVLv7CtxguRFDOKhV-BAr7zubQNhkd0qzyg-hm3FRzJn8fdyDJqVKOq7fiFkPF1emjy77n8XQQn_w8DLP05qIRxnXreyjSAIevgORZF67veGKTnNy4g9KLT3yEOLKk-GYTARrSQ9A6E9oWVGVrQy0ER_s-J6JclQCyhm1fracENId0cB6rZ_qBsaMGAnFbgMCXf5nl6cS-OW4AL5hbHKUuhasIqdri1bGnAuEPFEijImj0QiF8SOkL-W20O4vDasXr2_xWoXs-w5dCYK3zK8AGbUgIL9CYdJV9szjXdNq7K3rTYcuC9tD5d9HBetsuzqJjE3iEEWxF8dDcXAn2tjhW4MPgBjoFgzXUFoTSQt8wOpJApWuY7IlHJeMBmuzTCnh-U4msV_NPObmDHRgX0qN1NuWkiq1nhqGJfERGnTYasZ_xJfZ1X_tVR7qC75v5yaLz-__FlQzpx4CapugD4mJoUHfoLaF8HchftzVrz-vyITyo9vwcQRVuhV_dZ0S0m4euwu9cWfsVFEjnS_BfJvJp65ukq3QpBKG0kiHJijzBhXESvxDKzw3WLMkEFi7sfuJHKMmyEr56gJ1WDXuRQIA4Wo9-k3VW7lJJgO4xcce3Z6UPsFM5xbWh1yi2HKD-XebFM38xFgOgPxPPfmmef21T4xde5gczywkhWVaRT1qwJoyqXo3O5arzPci5zjjMGkeyIcNyjejlRc2fNaXjGbbddpjXGDCNTYViFlfQ3Lv_s1lX_La7p7sepr1_tMUAxU2nxbvtCrX_r6OmSYVUUSQYxoktHvXZWhHlp3Fm66X-yFMtzYtT2ZYLiSdIDA-plGwtfc0TE13yVf7C_ymMML_59SzSoTt7WIhNkabvImV1_bLSGrSkBjAk86ci31quBUpM61JeK3sSRcnMhI5bCg7M74wADULMP-rtyThVozT_qx3VkGKgAIF0g7N65-mC9TIKzh2C50pxp7mB9FxFMv5vqcG9ohujky3iB8Fu4eksWrnWv9tFvflGWiabXxlcEM6AD_gPGq5vuIFCj16ALgWR8T66JVnIaiK6ZVADl4eBOYPwCIhqyhETlk8F9qfoPb7ZmLbPSnnsrqtCiJCK2Jj8Qa2XfVSRRV6Qu_LERi0-3_p9vNPxL_Ms1Gq9mahhEyd0xacOevxdnPPxIVLr4IScvf1mlgJ4LItPj6t9T_i_IdaaBwlzWNu0EzomwsSj4ezuml54Z8mcnpOz_K7aHX9pmTqCgSfLUa5YOblBpAsXJSNic97HEYKOiGxNk8r0YTruRrLWi6CzP7H0E0sSmvNL91eTWWWdi7fDtPW-Mf82eikv7xlko4VSxdpZk_ZYBLYODseYEiTwcA-sjpxuWOdU4vyiRW6KiInn4FAPpJQPPEsV396BCdKrI0dFXglRd8i8_qCTfQk-s8r_qnBGRmq3Gi9bWh6ZobhD7Vi79WDHxa-Oy3uhqS5erqpQBzp7AzfVo5lMPj05HO3CJAbeR74eTu87ZCGGf1jOHB7u_j6HM1-D0sF-JpGlFqakunP2ZNeV8xG2t1nK4QtjR-LI2YPwEVdd3tSScqYf9geaOoUm01vPlhot1jjd7PrUHWf.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_03582e87e66f2254016afb9d326a2887d1b2a4c4c748f88979",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-509sRM_lWNU6ieCGZUrvNbCwS59mXZVEnxU_8euqg0cx_QwfKPvuRFN9J_L3zDnKrrIJBpKMcPhPBFmlSyEsvm1GY37GV6zul2_9scwHnoujyNNNuFDNksEzdi5jJEDY8paGe--BSI5NoXykG83ji2FDBFC4t04--_0vPCYlIadPyX5Ig9QnlZF6x5g8USSer5YkF7hL_Sfe1-1nhtYTiTmOa2efSyj4pUhqGl_9P0dTsWFt9zyW12B6Y3Ooe6MBZ9OpAPyNXMKVMkrCn3nRySP7ffAiDuCXXMmPuHwFhptbV9gmVWDN8n6CWX7XR9IU0ooYAjJTdBglIA9lnQTtSb3FrPGo9VFW1QrZnP1104f3KLFSFs-c2lRxxyRzmdbPuSaBUHpgvz85gmYlTuyGGVtQjSv69ph0yzfTAYfADKLc1gCtLauWxr4B7gPcN2XdKjvFSOM3jA45mpyXtaC0hjLl9OyE283SokvRmIDv6UasNIcibtNATJMJgAXB6Vh2Iim6FxihBPyLr-1Oj04_i3kjxHD3tHO9KcYqoSKRCBYgv72pGkBHBNAEjtGhvNcFNGuw5Pp6rZ4bU5YVV-BOoh41cpYtxw00YQl0GBhmBOpcAPTXHzflzt7D70wNvwwCPKm5Q0I00CjmCr2HO3_cYMlBM841BnFk1ndzZ3_eGYkgRknLCNMQNWkysLNyHvF_JRmESjtUdH5B8XoZRA1yRKVaVqdmT_A6PuUlPXYg1pU_Zl1LWxY0cj3rf0_NyPap4xLIBX_jrtMLoJVmWxhFNr6VLRzLpP-wDKV3UUMLoVv7lxf-ALIaPmnjgvYGWwhRpL3ejA6G7u4PLxcXbFNJ-Y-Y8SsBXGuHc2KQ0a6DHg-LYDe5kMH_GmdXqcxOyZf1UslDhkdiDWn0-3dyg16jj0-9D7fJiuDVInW0qhFuiF7xUKMYt6kv7ML3DVCLk7hPGTtdg7EIzXp7_TwNY6oY_qYY2LBts38C6NVGX9ekMCdj5h9kIESoroPJ44ZLD92AoYJTSpEtmTUXYnciKf95NEnQXS0nMEmghw6-sfJwzzIpeUe5hOmGyglmUHcQ9R6rkXcQhV9J3XeJbCfq-ZuKRNmmqy632Tbr6F0B-oVHJONp1gplFq2uzdfz99X04adX4xftCCkOZ1Q_NmsL2M7LuGNaaORtzHSgbj4TLrkfAlg6mCicoWw9IuupWzC6eiSKbGgVKhufhogYvciFrUfn3n2Dgl-167-4Vx-GNKg1eW6CeCaFGRaKqhwIrro-t4wvSJo4KrLWd5CbOvo3rSE6KjKIEh2llBc2ldjx_HX8s3voRvjQu7OdV17JSnpSPGY8qdRMQjvHGX3EnPT23zHGlFdJ_kG90pTJiCh18_mbvshiUAYrG1trm2nr_Rdu0jhixLM9QPK-z-KITxyTngWjCrClp97JgQCcQ1vCRzRysU63eyduTRCTQASpHG8EbmR23jjWsiVjSSbdzbtck-dp0PVPtMdrjKWkLgRO0Lbwdcy26k9j75ncqRzScsgi4k0uas7lrgi5huAbqxmn_O4X2rjk_7dgA46nyeK--rteuGUvXdkWv2FwOl7jhgjnC7D52LNwZBxY0wUekRquL8RGDoOjQH-5PhIYvNmzxVXPW7XesDlKJXo0HoOnAdsieeUTwMHpKNjiBmLMHKjrmTHqqHf3TJKUW3Na2QIMhc0u5X7fGjjtl1XGsQafLeBb6dYYHkixCNCdS67-RkZrr-WHDyCg_1bpAhNoYGFYo_EoZPQF5er9z1zZdnge1PeH4IJFIUOt08FyoOCgaTINowqAh1vqL0XDrcAbMjgoMQIbnNJhSeii6Dp5d8si9u5O51kQTm7T7leWSz2Qgv2eFc5kCUs7ZvGD8ShEfq5o6UK3QbuTxW35mZxtuasTknjB5LoqYwlJJ3atcBbJmzFZsf-ujw3hRzvUdfx-gKBNP3FGB52R7hugSJL1zWgL8k8MSfMR0-E-oCB-wbUE1y14ppBsjkP_EdPO-l3d6esRwDAjakGHiWv7-cCDJAFrRH7YI5EsDDVUC6aeqKOwMXeN7VP-2t6xBhKBfSgiTf1H4fnwVMJN73iLXqF9KDiHzchz4-yhdNE9DnElLEdaulRwiUgtYSihzNnwdP1Bs1mC-wJzhchx5KhWH1HJHpaW3JeDYH-YUnAIYQLbRs_h2K6OERkrpcmDZLK_ChdAUyio0etzVNnqjT_-IJ5UdCMgKemHLdpAmbzuMUGGkJEFm3Bn7dR8iuCS9p3SFld8WzgWqrp1K9ufq--oHxXmE_yQ54MvzQDGCP8YDnmBAUxp-N8dmmF_i69GvjxNKBAc2e2SY5RVF-lX_hGdwScDKg9-_7EJpTXCy_S7YVDa_4XRSVjv6j7VR5XPrBLyteBfGEYoGCBxd8FIqL6wW-CDldbUznky9Z66QzDhSFVL3TCLKihao7IDpS5N7tQJGZOkEXxjIm4H2TeotcMKGisMk6P3ReTqkD5HVzU8OzqYZtmfMiUYbQIASnVb2yj3fAT_TRHqtNsf8hlJe-z4fs08cof0XoWlHYYEMRRax5MsRfX_7y9GvoDi43x3ZKQ61EF4eFJJZhqNjjMAZ3jhR1tiGbL5YwzwKV08jLtp81O6GIW2R7nNWqQ84YnpjdA14FqSv1xPgAvnvYp4jEDTLfld5m_-YA0t4Z5eYiRgbzV7W0zWzphCkgLpuprHHpLi2luZ4Rq00TB530Gm_zc_ApHZ17eBVDKgDVmKqRwXzj7QETJ2s_j4Jf9ZiV49GyhrvUM2We9jgtr_3GCj2piqyt6sBZxjSIdgC_95H5dqoFUpafE2kX8uFwezW4jc3ckLRaQ9qbGL-e8kCEQgd99IxjHzMoLXCRDTLDOqnF7peREEv5xVyyxPTwAfl5K2mWEfArTNe-UOFDo5156KXG7VFc-qg4if8y8wrpOtHHDh05rVua4dsy0bxA1Ot_0-enjVuOsp9ONQLT8Z0xJopb9PUQgiKqM0D95r8x781Z39Hiw4XvnFlEEJ_dOM_i9oSYZUcectncdztLHETPj1dFm8HofKKSJdjj6nE7tub3skjSXZVo4dpWq2XOAE3go7yV2yqMP73E9zViRWPRMoOOxO4wFUgS8xjAzDorD089u1pe3xDlCsIdvqqy4P-PZt-ExbV56zecQ8fpxYDzLle4e47Acdb7DQrAAClwuNtjaR58AyaXt-06rrUi4Y_Z2D9CtsdwUP6djqALySezWjPQFIsHpmopnRrcf_EpyIez6XZSkOmUezS-0uRRKx5alVwsGka63HGOZyb0Bv-_SNwVEk8x8W820I7TUPrGCc3l2sqDrE8Ryc3cvfdFwS-zRHBlUxnH-JpfASgZf_ZVVPMgQ6oBHxXolQMf7GcerWz1xm3p4VSnL6fQpwEAjBogZ_Ro00SkqZUfmY9cUUeKIj7-FRxkYY1jeV5U5JUOE99VqEc44oEG5PsV3YIurQobFWtnIJ3TLuPwh9OkiF2GbgTL6AwqvDYZCOveGkjHVMHQiOyuVpSzYo_MCiMPLg7LYxenfKlhk_3ItgJnBdr3p3V4jb3aKwkA5sXfw7fpmOfYYWk6q3bvCcvguk2ZE1nhx8gWpSjC5heuObe5AWMkulerXYqBSiy8PRpSUULnIKSonbaDXWUFDbidEgdX8-_mk_VBjiJ7ypRfdeTCbAQktZxEYuhRnkBTRwD3Zyx-aVgvJrKMQfsPmQfPtRbdYkUTpfL8iAhq2BitnuP3wizogAZekqUUPeRLvTptdONLeb-Rswj7dbeCrTEcW88K5LWKiAA13p6bYpw-chtFFQke7YGg4c7TRUiHMThEbbhLCpNbYPBg6td53_FUaZV78_LjEIyynnp3y0aNNrWBKCEfjJXUn_pJkNxuBXNJhwNs8PBRjbyilIhYp4PiZ0lGCyNxn0YZSqYdK7KuzQJ9df_pyF3KF0QzD8wSR08ayqQHQo0CPzKCLKqLiFFKuQxOfoy9l3Vdzt2sLzUckC3WhpQkfoSGErrxOR3l2dMRjJsXRszboiZTuUIWYEouLGvfMqDFiJgv-f1Um0VkxilusbEK20EtQwmijPcCeCA-oPq6C1QZjVp4S7hDlgslgC6Qbcc-LvW3p6W-WlDEkMcHCiCyqOfIuxqXGcmRrgbaRd41rTSPXujnf6D3Pjxp7jpp_pngEAOkiuBNBHpu3enf-JFaTHZ4PHpmodGndzorYWdGShr3PA27EHry5-hV7jdRXc6WKkuuxTZV3QkAmSNUBtFOyXTfopjTyCvPFVruFXI4qBQyOilV6kG_fb4WQAvCd5QDAdK0e6Imy66-An_EE3kYzbJJPhS2ryJNsoOBNRudocvBw4zxLGNK1isumvIsZDlbUoN42IA_GZQlXU5x_yxxQUqbSqH7575-YWvnetRzfBUZfkjX_Op9-JvlpepU6eRo-HN_9nTztwbCpLe2z41LLC4a5LGTlWTOXgxaUw0whKtb2GBe1PsDfxKt66iR-nkVzsjgOdMM6dFozgSqU2TwTN8FLEmwt2SJth8FW6hJBFOba7Ss0ENc2JSiFeVYsMRt19oJ-hpxLucD72Lnn4ga47SICoPvo7-dSyQ7vC_HstBcq5byt14yrntJT9azjkon3dDgwwf9bqFY5YPQeyC9V663tzbyV2X5N0aFFnrC87gwPSg3jdkXmMjAFAvYXQo4mi872pq6yeN2v-Ii4sQXApcaGpFboX2DsLFhlmnzIURz01rGyAYdQxkDHV5L5Js6rvSbbx2WUVblNLqXBRgtjSgDoqYPPpLCHRIkYQ0IVMmEPexizkYNpPN-u9AP-BIbfSTCW5sBcCILKi3-9pIMPIAASAwT9-mxjjSyErVtvCVYlymojPZWizYjHJucV4AhY240Mc_Cfhp2FaMSnMaOimgn9-Wa0Zbt5JCnpQIuVymJygYHkUAYCYYDVbAM729m4heUO0-7QY-H_G_wgxz3-qttEBqnvSpxUf-OJMYlnElePnqB5KGb9B82wq1L7AP-TA7y5yCdcvTNU_whYaTPM6xNWrkfWr5g9McjJaRhCM6T6TZs1dGOXIG2fYhuTrHJmRE-e9LifHSJMqiBiLzj3dYNvu6uj9K-w716Z7ogV0SR3w0cVfgKwUwJC-catXCDzIMAWmp053oPtyG9vW6dMPQ4cjwOjBN3d9vbEiIh6rb_3fKeN2sRFcoujaldFz6cLOp1G97DwZnVKE-iP44ao6CGXBA2HqGiKuU2i9q_a2tA30arPTYjX5UthunO_gvSmjUQq3jxzmV8OhKxWwXLfo2XE1iA-wb8CSISj4O_h4iqxkjonDU2c3zKzySbEyVizimNMH6Hs6oh5DTwwxvUQTafMJ1baTrzwhOjWykf7sLWV-XVHLjVxuYF17h82i0uyeciN1U2sNc0dE2xujD-Hy2Tl2EQMPWcXLz1X3V8zv6xrmy_CF_WvstaaNlii-BxUveclT9CBWeiLZWPUEZJ_JRHexKwd-7XfXa4ug4bz6OiFiOHxA5fC5jmEs2s0qZHvemhkp8YdZs5BfHghaSb0XCVQHjvFmcNlMWlxluLPDqM3pcruQ3UD18OKlaLXvSwVq8LxP_2Dy1OfW9DvIAWw7DG_61OFgD1YRky_SfeSz3rvlH1BKJXZt33zMrqeRf7hSBjp3oA-RGLBMmST2mStGnqt5Clzz9NO4JLhQA7bvcUscxAgeTzxgWwnzLMn_ldywfYX1H13OLlMWql7XS310w_zHOK1GldiFnPjbX0hh3w7l21or1fMVNSPcB-bhsaIRqCDCc81Gd7NXsuoj-YQA5bL8PPKI4B-g03wL0bxIY_iBrmDE4xEKfEUgB2ug8AQ7nBX-7ULRFoEYalXatY4a0Vfvci-zt0hm7UmqFlHONe4LJtMDAKSPyDJH6n_lLrqlnU6ZeFixEK0IesFnCuSoke9KTa6kTuto6a2gqEu9pblDbX-bBjgJE95BeQJjqeDKe0wEo4f081G8qO1AS3eM7tmQFBSSez_0iG5AmPVpHTi46FrKIruVWCuS2vv8V3wP4unylLVoaSo3vcURLbhIin_3fMRtCfY7uE1x5XQYJAfK45fVBS9yia3_mv1M_A-ZpLIgvZZRV8s2-ApPBkuwH5h_QTjpIRbQJwutF_Uqke1u2KLwiIx6JOtra7M8r0uJUNqJGPYlXp_HAO-gTMhkoCCfdBFF_d1j8Hc6q17ek2XtI8DKwqclzmWmSeivenyKPpqJufnvUKMnZ4NSpDqRL99TcMxPSTfikxX0SRQfORsDagYePcDkpnEWWJKb9iwE9Ys_x1w0MS0I59_fOWRslFwAqsDcjs4yj3Wxwvs3kot-d8VJTT4Lo0upyWdznfkI33Ww3iepkoPdt28kXW34Qq6tleV4k6oNosZorin9BMzyAZhzSwcDcP7V8Ygj6Xz4QjGMLutDWJNoqaOp35vQ8oAMAaR34t9F6RsyKTetbTr4kkaonRReaGh7b9odFecmuwOyOpNzRSXmiouT9_HZM3U-H5MaInih8qN24hNddILgPYWrP_Ig0Taa6TtYQ4lc1OdUaDHZS2E1wSzQPiclsH8mpF-KcCmMAE_LluQXRtiA31KoMP_PzEl9V4EzPlKdqMeK5OE9kXc2Ly4_z1rzp-Kf2cQCk936o4xsgXig_47bq0-0E2sovEt92pbtxnLjEEml9BqwfPqPzBPDNrDU3taLUPKQEjTgJTlKIxXJcFuEeSxwPtEHxvs320AZIMWhPGru4qtEylu_jezrcJpOX116F3QNFBWjpbwr3tNqQ9smPCeYALIa43Z3-i_6pXqZN982TaztYenGDXZqQ-vkCymjTdepBszvtJJgYtG4-0DCufERX4oMIhplA-NokdGhnBIWeA6U0fSwTNDxJhSHiFj7YVwu2zVdi3ndhEIHQKMX2IwNxtT_7HSjEdyeISc7x7QdpLd8W-tDunZDzTCwrAAL8LKvfZl7SMandNZQ751h8a0w_nk70BsJ32bvWRnqBeL3QtUAYFAXgK5aGOiLK4Iihkx_tw8TX3WoMmeLqTws0I1x7FP9CphrIKu4k455ZHca1l77duHp3VFrNTuYz3t5TOnCQs6RnkfbX7wALDxkdo7sAL_k_YDWo3PPfUqhYKyDmsFg9AWlo2lL_vdy_TJKhssX-q9JSGvW5gml1z5zjFSVegwlD4b00RtmN-FwTIUSpSesXTtGIR8IQGR4x6ciSLE_ddTfQuMDaCVLlnndwaASjvQsRqCg4MpFxuxYnhZv_dC5i1n0_pxdVp240BIlk_tUKzRWCdNJs-nlkU7_EqfuCg2rMMGLQe7Hx4-XcRtUC26q19NX4oRFoZLFu8dJwCoHNGJzPwf0CqM0RO-82k24vzS2ukANi-ihRVOqULNTEH4FsRnZhq8gDmAaSPJDXKDBQ8BghadHBbO4ran9j8ye47X6Pf1G9LOzH3LzHrNY57HFQ8A43VnvltiGA9tl6-0TZe82cpR6EphSwdLQp_KCnUWr62QudAJwjXgCbo8hYVTcic-SF1Mu-yoKlY6KwVLTAehuKsVHt0ZBAKxJStJfv8cIcPzNAUBZ3vLloFi77Z98jUSGsJ--aIFFoDXpXrLtxob0_bxUfO7br9qTw4jLKJK3nO3I_U8HfCukw==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_03582e87e66f2254016afb9d39bc5487d1a9867741c50313ee",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-51AtWBnKPUW40t1j1wJ0gfMTFoRDmU_ZxgjtFw07MMqKovC3iGgZ-pbY6mvVNQJE-XwuefH9ZgSsJ5qg4T-GVi5t3Tz_O2FBO2xIVTlAkXYuzeXfuFKnC8qxtIjzjEkKe2y_9_7yE3INKyj8FfEJg3l2Muf6Kp5z2dWL-lkY1tFbb7LxuV_T-AeuPaQ41AcZKrY4-8p3b8JASjHZom6PkWmezfQdJhJWepHxpt8J5EyyDrln4VDuzKNLg2V_HAuUae491O-Fudt_VFdyr4dAOBrgmLA4XuxE8WaFn0PSbNY3o3XHP5vdi40iYwRTqN9iO1vQiPGIzhwVIShzKDHM06FpLwSVWPj_PzJUpgD8vwpoUlKqKk3MLnTxY2V9gpHd01cd81x_duZM0RtTk1o1oXiEA8BiGPtsYtFFGO5jH6mWFr1wzxUY66F92vXD4hSv10J3wT8DKQrahI_LrA8u2Gid3wnCUMMK-7CqIrmZozsyzZAU4qyQzPmNWSLwrvniGxh0DOjBlfA4UUxj6tspRR_NqP-OhMnR4Snovtc2Mb6ei_IO1l1L5IPmWYFCCmX10DdgaNKnG0rLWJUvknp_6drBIjyXfBB4D0eadezbkIC1okOCrzHJy6xLsW5LmZYNawr3O0fwTVToa2anMwL_A2K6ZgDuqOP3otPWG0QgwHPryYSW9oaJQqzaNIlf6JdaVgDDvpJ7d-UgsFkqiuzb9kdQ1iZqwAoRQmjQWHlw2EDSb0e1y4FRcPk5jhALen1koToXHmt-Kx8pMXpTbAQCj3JIsC1tQ9xb-O__89qFYC4Yvjixwg45oBzGEOHiDfL17gT-TIsSAm0mKeNLy_ZZJgrpQw0uJqgNRK-oc-oqPFoYvJYdhX5rJa8cyv9jZiSe727eVnpMPEL47qkwM1QPjPhHi1-olrBEj_HnKVvWK13q9FvCakmT2udntb20rRX0Y-XTIqac-E70-G3HlbRTG6y7iOWsC72l6vy6cUzSTiaWaGc1rW54Jk4K4vQoKHkqs1LVJEPBqEHU9sJu-P0eDFg60NZ7wo02bNmK_zOP1at5IfbALzl5pjz7ALqrX8cpTcInF_yeHyWM3eWhRC3YZnw7ekN4m9oYn33i8HcxMshnudy8MeGbrp_hXCQ5OrW2YdlbOPcnUKvkt1f9aQhEMYUknKuqm_ik9xT6cZ0pXHvYPN1-S2eXDjQ7ejscWk0Or5Ii27qJU--piRhEUVz2Pu8fiWqpHyuFSppAlYcunaCsaOrhoDlahZDhyGu5jVCU1DhYzY0YEq4VLZtYtS4KTzQ5t9QBmlcN3Tp6pV5xrwfm8Lo6ZCLkOPywE0Ziwz6Xc4YvB4eUaLyNZqOaTvdT2oYoYXrfJrdSUy3YXfX8a5i6dX2vFkq4VBiS1g6i58o5mmHtOijo8Pjvptuht4RBH0BzvUMKLbaId0dFb7dOzXukRs1YjyAW-lgEDZlfa_qptB8ioPs9NtqhvcT3qOPCxkeMIHLx5EugNdmL5qvzvh3qR0A_TogQ8XvsXp_nix912NbJvsMe_9F8lqi_f6SeIHlt_McNREOkaN_Radr8AsKjbtp42dTFe-vjcWPy5vCcmO1tS1gT6kybd1mdxJnUP8E9z93wLZC6aq6ShnwJ_qU7j0XCn4kIdMmOIqCUpbhAjdZbhMgu9O7uS9G_jw33__EqWpyTuivTQ1_k0srlX2apJWUAwXmijMt6MA1ORqVXTxdW-VlygLyLivsHWoPI1FwQmxIjEINfrAmMuyL6Tp5tqYKCmuidwPkPetUcSdg20ZgRFbGzP4--aB51ZFc1Rek7Xj4bSTqsngN2gEfBcgmpuVBsWwmrVVR688cdPxqCcZ_Gpniwq6yDvgpEpXgRxTNXbNLdUISPLxhhxempUcFNFkNKZhnqw0VxvgM-ZIl4M3mjNkx8pmtQqh7IGl9slIheHT-MzVdbghVbC-xzSxHPAm3m2txWCoC4uNacwXaHNsy7ZgPhM6Ps9LrzdMaSfQGRreRHvtGxV8fyDn3c84_QfD0oY_8Jb6czZKg0T4Nm2NfNmkQOYqGqpuY7SYSlTUe0L7rFlD_BGuoKbJNWKefkGil1AWmEUMUgdWqRawDjFbZtcXFm_5TTqKZzYWlpp8b7NohcYxnoji51gr3MIqwCc31rCbwiK4ZXsSQgQWexoTDJK40w5eUOhoPUgyNH5Gpv5iXRB-vQltoKc5pb5loNuxsjvFxpATPI1s0yxntnnT8eOMmtDDFJBL_9m_s5FvDv2FrDcBboEaCuX3EnqrRGw-Ao3BMAyYL45rqBLQP6Oid3RbiVMdZeajgGvVBTLsYywbnXwXThl0PvmjBkGrHJHP9yDsG67waCdlBcl4pi1y2O20zqpF42-Xk-5cjs1tdHqt61Ly55W3gd28jim32FMnpng_kXTiPQKcZYHTr1DYkIlqM-1CS-AQZq0jVcHYaE_VeBnMBIS8PnR37OpZ6HeF3uxEcrwtVxbQvzELmBXDsp1vSUPwtyRq65QyLqgX6IWFOTl0A8sonO07gVg7_DbP6iJetuqk0BjAkSL7dpybxAxIarNBoPuUzjjFpm9GsgtNOF7LNrXLZhdQljMAWv8Ak2c7zFnGTIlm9fld6X2cQuJfHWr29YqINAYdS5Ah9TOxnAFik5WtJHkiJ0r8Nu_fQHg-Hbm5mrDnAN79wPtXTS2qPFfuOwPTkoPLp9unuY2u0JIJtmg50cyC5PT_udxkfXoprUXR56Alzd0XmArntQeBAXzSNT7_jyeFY-3aoz_NpoRoxlPZAsmNV69-EXsQitXN-jyMagi4mqEkyHXaXvegsb5PmlxmG8DgFjNvpLk9xmBRmOUJ_hDaOffZGA1DqSqws00RSeulUzr_0dItFO4hbaGl16UiVB33gppV-tdlZcEwhfIk4BX3KlR2pbnrN-0mLlNCmtjo85fwiIoRCH-Go2o9DNB-DV3MZqp6Exuy_5lPfC76bdkTtSmlOJGt9DYryAwtI-NAzH_DFPg-zCobYRoaRBHAGwACby97Gszp_hcE92xWmdQoweoJVTvue3KSCCESFUkJWO-R_QWCas69D_4LEHQOKc1JNhVcMLP0wCfdzXE_KdronvTc6VTlqNBt6yzE4pEmBIXz9aNDl6TGg2E-mKMOlPeAUihZ5K2XaEuB75dLjAbvmwO06gRUi8K67u9c1Q_GLXE9VOCWLjLN8K8CLNC4MJs56wQf9YgJDc_Q2_hKrqaRBRiLNDk5ZZkpfz-RVtL9mr6Te3jyPuxy7Q3VxWL3Hq_US__UMK8XtZPD4B_uxBbl2FfvNkEtl_mXwuEi2QylmeCilnrdUxP2z_7JQEiCacpwZryRS1dvkyz_FK5Cfn0HDP1N1P1h42EYU2pRiwuxLCVMXCwpQu7UwVjX1BEQ-ykyxcPWxVylKhtowKF4wIj8F5E9Dgfdd2iy28l-OQvu8rrgZX0slJS2zDee6oQGDLZsWoBc_Vrq63heANKTC8vtJ2Dj6n5IWrzxa7Qh_ydmgZKKkdxV28p2vqlx1Npthom6dgKCuLwkXK8puZWdkEZDQnly_AMKg0u6vg8gn9xxQmnxw268JMhIZwuCg_ZRRBjsR9FVIkbVEW5StwR3Lgu9U6smhPQeyxqhcFru2HDgudVG-mTT7xTZI9A7e5d82WMIe_Hn7S7aVW1kl2t8mRS6YXo5lP5uAMc6azjbI2ssWk5Sp4P7Oj7LMdNjcXXHggWwk2--gyNivDhOlTTE31xQhSmfH-9lBCFlhBwegHURoNZA3RolG2Cpqqc9TkJ7phh-XebRrdLQ96M-e0tbz57HbVzBd0Y21MH2KplMdq9IqUXJLCQMtK1Wi1S4uQbbV8BH44pAh2-Pc7l1UopMFQYBD99Y1CJDxxkuZcyyzB_k-eZjZC3DeWqnNOB8SIxnWO-pYVHHOoyabe2e7_TKc5uxyMamTImcgxGz_asetoPPeQw5VxpWe1vdbYBeVEJ0BQCkJOVB6ueb4kEJhM1aEGMI_DujEA4kwJV3KdlJCUrMmyq0LcCGrlFoeYfQ7PvvsoC7nkIZrVLtwGRD-x3RzE34OZstXqxw5GIWQiLtmmWZ9dtDuvXO2R2aJQ7THuPA15kYrUEHi2y10Vu-IjtsRYhMA7nX2ad2UBX3OPdZbVVIIwgvvdvrhbJAjYx5Yxu8HAPiTFxRfhg6RMo2rzJsXnJHqI2-DuQcxhdgk9z1u8W3HpsPM1RRXtEdsRUenOkFfnNfV2uPVt3Rli4H2dXBDpFTkbM3M_Xd7qoFGRdIicHK6IOxErDpV_RTI9d1zbmr2z0UAHA8y2GaiPyS1t_Dn4EwrG7WODNwOLLYlr6yfdx3pJC5SSjEW96j2FgUCn-gRBoubiYlysPt13pAn7wTTJUcjTub9mACfmQPd5nOGdq7Rb9xU0Ml1JvHuplgtCXMn4j2h1492hWGfR2TfHfJ58cNwVICFGpWkXjf8eyrDiLysTRVwT_kO6DGABIDgXIsqIIDO1FlYs-Zw9asJlS9fkfXKBvpbmtShmaEOZ9hboWMVnL7k3bF76By4LtRuTy6XMuxQHr9MuK3tLDUqeGCaCw5W2exakJybRGagrAzSMR2Z6ilAjAg6GHUAiLTf_FQXg1gWW9n7VF2SyCxPLjYLv1vAqu4sphPnT3sWMco2tSvsAqSxHHxhDxdyi3t5NIDLfDoeqoEVLEfrVFMFivUekfFQIx0sICUae5pKj7SwZZHiDN4vfgtaEzDJZIEHzvM5MTN-HDKZMRyAEaBNp7tM_dAOQLF75gQs8Jcx1CpDSJ0X-rfKuXLqKSicNBZHpoW_ObByJxOzCvjYBa5PxxSrPzGIq4NQFRdki2nVwckNprTvsjDmN0KeJJqItw8LBGuIX9sSHvyM4hlbkjr_xdvoZYzho1wn5SHt4mL1J2FeZ1h3SKgvkhyjyz_bbyMI5G84VDvp94qSZxtPTXHp_NWmG9jkmJRZrb-agsmldOlowkufHgWAFUpm8Xk0-WQYUYg3LGSdQ5pXVtK7nTndX_FbXKuQls_BOkC2XMiFpb0KCgj-kTMefK6Xb0CoKxasJgE402DmfU5ZHaYyJ4eyXZgWVlBfWkJY2G07LQTPJHxIF_tLehT21nEgsd0SBj3j_bq8Rb-NAqSXHUnpCH4joHSUQANOfhzxq9fnVuuY3S1C_UCs_Q9gidSjUNHLV24dffS192onIfVxu508W26QPFs4cXR40OCUKfGp5WPSpp04eO-OqQNhY4U8jdV-KUOciwcDBb10PGJmZ5QwU_PskKJJlXNBfBjQz4iWfPQ09anNPQD_-Q07_H5qrK_BPweMT5gV1BO5NNtZEPON3md1aSgMVQEk19wGUWO7ftsOvNntjjH8K6yh6d-oI_XmS8RlSgnmR9e6oGOkYR23yzmxH0h2oJCxn-p1JEH_5l6NAzt3Zo5k56v51rRHXsZgXuefgny2seyQygQgv6QS9GlpTs-wvQbnO7BFIQcuhxTO6MZ5QZ1cwabCdSI1UGRmzS9q_5TTkEQoZvaR-novMxBa6dxUz3cgMHrYp8Ppt93vaRB0EjXzX-y2ZYVVnA0safq6DE03z8nkFjLRLeNoNBqM4TUp_diBT9BeWtpYO_NPSAbzbEbRfEeDvQuyU4T1SiNokvdqWx-gg-k8SORSwsMMolIPo1fkhg8RBlhDgvooFpOFmxACJNWTxfKXula16YHqreNb6Vz16krPSvTc00dqLd1Jv-ZwuIN43nz1w6FnrcOBzQsid_VULnqYFqOM_vJrqBgjS3RW2r7EONZ4epMkVhTXiuuDSHveorq4GQiuNy9PqY1_KxxYeJ3c612dQ4NBBLvWGCqv17VqRGyl8_94QY_kFIsn0aFLwQ0Xdw52qtHV4aJFJvjUm8gNIlgUCDrKSeqK0JLR9YtRIvgz6ehkXGnviUOv0ZNJRs8btOTq6LBbyMpmAeCDT7KWgiuBSGFbNw8vaSla6EpeQWhyNbxI0Sni8LqKxtc_vjzEJiqheB3MMp_0ZVm8Py_dAZDzoHfEHiRI_EHGUnGg3Ig8RCKUGengm4KZutKRSrZvDhiNPWfLyJmWhpylo7V-DFfLgOtASsA1G2lJZ0Mn6rJtWUwgVB6RdQkndHvoIlqhaut8zAp3cZChhcX2SkofEwclRsaHH98f4HiZKzp9CaMiCAYYdVPp3St7c-W-U6pJL1wlApAFFHOMEAtTvkItV7n99bJFkgwXmZfPsPGSCQQmuCSnxeA6NyL_qEXs4NjhQNznX4s1NJK7PG01FQ9_QACBtS4Spe70CvzF604B7a9saGHeBJh4HVtj19t3J4SHxD5rSJkoP376OpOeo2JtvM5_RrhMzsmxGVA-n_ecKwgkZbyAyft-1PRgzO9wdjAzZw4kBhNcT5Qdps8sT_OxtTJek47lMOE-nKWVmHDz3NdIRRdjefL1Ag8FgKe3jXTiBaTFzXdZa7pj1hNyl5zbOUBlCTgkyH4yHq4TWwigfz6GDtVxQmcFqi4B4vNBKbknRkioG73Bz4a6hrAykdMeGp6s2OCTxLtvpYOobv5hSP-oMoD54gyGppU6WEul37vB4yKA1dpcQ5oegxswkDwvZZWsK5uJCUFj7ON9XR9uDQiCzKt0UWBEJHIjEEmTAQDQIxl7kbQ_XLOWLgPVBTpAQLKVjK7MQDcTmoiNcMrJLiQuvmnE-qg-pUim7ltKHnHj0zTts2y_xrx-RrwSqw1t8ldTjXArE5ciag_uYaqDPW-1Pn0j9MUVeu5iN12B2MWBdLRiq9ST6Kry37pz_PZG99jwdxwUb45OIZviUn94wzcwXf32nCHq9dRBQXzFrw1N95NY7Zvj_Ju0-Tomj7i_M1uh5mlvBmhyDFEGVx10QjG_YO-AwX44WCGxd-z9uKX9JpyLdtFqWEPrktlsB14oHFVbZLJt9PRurPEpZkczYc5R5Ei-jFD07YMPjoeLsyzLD9pj_wj3tE_T63C-Zo_D1UvY7dNhuEzXrF-JWdJxW4zR0xNxRCBBU0oKL4GxC5XNpxu9Y5o_hRMsWKEkh0E4JWTZyVTX2CVeCXuY_VrHZgVq1BNQ8LygqeJSTgxM5BJ-KufnaOvvHiJmFVsdkkYleupzt3P4IY2qYRmjfmAIIoDq3fEPxXuvLRym_QGBOcLvyc0DAFhBJXFuuGzMLWOMrg0cZMt7FUMn3jnpBeDig01DpdS7I0neJKWTSjfINJ53Ra_KUCT_ib8vTIGt2xHHeukcXItjUEEkMrOC7QvQBuIAyLeWDXQC3NbrxfJ4J7s0sv3afTO6nbnKD0v7SN_spnFj0U9yZNykcw-cg_u2xW3hygLcPwao0om0MWbPh_tTOcTukbfl_mzZJTiPNeP8Nb1ZkjVdI9N1r3LmevY19g==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_03582e87e66f2254016afb9d3de8dc87d1934f5f5a28eaf301",
+              "index": 3
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794874673,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3243,
+      "prompt_tokens": 107605,
+      "total_tokens": 110848,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1504,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 107602,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.01507205,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.01507205,
+        "upstream_inference_prompt_cost": 0.01345055,
+        "upstream_inference_completions_cost": 0.0016215
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

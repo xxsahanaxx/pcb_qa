@@ -1,0 +1,267 @@
+{
+  "id": "Meshinger/McuBusInterposer_UART_RX",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/Meshinger/McuBusInterposer_UART_RX/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/Meshinger/McuBusInterposer_UART_RX/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/Meshinger/McuBusInterposer_UART_RX/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 102603,
+    "sha256": "7d389f83ba333964e300223ee38862f5f619d419fbd15f5528920891c205b137"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.6,\n  \"anomalies\": [\n    {\n      \"category\": \"extra_component\",\n      \"components\": [\"U8\", \"J7\"],\n      \"pins\": [\"U8.2\", \"U8.4\", \"J7.3\", \"U5.25\", \"U5.26\"],\n      \"nets\": [\"Net-(U8-Pad2)\", \"Net-(U8-Pad4)\", \"UART_TX\"],\n      \"observed\": \"The debug header J7 pin 3 is not connected to SKW92A UART_RXD0 (U5.25) directly. U5.25 drives the input of a 74LVC1G34 buffer (U8.2), and the buffer output (U8.4) drives J7.3 through Net-(U8-Pad4). The module's receive pin therefore sees only the buffer input, and the header pin is driven by the buffer output instead of being a direct UART receive path.\",\n      \"expected\": \"The specification describes the debug header as J7 pin 3 \u2192 UART_RX (SKW92A pin 25) with a direct connection, and it does not mention any buffer in this path.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26), pin3\u2192`UART_RX` (SKW92A pin 25)\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"55\\\") (name \\\"Net-(U8-Pad2)\\\") ... (node (ref \\\"U5\\\") (pin \\\"25\\\") (pinfunction \\\"UART_RXD0\\\") ... (node (ref \\\"U8\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"56\\\") (name \\\"Net-(U8-Pad4)\\\") ... (node (ref \\\"J7\\\") (pin \\\"3\\\") ... (node (ref \\\"U8\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}\n      ],\n      \"impact\": \"The debug UART receive path is broken or driven in the wrong direction. Serial console input to the SKW92A over J7 would not reach UART_RXD0, and the board's output on J7.3 would be driven by a buffer fed from the module's own RX pin.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C1\"],\n      \"pins\": [\"C1.1\", \"C1.2\"],\n      \"nets\": [\"GND\", \"Display_Power_Switch\"],\n      \"observed\": \"C1 is a 0.1uF/16V capacitor, in parallel with C2 (1uF/6.3V) on the Display_Power_Switch rail.\",\n      \"expected\": \"The specification's EPD component table lists C1 as 1 \u00b5F/25 V, the default value for that position.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"C2 default: 1 \u00b5F/25 V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25 V | Matches default\"},\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C1\\\") (value \\\"0.1uF/16V\\\")\"}\n      ],\n      \"impact\": \"The bulk decoupling on the EPD boost/display power rail is reduced by roughly a factor of ten, which may affect boost-converter stability and panel supply ripple.\",\n      \"confidence\": 0.45\n    },\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor assigned an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Its pin 1 is unconnected and only pin 2 is on GND.\",\n      \"expected\": \"A capacitor should carry a capacitor footprint, and a decoupling capacitor should be connected to the supply rail it is meant to decouple.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"60\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}\n      ],\n      \"impact\": \"The part is either a dangling capacitor that does nothing or a decoupling cap that was never connected. The wrong footprint may also cause assembly problems.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The netlist shows an unexpected 74LVC1G34 buffer inserted between the SKW92A UART receive pin and the debug header J7.3, which the specification describes as a direct connection, and the EPD display-rail capacitor C1 is 0.1uF/16V where the specification lists 1 \u00b5F/25 V. A floating capacitor C11 with an inductor footprint is a lower-confidence additional finding.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.6,
+      "anomalies": [
+        {
+          "category": "extra_component",
+          "components": [
+            "U8",
+            "J7"
+          ],
+          "pins": [
+            "U8.2",
+            "U8.4",
+            "J7.3",
+            "U5.25",
+            "U5.26"
+          ],
+          "nets": [
+            "Net-(U8-Pad2)",
+            "Net-(U8-Pad4)",
+            "UART_TX"
+          ],
+          "observed": "The debug header J7 pin 3 is not connected to SKW92A UART_RXD0 (U5.25) directly. U5.25 drives the input of a 74LVC1G34 buffer (U8.2), and the buffer output (U8.4) drives J7.3 through Net-(U8-Pad4). The module's receive pin therefore sees only the buffer input, and the header pin is driven by the buffer output instead of being a direct UART receive path.",
+          "expected": "The specification describes the debug header as J7 pin 3 \u2192 UART_RX (SKW92A pin 25) with a direct connection, and it does not mention any buffer in this path.",
+          "evidence": [
+            {
+              "source": "spec",
+              "quote": "J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26), pin3\u2192`UART_RX` (SKW92A pin 25)"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"55\") (name \"Net-(U8-Pad2)\") ... (node (ref \"U5\") (pin \"25\") (pinfunction \"UART_RXD0\") ... (node (ref \"U8\") (pin \"2\") (pintype \"input\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"56\") (name \"Net-(U8-Pad4)\") ... (node (ref \"J7\") (pin \"3\") ... (node (ref \"U8\") (pin \"4\") (pintype \"output\")))"
+            }
+          ],
+          "impact": "The debug UART receive path is broken or driven in the wrong direction. Serial console input to the SKW92A over J7 would not reach UART_RXD0, and the board's output on J7.3 would be driven by a buffer fed from the module's own RX pin.",
+          "confidence": 0.5
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "C1"
+          ],
+          "pins": [
+            "C1.1",
+            "C1.2"
+          ],
+          "nets": [
+            "GND",
+            "Display_Power_Switch"
+          ],
+          "observed": "C1 is a 0.1uF/16V capacitor, in parallel with C2 (1uF/6.3V) on the Display_Power_Switch rail.",
+          "expected": "The specification's EPD component table lists C1 as 1 \u00b5F/25 V, the default value for that position.",
+          "evidence": [
+            {
+              "source": "spec",
+              "quote": "C2 default: 1 \u00b5F/25 V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25 V | Matches default"
+            },
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C1\") (value \"0.1uF/16V\")"
+            }
+          ],
+          "impact": "The bulk decoupling on the EPD boost/display power rail is reduced by roughly a factor of ten, which may affect boost-converter stability and panel supply ripple.",
+          "confidence": 0.45
+        },
+        {
+          "category": "footprint_mismatch",
+          "components": [
+            "C11"
+          ],
+          "pins": [
+            "C11.1",
+            "C11.2"
+          ],
+          "nets": [
+            "unconnected-(C11-Pad1)",
+            "GND"
+          ],
+          "observed": "C11 is a 0.1uF capacitor assigned an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Its pin 1 is unconnected and only pin 2 is on GND.",
+          "expected": "A capacitor should carry a capacitor footprint, and a decoupling capacitor should be connected to the supply rail it is meant to decouple.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"C11\") (value \"0.1uF\") (footprint \"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"60\") (name \"unconnected-(C11-Pad1)\") (class \"Default\") (node (ref \"C11\") (pin \"1\") (pintype \"passive\")))"
+            }
+          ],
+          "impact": "The part is either a dangling capacitor that does nothing or a decoupling cap that was never connected. The wrong footprint may also cause assembly problems.",
+          "confidence": 0.3
+        }
+      ],
+      "summary": "The netlist shows an unexpected 74LVC1G34 buffer inserted between the SKW92A UART receive pin and the debug header J7.3, which the specification describes as a direct connection, and the EPD display-rail capacitor C1 is 0.1uF/16V where the specification lists 1 \u00b5F/25 V. A floating capacitor C11 with an inductor footprint is a lower-confidence additional finding."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 48130,
+    "completion_tokens": 7408,
+    "reasoning_tokens": 5627,
+    "cached_tokens": 0,
+    "total_tokens": 55538,
+    "cost_usd": 0.008517,
+    "cost_details": {
+      "upstream_inference_cost": 0.008517,
+      "upstream_inference_prompt_cost": 0.004813,
+      "upstream_inference_completions_cost": 0.003704
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:20:15.019524+00:00",
+    "ended_at": "2026-11-17T00:20:47.640160+00:00",
+    "latency_s": 32.616
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-17T00:20:15.202Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 28044,
+    "moderation_latency": null,
+    "generation_time": 32418,
+    "tokens_prompt": 26118,
+    "tokens_completion": 1007,
+    "native_tokens_prompt": 48130,
+    "native_tokens_completion": 7408,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 5627,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.008517,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794874815-a5DpcMadbMbdp4TvMjxe",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794874815-Fekapb2qjnK6USKbqVQu",
+    "upstream_id": "msg_011Ch7YSmBTsGJcBVoepwGeL",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Ch7YSmBTsGJcBVoepwGeL",
+        "is_byok": false,
+        "latency": 434,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.008517,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794874815-Fekapb2qjnK6USKbqVQu",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.6,\n  \"anomalies\": [\n    {\n      \"category\": \"extra_component\",\n      \"components\": [\"U8\", \"J7\"],\n      \"pins\": [\"U8.2\", \"U8.4\", \"J7.3\", \"U5.25\", \"U5.26\"],\n      \"nets\": [\"Net-(U8-Pad2)\", \"Net-(U8-Pad4)\", \"UART_TX\"],\n      \"observed\": \"The debug header J7 pin 3 is not connected to SKW92A UART_RXD0 (U5.25) directly. U5.25 drives the input of a 74LVC1G34 buffer (U8.2), and the buffer output (U8.4) drives J7.3 through Net-(U8-Pad4). The module's receive pin therefore sees only the buffer input, and the header pin is driven by the buffer output instead of being a direct UART receive path.\",\n      \"expected\": \"The specification describes the debug header as J7 pin 3 \u2192 UART_RX (SKW92A pin 25) with a direct connection, and it does not mention any buffer in this path.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"J7 | Conn_01x03 | Debug UART header | netlist: pin1\u2192GND, pin2\u2192`UART_TX` (SKW92A pin 26), pin3\u2192`UART_RX` (SKW92A pin 25)\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"55\\\") (name \\\"Net-(U8-Pad2)\\\") ... (node (ref \\\"U5\\\") (pin \\\"25\\\") (pinfunction \\\"UART_RXD0\\\") ... (node (ref \\\"U8\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"56\\\") (name \\\"Net-(U8-Pad4)\\\") ... (node (ref \\\"J7\\\") (pin \\\"3\\\") ... (node (ref \\\"U8\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}\n      ],\n      \"impact\": \"The debug UART receive path is broken or driven in the wrong direction. Serial console input to the SKW92A over J7 would not reach UART_RXD0, and the board's output on J7.3 would be driven by a buffer fed from the module's own RX pin.\",\n      \"confidence\": 0.5\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"C1\"],\n      \"pins\": [\"C1.1\", \"C1.2\"],\n      \"nets\": [\"GND\", \"Display_Power_Switch\"],\n      \"observed\": \"C1 is a 0.1uF/16V capacitor, in parallel with C2 (1uF/6.3V) on the Display_Power_Switch rail.\",\n      \"expected\": \"The specification's EPD component table lists C1 as 1 \u00b5F/25 V, the default value for that position.\",\n      \"evidence\": [\n        {\"source\": \"spec\", \"quote\": \"C2 default: 1 \u00b5F/25 V | C1/C5/C7/C8/C9/C10 = 1 \u00b5F/25 V | Matches default\"},\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C1\\\") (value \\\"0.1uF/16V\\\")\"}\n      ],\n      \"impact\": \"The bulk decoupling on the EPD boost/display power rail is reduced by roughly a factor of ten, which may affect boost-converter stability and panel supply ripple.\",\n      \"confidence\": 0.45\n    },\n    {\n      \"category\": \"footprint_mismatch\",\n      \"components\": [\"C11\"],\n      \"pins\": [\"C11.1\", \"C11.2\"],\n      \"nets\": [\"unconnected-(C11-Pad1)\", \"GND\"],\n      \"observed\": \"C11 is a 0.1uF capacitor assigned an inductor land pattern (Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder). Its pin 1 is unconnected and only pin 2 is on GND.\",\n      \"expected\": \"A capacitor should carry a capacitor footprint, and a decoupling capacitor should be connected to the supply rail it is meant to decouple.\",\n      \"evidence\": [\n        {\"source\": \"netlist\", \"quote\": \"(comp (ref \\\"C11\\\") (value \\\"0.1uF\\\") (footprint \\\"Inductor_SMD:L_0805_2012Metric_Pad1.05x1.20mm_HandSolder\\\")\"},\n        {\"source\": \"netlist\", \"quote\": \"(net (code \\\"60\\\") (name \\\"unconnected-(C11-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"C11\\\") (pin \\\"1\\\") (pintype \\\"passive\\\")))\"}\n      ],\n      \"impact\": \"The part is either a dangling capacitor that does nothing or a decoupling cap that was never connected. The wrong footprint may also cause assembly problems.\",\n      \"confidence\": 0.3\n    }\n  ],\n  \"summary\": \"The netlist shows an unexpected 74LVC1G34 buffer inserted between the SKW92A UART receive pin and the debug header J7.3, which the specification describes as a direct connection, and the EPD display-rail capacitor C1 is 0.1uF/16V where the specification lists 1 \u00b5F/25 V. A floating capacitor C11 with an inductor footprint is a lower-confidence additional finding.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794874815,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 7408,
+      "prompt_tokens": 48130,
+      "total_tokens": 55538,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 5627,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.008517,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.008517,
+        "upstream_inference_prompt_cost": 0.004813,
+        "upstream_inference_completions_cost": 0.003704
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

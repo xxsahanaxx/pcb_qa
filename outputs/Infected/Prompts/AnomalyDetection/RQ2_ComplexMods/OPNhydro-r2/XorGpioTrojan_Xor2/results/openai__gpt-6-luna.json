@@ -1,0 +1,285 @@
+{
+  "id": "OPNhydro-r2/XorGpioTrojan_Xor2",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/OPNhydro-r2/XorGpioTrojan_Xor2/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/OPNhydro-r2/XorGpioTrojan_Xor2/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/OPNhydro-r2/XorGpioTrojan_Xor2/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 369364,
+    "sha256": "bcc34c690fa4456f2db340762de791ee8c5120b4a8897802ac5eb81977ec5d26"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"U1\"],\n      \"pins\": [\"U1.2\"],\n      \"nets\": [\"unconnected-(U1-EN-Pad2)\"],\n      \"observed\": \"The TPS62933 buck regulator's EN input, U1.2, is explicitly marked no-connect.\",\n      \"expected\": \"EN should be driven to an enabled state, or otherwise connected to an intended control signal, for the regulator to generate the +5V rail.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"138\\\") (name \\\"unconnected-(U1-EN-Pad2)\\\") ... (node (ref \\\"U1\\\") (pin \\\"2\\\") (pinfunction \\\"EN\\\") (pintype \\\"input+no_connect\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"U1 TPS62933 bucks +24V \u2192 +5V ... \u2500\u25ba +5V rail\"\n        }\n      ],\n      \"impact\": \"The buck may remain disabled, leaving the intended +5V rail unavailable; the ESP32 DevKit and the 3.3V LDO would then not be powered from the board's 24V input.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U6\", \"U7\", \"U8\", \"H8\"],\n      \"pins\": [\"U6.21\", \"U7.20\", \"U8.1\", \"U8.2\", \"U8.4\", \"U6.9\", \"H8.2\"],\n      \"nets\": [\"Net-(U8-Pad1)\", \"Net-(U8-Pad2)\", \"Net-(U8-Pad4)\"],\n      \"observed\": \"U6's OA2 motor output is connected both to H8.2 and directly to XOR input U8.2. The other XOR input, U8.1, is connected to U7's STDBY input, and the XOR output U8.4 drives U6's MS1/AD0 input.\",\n      \"expected\": \"The stepper-driver motor-phase output should not be connected directly to a logic-gate input or used to drive another driver's microstep/configuration input. These logic inputs should have deliberate, safe logic-level connections.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"119\\\") (name \\\"Net-(U8-Pad2)\\\") (node (ref \\\"H8\\\") (pin \\\"2\\\")) (node (ref \\\"U6\\\") (pin \\\"21\\\") (pinfunction \\\"OA2\\\")) (node (ref \\\"U8\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"118\\\") (name \\\"Net-(U8-Pad1)\\\") (node (ref \\\"U7\\\") (pin \\\"20\\\") (pinfunction \\\"STDBY\\\")) (node (ref \\\"U8\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"120\\\") (name \\\"Net-(U8-Pad4)\\\") (node (ref \\\"U6\\\") (pin \\\"9\\\") (pinfunction \\\"MS1/AD0\\\")) (node (ref \\\"U8\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"each drives a 2-phase coil output ... to connectors H7/H8/H9\"\n        }\n      ],\n      \"impact\": \"The motor output can expose the XOR input to switching motor-drive voltage, potentially damaging U8. The XOR output also makes U6's microstep configuration depend on a motor phase and an undriven STDBY input, causing unpredictable driver behavior.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"The design has a clear open enable on the 24V-to-5V regulator, and an abnormal motor-output-to-logic connection around U8 that can damage the gate and destabilize a stepper driver.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.99,
+      "anomalies": [
+        {
+          "category": "open_connection",
+          "components": [
+            "U1"
+          ],
+          "pins": [
+            "U1.2"
+          ],
+          "nets": [
+            "unconnected-(U1-EN-Pad2)"
+          ],
+          "observed": "The TPS62933 buck regulator's EN input, U1.2, is explicitly marked no-connect.",
+          "expected": "EN should be driven to an enabled state, or otherwise connected to an intended control signal, for the regulator to generate the +5V rail.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"138\") (name \"unconnected-(U1-EN-Pad2)\") ... (node (ref \"U1\") (pin \"2\") (pinfunction \"EN\") (pintype \"input+no_connect\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "U1 TPS62933 bucks +24V \u2192 +5V ... \u2500\u25ba +5V rail"
+            }
+          ],
+          "impact": "The buck may remain disabled, leaving the intended +5V rail unavailable; the ESP32 DevKit and the 3.3V LDO would then not be powered from the board's 24V input.",
+          "confidence": 0.99
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U6",
+            "U7",
+            "U8",
+            "H8"
+          ],
+          "pins": [
+            "U6.21",
+            "U7.20",
+            "U8.1",
+            "U8.2",
+            "U8.4",
+            "U6.9",
+            "H8.2"
+          ],
+          "nets": [
+            "Net-(U8-Pad1)",
+            "Net-(U8-Pad2)",
+            "Net-(U8-Pad4)"
+          ],
+          "observed": "U6's OA2 motor output is connected both to H8.2 and directly to XOR input U8.2. The other XOR input, U8.1, is connected to U7's STDBY input, and the XOR output U8.4 drives U6's MS1/AD0 input.",
+          "expected": "The stepper-driver motor-phase output should not be connected directly to a logic-gate input or used to drive another driver's microstep/configuration input. These logic inputs should have deliberate, safe logic-level connections.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"119\") (name \"Net-(U8-Pad2)\") (node (ref \"H8\") (pin \"2\")) (node (ref \"U6\") (pin \"21\") (pinfunction \"OA2\")) (node (ref \"U8\") (pin \"2\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"118\") (name \"Net-(U8-Pad1)\") (node (ref \"U7\") (pin \"20\") (pinfunction \"STDBY\")) (node (ref \"U8\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"120\") (name \"Net-(U8-Pad4)\") (node (ref \"U6\") (pin \"9\") (pinfunction \"MS1/AD0\")) (node (ref \"U8\") (pin \"4\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "each drives a 2-phase coil output ... to connectors H7/H8/H9"
+            }
+          ],
+          "impact": "The motor output can expose the XOR input to switching motor-drive voltage, potentially damaging U8. The XOR output also makes U6's microstep configuration depend on a motor phase and an undriven STDBY input, causing unpredictable driver behavior.",
+          "confidence": 0.98
+        }
+      ],
+      "summary": "The design has a clear open enable on the 24V-to-5V regulator, and an abnormal motor-output-to-logic connection around U8 that can damage the gate and destabilize a stepper driver."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Evaluating connections**\n\nI'm noticing that the U6 OA2 line connects to the XOR input and also to the H8 pin 2, which seem to share the same net. It looks like this line is tied to both the motor coil A- output and the XOR input. Additionally, I can see that the U7 standby input is connected to the U8 input. It\u2019s essential to ensure these connections are correct for proper functioning. Let\u2019s keep an eye on this!"
+  },
+  "usage": {
+    "prompt_tokens": 131043,
+    "completion_tokens": 2911,
+    "reasoning_tokens": 1980,
+    "cached_tokens": 0,
+    "total_tokens": 133954,
+    "cost_usd": 0.0178358,
+    "cost_details": {
+      "upstream_inference_cost": 0.0178358,
+      "upstream_inference_prompt_cost": 0.0163803,
+      "upstream_inference_completions_cost": 0.0014555
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:19:03.265762+00:00",
+    "ended_at": "2026-11-17T00:19:30.523277+00:00",
+    "latency_s": 27.257
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-17T00:19:03.305Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 7910,
+    "moderation_latency": null,
+    "generation_time": 27155,
+    "tokens_prompt": 94236,
+    "tokens_completion": 1100,
+    "native_tokens_prompt": 131043,
+    "native_tokens_completion": 2911,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 1980,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.0178358,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794874743-5Bk7uVQJa1hKBZKf3YXI",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794874743-yNRdDTw0MR2QvcGAr3YX",
+    "upstream_id": "resp_02ea6a6af084c1c3016afb9d77818c87d1b9174633d28c4714",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_02ea6a6af084c1c3016afb9d77818c87d1b9174633d28c4714",
+        "is_byok": false,
+        "latency": 601,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0178358,
+    "cache_discount": -0.003276,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794874743-yNRdDTw0MR2QvcGAr3YX",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.99,\n  \"anomalies\": [\n    {\n      \"category\": \"open_connection\",\n      \"components\": [\"U1\"],\n      \"pins\": [\"U1.2\"],\n      \"nets\": [\"unconnected-(U1-EN-Pad2)\"],\n      \"observed\": \"The TPS62933 buck regulator's EN input, U1.2, is explicitly marked no-connect.\",\n      \"expected\": \"EN should be driven to an enabled state, or otherwise connected to an intended control signal, for the regulator to generate the +5V rail.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"138\\\") (name \\\"unconnected-(U1-EN-Pad2)\\\") ... (node (ref \\\"U1\\\") (pin \\\"2\\\") (pinfunction \\\"EN\\\") (pintype \\\"input+no_connect\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"U1 TPS62933 bucks +24V \u2192 +5V ... \u2500\u25ba +5V rail\"\n        }\n      ],\n      \"impact\": \"The buck may remain disabled, leaving the intended +5V rail unavailable; the ESP32 DevKit and the 3.3V LDO would then not be powered from the board's 24V input.\",\n      \"confidence\": 0.99\n    },\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"U6\", \"U7\", \"U8\", \"H8\"],\n      \"pins\": [\"U6.21\", \"U7.20\", \"U8.1\", \"U8.2\", \"U8.4\", \"U6.9\", \"H8.2\"],\n      \"nets\": [\"Net-(U8-Pad1)\", \"Net-(U8-Pad2)\", \"Net-(U8-Pad4)\"],\n      \"observed\": \"U6's OA2 motor output is connected both to H8.2 and directly to XOR input U8.2. The other XOR input, U8.1, is connected to U7's STDBY input, and the XOR output U8.4 drives U6's MS1/AD0 input.\",\n      \"expected\": \"The stepper-driver motor-phase output should not be connected directly to a logic-gate input or used to drive another driver's microstep/configuration input. These logic inputs should have deliberate, safe logic-level connections.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"119\\\") (name \\\"Net-(U8-Pad2)\\\") (node (ref \\\"H8\\\") (pin \\\"2\\\")) (node (ref \\\"U6\\\") (pin \\\"21\\\") (pinfunction \\\"OA2\\\")) (node (ref \\\"U8\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"118\\\") (name \\\"Net-(U8-Pad1)\\\") (node (ref \\\"U7\\\") (pin \\\"20\\\") (pinfunction \\\"STDBY\\\")) (node (ref \\\"U8\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (code \\\"120\\\") (name \\\"Net-(U8-Pad4)\\\") (node (ref \\\"U6\\\") (pin \\\"9\\\") (pinfunction \\\"MS1/AD0\\\")) (node (ref \\\"U8\\\") (pin \\\"4\\\")))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"each drives a 2-phase coil output ... to connectors H7/H8/H9\"\n        }\n      ],\n      \"impact\": \"The motor output can expose the XOR input to switching motor-drive voltage, potentially damaging U8. The XOR output also makes U6's microstep configuration depend on a motor phase and an undriven STDBY input, causing unpredictable driver behavior.\",\n      \"confidence\": 0.98\n    }\n  ],\n  \"summary\": \"The design has a clear open enable on the 24V-to-5V regulator, and an abnormal motor-output-to-logic connection around U8 that can damage the gate and destabilize a stepper driver.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Evaluating connections**\n\nI'm noticing that the U6 OA2 line connects to the XOR input and also to the H8 pin 2, which seem to share the same net. It looks like this line is tied to both the motor coil A- output and the XOR input. Additionally, I can see that the U7 standby input is connected to the U8 input. It\u2019s essential to ensure these connections are correct for proper functioning. Let\u2019s keep an eye on this!",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating connections**\n\nI'm noticing that the U6 OA2 line connects to the XOR input and also to the H8 pin 2, which seem to share the same net. It looks like this line is tied to both the motor coil A- output and the XOR input. Additionally, I can see that the U7 standby input is connected to the U8 input. It\u2019s essential to ensure these connections are correct for proper functioning. Let\u2019s keep an eye on this!",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-51_tZduCIAzkPXDvT5naU2B4cwxm7ak8ns8EwqZwKF_qjOsDY3tnWOK8aNFKkNMlrNa8DC6Isg8dvlL0VsR4yR4R7AmrqEorPtPHx7wQDcu6M_5JGPMbuaLyBnfv1fCuc7q3Zv208jbvaA86SFUOsXIMdxbE2t0MHGAnL64BKu01GgK6AH5TnacAeTfICELRPEBbiBJ6-GhHQ1NzHE6j1Cv6xf3QPuoz1WX_q5YflE0OjlFIj7v35jYSEr0OFPFnN7tSQMXRsp8S-AWPDSiI1qhBbpv0QP5kKpm11kSnZWimD4Tk1DWwJ2jAV6IyxoPqOG9-FiUdWUmamFLDr0O0Yr-dKlShlX-gIahcISv6Vz5fj0q4gk5p9XmUCVBeHocrGD60nHVmqnsMEdNsDENco3aVmCo5RiPljaBdxTlwlYEWJKQw1hWtt4KieUAg64cYFPgj8e_zFAs5JYfEe1j5wK6K0CeUPhU1lismDgbYcUF5wy6zZk_o3wYBNotj-k3ESAdv8j0XlCD67dvLS448y4iN8eOBZ4OISuIqOIn3SptKysTpXdTyvQfKvy0Nmi-UFR2WdIxOPVvs_gyRZelRh4elcQeffZHU04U1pp1SzLrH2qLTWzxKyAIVGE-oRI64dLYQegiy_t9M7ae_avpBkfnJDwMcL4eWZBBDWreaCAEzMjLcbXao_yU5GpP7uZE5wKpyrS_r8nxhkX80wuqpyV9yjzUjXo7xX2pSCk4IBO9YB5dwRFmWHFz_C_017qDPMf9U1Hwr6baxrjoXE1NI9fofk_fx0KqB1FTVCBbH_ihVVEbQ4HwtcU4Mmo0dmhi7KC-L024oRDajgd5t-9iCViT_MGHVmn1OzoLVjJ_WgTaDConWR2GTwt__9oUejprNilzZNAko7ptPbL4LW_yGItgrDgQJP7SqH43Jz_H06ri0EuDzGm6oq71te75rHt9pNwyHRqxO3qYd-VdLwDQ4p-pOzKoLErgs4P5VszdRa034ZDy2jrefYQLoECGcDuzKzyvcjn7ibg52nBWfJFiMb4iW7wvzCGH6sZjNX7Qu9Ax0GgCjl0A5p7ao5u0beNvd08OWrFeuJ8wjKUJlqEqaPCg9k59UPp-ofzXjpc9N-4xCkzpH0XCnL5ZbE0GywblQ5HKmR1yQpR8AXM5_UmhnU-1yVNW2ItCIjd_IVnyUtexmWTihKKZ8KV_HF2HVGUPgVINfH_QnuuIVm58gzGc4Vbwi6WOinSfE-v_dMsdZKxB5l2z-7RdvAjTSF5-0SNd6Dj7amC0lVYgyXC3IgPgbIhboRI3D-Sw--itWdTGEDz425eI4t6Ct0s6NLd3SLyoO--_erNuaaCeKaEN0d6IafDi7AIvhClrwjUjlnD7_MZ_SU1JAQ9tutrRSYsHXg687baL_dgXYGkzBAIrZQDYnFVS-neKqXIwOuY2sH2KfUzve1z-raijk8uyGx2fVp11RbNkRY7M9Ee36_DtyR05jUYjxLXvEk34y6i4FCTKS5oIeYE8ZEWxoCynJR_yYjDNJjFIqENByzrkzajHn9SAIBMfDJqKTx-uqxMlq4gpFnIhv9ggxzmGeeJtA4FjGHCvu1rIuQfuaU50pSAcV8Prhxo8hFd5pYByH7nKrDNghY_tmYNsHvzjIY5VJg7gYcHgyAHYeiriQ7AH_GsI6CznXwlzgyaWFULhlkcCMIr3Z8wVwpxMZ2ZAlckt88xi-Jw-eNA4hsalxCcbBQgOTZaQ7TylCCXXEZMEoys8pj6sBvrCmAcvpkII87yqOzdpfXNlrCURZa0pEgjXQOf0ysdb6BX4Ws3fkYIuXNCQYnOo4JZiq9BhNR0eUOT_cye0IcwANO88pmgH9HfZ1Jka3k_Q9DJvRXOJV-Qk9SwX22iJ6ZSIxG6fzEy6nwhwdOaMYbxFQOeQNnuiyrv7T1N9HkIEbIJpgpaZF1oo5zAvx96gcYlNNqLAxKIXJBVCYdysOrRHe7vOskQMtqPnXfbM_TlY8QyusuWVbvRxIwHzyZ5t45-mQ1yWMENdRVOECObkpXHzlVc0d7kg-5aRKC7x9Z_Wpu81XebcoEOykroTdhETKmeFcRyalhHUabmZ2AzUg6BmoGSNoULCeSchyl5kg70zBkjffVsutB9gLlCZv3lAvfbr0PUTvpG6mJ1gdZrMUjxNvWH0KOzJBKSf_kHv86NWSm-l532qfx1-8bbI8EoOZrJjlP6fgTyIrCVi17azquvquuat06IH2WaBRQNAXNn37g442KnxJtVF6L_2aMuoNynX3hhw864CS3nDPisLLR98CBEUYibJaIQG359FJ2lKRS3Yra22BDglZB4fHsInHlrtHg23y3nnCXBZljRFa6oR_9PZetx7OMr0_KXNAIOY1neG2kf47IIltZS32LDNqF-lbacEWQvldyvOmS6IhA2WUM3s5DUrK5_8ixAXfkTtmPo-LttoIsUUah80SrIP_jwJ6nIFNQ0nK02MuAJoWJGAvSJfz3gUo4Ug7aUn9avD46BgSp8QrCAbhf7jCJSiTOU8tYAlDGm1Jyn0xX_JDQ_rwxyJqxQ37pp8_E2_kr9VIxb3sd-kLq_lYNY77ZXGOuesf6bxlYVP4iIkUKujfsu7v21bsDpAr7FP6vppypV9nsQCt1DqpsVFG-plXvqCSH9jk0zRWCnwPrwCgMnOj6Esxab8034KNsuPJqllTr97xFpAF1D0QyuxB5DJmWpnEyVhAW6E6OpSc4LI10HDIwpkya6PqjgDO1lILtkPzquICtCqQAXMZFpb9t7BGt7uMzwp5azBWWOmjZaXG7VBvnhWW0klWKagS6aMFJEQZo9W7F7ac-BS0_LKu7HhCsIjWQ6C895S7eTiApfbaLb6yWaWehdprdtnxSRaGT7asQHpIltvI29cVlHUbwPkGTZkw1W8sGSwrwbslqTqnuotgZNuVdBbpoGmx-bPN7pvFW3qyNtfbt36gOmFvqUvjNBm-a_fLoT38yESSUsJjlZL0Sn7TuKlEIz5TUt6mWksPHXk2qsl2FXYUCX4kk-MVQMuC8ZOtcB_-TM70aV5RhdLscFwYL6IPJcghLGA_rA_6eSs9Id6idJ_qpP9NhtfpWwY1izK1EcYUDoP7tYUmsxFh9qTvAhIKKeizYv8VcZGvGj-dVRrDxPQ1HlNE7JxFT7DkNlSsGz0evZXWZ83ktDP261HK3com-qvVUkqT-yK8Rjn7OKsT-rxLZBcAlWE3X2oT3EqkhA2PC-3KuyyGWd9wzort_N2fnkVBSiNe39kdRs7IV1AMUVxWSxDP7U9RDUoxX6VaEGUSukpTHJAASZNQji2uX0NJPiM0FdBByGjG7gcw0t-JH1Scq5DqW458WTCkOBcFpN1Ttw2ospuDttXdpy5AOVe_QPzEyWy5VnGasPMXpGOSWATorv2o1VZW2Z8UoZrTxEylnrm89CSBMLeTM_SBZQQIH6rUJ3WEWYprT1CMB2Ou2gMMdqDmgp4mHpmWmvqzcilyP8QKnb4P3QFW2EGOpDVoICujIHfwSe-4mT9qRFqArzj2l3oGJMe7WEM_0bPxkqm5nWpwGANdJguzGVvX7c6OgXNhmytMdcJfFaw39yHpKg9hNEDGQVAKW4jPHUwIKb4C28AeSIXq-0Mgn7eg-T8Yl9ZAgXru4GvHmyTBZ5vQTFqPV9Tp18PQHm2GVTyuRZPtJGg0_X005AsfBHsjzkiw1_EspxwYIYKs7OombjFefNJTsNFajbuGZUxHFIjhqg7pHkRkwkc-nISNvD2CAOgGPUPYjAZdwvWAaQ5sKwTLIqeVGsSFBbPvfued8OKvvKSVXAQVcJA7OlLeqszNrqDGKLuhhmD0hLU954aLnES38gQbuaIOFMMLIxBQfRua17EROfYRI0qpItZn6C09nHvnCi2M7w-VXY69pDP8IRRmWj6yEHm5UNeqJ2e4bidg6YC3lra-uT2OVnA5QHrGa1xo_sM0xY5meD8v2gEfCykvCjC9LZb_rrAodym02-GDCq3A98djbKKJu8UT18TAWeYIAAV7Bcuwj2jy2Ph9A-PoTWfXGfJc8fgmWVniLRZCDKYjt5ChykfSO0WCCUZx--9DrZFqi230ED33A-GRKfUO3NMkHyQ3YxspICamBadKaQLdxOF47Ikrl4s7v4EXvJbyUlu2MAcNZ-SN_WYsNuW7f3Iz7mYF0Q_4BNpy_9AcbHa8ZEFm8XzvMZThi8WxVlH1VNXOwZrKyt7YajxCnLFIIwrOEdo99-VhKilz2GgVe3Ro0LQhFsiOJbfKTp_UsmvbDPtIdp_ojiT0f1lXtQu1HYK_iWOcXXBRfCN0N26pNZDqbHTIr5cylF90lnwRT6ESDijvdSTxmFAS3-IJxKjAM2kmS43Ycb0IpkHhBzIlUdCAsSBcvirfXWkgCqR3PInKxgtGXz90LG3HC_vcI41PvppbBfJ-os3PTNuNNasa9YHa3a_-Kkq7Uz_oyHKgz6OyDDLZd-nwVNT7F8Gdbgn0XzhAe23nrXTWFV8IIOLaM_uGwUv7YMAOc8bDhaKhQLuSsCl1JsvO-9VgtLs0I5fDFkndULw7SD3B0ZsvRadMEpXwMuo-FSfVQEl3jCMMXCpfu3fUXAZnDhcCCAdEBHsIKyyVRvXPEKnLnhOR-EII1PHyFfB4Cq7lnKUi8wxi_vLZ7n6AGnsReJce3UtLfvi2T7c_it9AU8mnRW98JfTFnNSmQt6HvpU5B-FA1elvMYuBV8E1WYnPadOotU82IaWzmB-3LTf3SSX2Q2Pa2j2wU5vndi647iFNKau9GgYyjUdPiVsXOhP4W7Tkfh5HvctLRSW7UmEIQaHHYAMhTt7vCY9e9C_rQPbcnAwtKtHxrcd-jtKbAPY2K_CFzTpcWfJvKcUFJfzEjpjo_fd_ID1cImNl8ZKzTBl3XgJGa5OS3nkmelidUZoVnJJCJHZXt8zqNEXtR1NN3XXT1vtyD2pADCXKHrpqsCoJIv1Lf2WyFW-JDubLgLXry4IOUp1gErbKGPHHlMA2d_ocFRn3c3BaAAu9DNaFb1grIuNshC9ca5UxWUacFi9Bm0D8KMQ9RYDylzDQarYBTAnqCC4JluUT9ZWqMqF0rDNhW58FJbaRYnSNcxAWG3PBVkYS3WPUFoW5Lkc92ipihLZaFzEl12vPD3KlP09pRJr_p9xHKTs1AYD8IimvOOnFkWYM6AzImncCBPcQLbkRY4EmSYcD-WOV-dURAaQ3YBrMvkOI3cU0Pm0YkdQaLmFpQcf94NVOlmJu4X8I6aHRjzE2Uf2vXTH8MeWeXJJTKbp0s7Ssqlfkgdzi4I8OksGnzJ0ZDTaTOqGAtNMyWQ7kZPdJjLrwj_Qe8aLUFiLyXCIkFMW2P-c5AlUGbIO8dio5Nu8FF8sIntVxbXbBwMOs53XJwl3y7Bx5SFWwgDkWgVkpYaJdcHuWL0emeHELQpbnJXc2THXF2yRyRI0JyYYmem-eM-A3DgtkEmDPLeTToHGu4jabUHuYgfjLMPpjkLzR4LA-a6TU4FbKrWm4VIImU-vufWSK2L8BLy5-VpPvPY1bZJdPPNXj1CwGVnNh8-xbnb5-xmwwKTQuJQiJkbjNonWKwStrz-K6Zky2gkBnzWb_TaVykR9Wrm_1U6Nu8_ISY5WX0EI9cjzLx5Jaxi_EhZ3spTVOjIDZ8TAwxmz3z3LCnXaaflsk2D8vZHPh2Bt8QG2Y5ibHt-IgmWO_8GWiI_M1MuU7PX6lo8iIfmXlfoykvrpl59XCQmqQ7xdb1YK6QWkTYx6JhAGBbvouD4qqP8NE5H1jbczn2sxbzPfHNWD2qILcDpDn5Z_P7JsPhOtIHmlydufHtlofPBud4NavU7x3JI_qbuVn_fyLZh5etLs6P0qj0OuO2Ev5f3KKCXjN0_VmTENdsQi_UyOf_NkN7e0a18_RRKytboMveAFK4mrcsDkPdeqeZ_ANDs-wJhPOh9a-uN2HeGqYA2BcsH_SJ9gGy9RwIDjQVCMuVq0v6WYlAeYsp-ZTpYe08pmZU-YsqQ9NluRvOTSd45SzOcxgm5Yqdyy5E9l3WxLeNp0p4votFGrKw0sPGwEtPruHV7BsrUZBSupy7qgrf6WgCCUryMeZOl53i9IEGFiZBDL6OqPyDfsxWjL1tlFKfzOKj6m0iJVOc1e8V7WrdkG_-xkVvnSzFhX5Gm521ReSjUkNYqH5RHWj2RVf9a1SITzoxsKYlGxmUsPwnNQZnglXcvhKOJuLA3MKRFGDgh_w0vOrPTUr88Cqj-AI0qFUACOc4nppuD3Lgul4wOHA5LUMENZ_NGDxNwbDp3r422xe0rneh1hIVC5LkePgS9oIOW-73NemMQW0dmSONDQbmz-UIABZnth2wv4mWALULNvOlkqjljv2ZmrQST8-5AxY7FJDaG-9BvQXo4pPRmhA8FryIKAmfQLRlHvDfYj7-ui3uRwO-e8kzlmTz-TZ_fuLMD8JuO_xfMocZzqdFIeomZNYpJeLDK8WFb4TmsEme5ad3PPUKhYNoFQbP5e9hM2-5ZCMfzWCv4ydsevC-7nnN8o0zkopGV6eUJwRPn0E-th4ugm8r3Q23qKSyhGzgL2XtaPnEu56pajOX2tyfrZjpwn52n_nvqf7kGGh2XUgWZt5ghn97z83sGnv0hBMmhFbRLIWor8RViP3CRRuiBYAllWsdKkOkfJB9ObRRBiXNb-znu0fWrZhETBgx9pGRlckmwD4GVzZX1tnjQ9w-MzsztQVOXIVAIuu896UAZoBCOM9ocdnD2vjJOdAJ4GcbibGlATVI46N5F8TLBadTj9-43caJHny45O08g6XU3n-_WrbAX7PrhYwo3WQW5PXU7vJzTvtiNpMo2KoKR1Fy8IdJW3KpoHTyEHqWbYueG6KAoS1dhjn0kCjH7yge7T8dhhXYfIRCmsUKdVl2g54hlsZXkY1TNcxndQmLHNXxoxXk8b6lqk79FXr6M_7Lp7_vGfYSQpGpRvtyqnY1u_MhO9t-G0sihqFmQ1E9nPPX-pdrOHVoWtbRvXb9AvoTkQtMcWC0HnYS9zmagGd9Gg-yOShgAfwzZ9uHawnsfEMWpmZbJ0BfvLYnMXZvgWkvb6qRIKlfWNPtOTo5xB7bfxEQaPztToEdDSj-zh2j6YlBzQ4zHH5csKXTsEAd1xPgWU-7n_AiPhkRO_Ca4TEQlaOram-TaHmGaiDwK80i_FegnSae_s70LVjYG_QIIUocqh2t_DcT5f_NNTOo7zGTFCL_nKxZ0Oh3xARfDlykQQJy3E2yxKTXlfaXgBStKKQ05zCPzr0K3ki03kqiReAU05HWmA3jAb90eVl5KrMQkndOinNW7DkanaGcdw068F4-nr-9d1cteaGTxPXG9mZHYr5UCT3675u9t123GGvIFLFRlZ222UClOfiLct9tzYEJQogNdm3xifr9D-_x2e6a7o-gZ2f2HuJKHjJzBJleJLJkR2ZVCoAQMtmAsWOpa4NtSgVrQIfF9UEB3S-s-EczfRA_UST5FevJqVcCOQyy2atZ1-9IKCz7CQvavXjnAVq7o1ZFmv9ytpNW41ckLEfCkq89ae4WKkYFspJ34gzidOTrco4bfG6SznA8te3MCCwHE3Ps2Z.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_02ea6a6af084c1c3016afb9d78cff087d19a1ab3937f2a310d",
+              "index": 1
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Examining regulator start-up**\n\nI\u2019m considering whether the regulator will start if the EN pin is floating. According to the datasheet, the EN pin seems to have an internal pull-down, which suggests that it\u2019s active high. This would mean I should tie it high, as leaving it floating would probably keep the regulator disabled. I'll need to double-check this setup to ensure it starts correctly!",
+              "format": "openai-responses-v1",
+              "index": 2
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52DzoIVroEl-a7mVFdQ7kcd5y4KFaPFujJ3_vPXsz0vCyWy90wbTzOhGpjUFomMo-lrYhgLk6f7C5VqoX87mUnCwqZ7vWDlcYU4Y8n1aGJim4watoHGcSPAiTIVMMYdbDOCviKwVo5y1dA6ADEpHz2FubSC_COlIn5W-v7OtppZnZBpRlCAumSz3LAuONuRFsvei_19d5QHq5vW4kmgjKvaNW5gMV8fE4fbiUYoEw3N23qWdc7q2u_pTEk2RkQAW_b0xyTZaftUYusOYPW8EeHf749KSuXV8OTGXMOPYO3OWvWAftQhnzn9y3DiFSwCdZtasZhVTmyWaGQUpXRO3iuudmkeMPSQO9hrMTZdXjgqo9QsvH-rBnYEKwXHqs-ym71Be7l5FqyvYi-K6_QjwyVTsVMTXT_TGhFlaNvAl70eC91gMg_0RUGBzOnM7s0I_7S31liIWZ56HiBNWRvW5zrEvlThYsK8Nwv6WczdbtbjrXaYX0rmg1binNDVH3ykszlPi0SUOQmKlvaMDKEPIUKC5VRhpiVlrOh9arwKleUcX_wv_sZE5NCsSnF9ndbEugX3knrH_w_k7tM3V_25rN3FphCVMRHh7J8CXAVUswzyMnJ6TpCAp-1tXqHuX2sBapwixpErd0SC3Ae3URsCMcy0TgFjs2pXN_Dj9dZYrUe2lETJAnrDimytW05zP9JCJEYW_oQpO2hgu94lOXro3T5rGBEC-_YCj9yvwUq3K0M34VsEmhMxP0J53OcTACkERIx_Vgq0zk5PJVaSvSDxp_69CleopFFgclfzbo1i4FQ1OinKcGHFaYrIJyYmcWXOTmbMrsyM59v5hhWNq5xsgb4y1uNBybsJxe74Po9cT21jwcUcsUgacJtJd9-FvqS7XRv-ByYK9oE9-u-nlNCvbaod85S0XtWs5aryBAcY8G4Msz9mt7cbYEIl9K2DErIgFubxLdl6MtDzigXYdBL5O5_PsarmPL0BlFbUXr3D2iseDbRW3L88u2p5drzBY-oQCizF6nNpnfCmjeI0F2M0v6UHajCm7_AGyTV74_Ckd5QKfv9CdK29A-svC9yER0K7eeFJF0X9dv_qsu7vbGhbGAVDM-zebjwlvqbbPvt7zds7cwKX8wCmPWSAEu1m8hm8Ulw3OHU94sJuJ3eiAYMMUITVdtNyLc7tqQdSXD8R81PNXtDfNaIGfKIs3ec1t-6AOoh54S2Wt6XgM0psSSKX0Qn5i8Dm1_4DsBFsxyHd15_NyyANFq94sMWNcN5AvvbHN41HzPTjxMevIwiKyFJnuReIKXYEHu7mwpSyWaXLIyGHhJUO_ZzkYFUequ3YcRZa3-Z0M1tnfAy4ypacmCBHRuamczNrOTug0fUbrLLsQvlY1U3WxVGowmbWw0b_okc8xTfQCp7_6XvNOMGZfCJhdnNc7xTWVJmxJll62c8UZexNYAnJSvmLaTxKnq62J5L1_u9Z_XOlfe3A_Zp-sgAhVBemlhLLDvKKp-9YYfPgN_zd10VVEgeIAH7AwvD5-p8SvvclfL6Wi2E4ZkC95SxDa-FldDkRMPsWX7tCOWu74dNNEGDEBocOHEPbs177E4SFRXebkyxoEB8GrJpVFP2vnEfDY1axMf9Ge4o9avHoSZq8W6GS5kTIvx-4AmW9mt684cdggfkYya4PV9UZoAf7YFKp9Usb3qhWkEggQfm1oJn7T9s7M9OpV1oX73PNl2k0HWdcGEHku-DsYHqTUATpc5RCIT7YVJcTDbiQ8STgeGHWuw4XYZf_GXFqR2yhD1wH5r4IdiGOtL3qGKcEXmOhPI0Xi8zbqFpldZ-BGpEwhWIEGuYyU_3_MsWR86DQg_ugMGOEMX8J36fsBZnx23PsDObxb4Z1XmJ7sY4ez_JPB0b5srPamPPyImq1kHSYRD-P1tAt0x2GlvVVgho2iKVW1rcb0ZR5qttC-GTiR8IouyV7r4BaVC1iH78-WlyNrfgmqE7Qk_fThgV81VXlmquVf_oLRT_-oMzJpwKslYG4KnL7WiTvnpCyabBhvt_g9LQyRxuujZAjhZs9kkUyV0Y9Rzn-skYi4RgMMh0K3NJZrRC__d4KMKUclIGXo6x7vmx3M_PZG8m5ygBIZeMC5wFXz1ZPowHqfPUwVyMC36bnmN7Ve7pqHy_QIM5RDy_dLwnBDGJfDIpgJXDujTE9bDlYh3Y4SBYAfUa3k6lTCtcYLxaVBoS8EBk07dHEkIn3zjGlq5x0tFtWMT1-RzJukF2ibudXhy-vxwGn0QnXsJm5A8yMn1ANQcLvYBoz38FA2S-lmRq8zCK5y7DQfZE2kcYlufcO-Xu7Q4qNTorFFPcoBE6ni8fFjVZhpbbnwDqMRxyL85MtoLrmwYqGfOmP5ZF21CHKiNP7coXWJ9R6nSAp-e2w1_0u02Fvd5TDXbXCglQrW9JetDyN3eLKvPLOOOrQdnVs7EC2R9kkWOuNSulR0EQ3L5aF2OH9cQqedbv_psuAxy4Mtpp_iFD77YeoVpcEe-vu9oGEml8153cJmnDnSSY3foM-Fmu_cfHKFxyT-GLFydvY5ZbwPINeXnnj9LD6E4toV3fIwfbtxfxH2ixtBMpWxFyS-Iwho6SrdYj71NXUEO5J7CShhv9qvq-QBJ_AgDjhaD_3H4AwFYTzMXoHcPUcQ8g2pOieYxQDYHULoozY1bBlf8v0vT_rSnqldND1odyWhCeYzcSzOYJhTl8yHVwwnSuuWXkuwIaY_RveWjS1RhosFu1biF0P4pTM_-5qxjQRkRVJAkuw7Scj1bR5Y7rqa-wg2gMq6c1UiaA6BfncMc8UvnCVMNXGbMVtjVs45b-6uwTQirmyG5Y0kCUJ0fCuNqsBYMY6cogqM_dppU1KK7BZZEAK9zNLXe42jDHvglfDoB7PW44ORDf4QjtboeL_cxkKrkRL9y0RKF0fg3LBdnfPfBKDU-3QdwLNGu0YRX3DYtY_YdEYnX84mdBHS2orSKm2aybQ2ibIWL9hcwjePPUPbJZf7-B5UtGBKS-s9yBydf9dn02tsNZD1bROH_I_4SCG3_3-gA_BxxRoq1OXIV6iSBzvI4CJRi3EY11DpssWelyprBvw812UePec88LCVuf5yORLCE_2c8LvBai4zGTRujG2cCYYk4qdIyrkoVTtzFf4qbU3NehGNiIJhYIeD-zBH-5WLGMgXFHoJsUEkQBWYEWuOSQLW-4vW5RShjhx-I0xEJmLzNLi76A3a1aI-6e-3XgMs_J-eZNeQoM3bWXHnjcJhkTPwYuvMexg6IfkCf1wkcQPBd2YjL_R8FsXMXnlAT9Tpalo33Ae6yGnuH6Ojvy6ufJvhR_hMJCFaOM-IxTI59egQvkGd0AVJ4ZG_iz3CFkBk6V9rAeu3ZiWrJUtkgefunyi9xMrbTVWmqv_0-EpXqx2bI9IUBWVtU_WoxOc0R7tts6Qh86PBVQYGptcywc1JV5ae6oshT8po9kTOaPZPzek_EVphW1j0eiyuN8iIVBOWAvG2JxAYW3sOnz8BvC9t9ARQRFEulLk-9j1WCS61ovxieGsZN8PeFJs-klKX3cSyiZ4u_fpKbxeAvo4_WavT_RAILL4oLFh_Co2nmkP7rB2dR26-gqIMQyR16LEHS1AmY2xEDyKk1SpIF9AWne_MGXbCnq18zJLwOuGnZuWNnftd3bNEYs--puF5FrpisQ9ngD7W14WtgG_R7tGMpviEV2MUbKooNPIgjeTf2whELPOyNkIXyDvY6N7N9KUZt3mGx_6EziEHN-c-ygAzWSsvXoCJDVbxL8L34vra2q2UZNA3HY8U1Hi-PEtzyxgCK29rPmOvrNLe-vU5cHxwgZhdrId0wMMWAZ_ha2vI9i5-lbAC0-mtdlxW6rf5rwaNeSt7jTEG9SOS9pcDYCkq97CN6rwFw6VR6iUDJb2ksWpB9TcERntLBGSlvKnQoXVlDGlNgMgm_XW6WGf0NAnoBQuCPCV-MJnXt1s3PAYqB1kH-zHdSO0ZwUDukv-pdqZvgGoqWL7VPYFidmQkWHBavzgieKrHGwMFFbxIYpE7fF-fsbSMK5SkNw0DchILw6DuoCoi48J91p5FptGJZ0sITpuWcLSbiuRkxYQl_IXVfb7V5at3OufHT9RVdsXiK7j5FnRqVHin2jET4pcy9v5porhp0_G4Qd8GHxdi1JXmr3Xl62RIPykravO2Sjx5VD_jDc3JRHK9k1GjV6AdxLlAo9BGciagdeHBvaykV63zHVq3hcYP_rRJy2VoMqs_cHMpL6hbvpylWFTG4hTtMXI41_Fs9KfHpxp3AM5AnuJY77Pvd-dthS5V6iJk25fC8vFTjBbV_vRV6pLB3CJIusHPWkUiLRoiUtzqC8EmyKcRQT4730yISBBJuu2rxvN5MeppRvHb1-L4PMRTeJTaairqI57uPZzIHUApEYhKS_lFHChNItkcKXtBiTM-CANVLhxLoKV9v7XuxutKY2BdcPkNRS6qQgEeePgTdDKV_wNEIuEeYfQELUorv12fcsSZb8E09oQRTYea4Z0kBEWHeRSDi67G83TrQrTE3dfTlQeGkLrz4rQrUHewC5MHuU8og_URCd3Nh4ktAqyfJmbIM7LWvSC09sNCdEpQbUtfwHItTO0deWHSSaCGDTo0h1fjXQiimU_EoWM7g-W2K_A0Bv-rYkdwDF8lWLVjjWZ-yXEOTGq82A09jCIMrcpclKgJdfLh_BeyZRGImXcHFKokuxXhcjZ0_C6nBu7BczxrsSnhgaEXL8-M9qggUrZXlNfLBRhOCm2BjrIDNNjLYe3pRj8TTsB0YhNc_tU_A--yWoLNpCDyNd-N4l1TJhMc4kT3LLdSj81qwKU9jAYqZd6dKdcNPsFU3ZPqA_jSuU2c2PDVq0vdGYWbtVfQCrMxYBBIO0lMZesCFtfzqQXYd_cGbz3BtSiuvB2yEKTgC5EaIkjEIIdIqe09kbBFo47L7TVxA5BiLAncveZ6rPyitjYS_3KHUJFDDGVwV_6Jn9nbVl_0anweGtiJMFMYbB7GGU01uidu7NQIH1oHxMHslf6ie17gCHesvmRiNaAtboCa9Z3soFIYJOchgXrHLhYsiy8twvLQo4ECkD7qJ2Z1KcTCTNRMa0daakAU8y5O_ykxafbp5yj5hhtdUSOOSNW4dRt-1gtmRhkznsRUgMYirGMBm0my_tv8DsV69Wgap3xY5NNie0xH9hVHep4QKQhkxje-LMJkMfUbexLpUS-n2OJToEh8PJn1tD_VkOSheIWqy828ftuWV4nIwoKWFNH5Ew8liVwKIqBFLtmlfWIFBtgTIeclqcQa2NRobbjrqN2_QZJOGQU35nOAInmq_3mcQ0gKW0xLjUD8V_mMkH4yczGIqdHF2iy5e8-oQ6EdgbpKrXN8c1KqxaqInz7UCMggj61UorUcD7xxD8j6L39zUNtM4LIulfoxiOr4rUuXaAaUHOyOgG2VCyRFBrJ_RVb-w8N0j_LkqUN2D-5xD1fbOnFyWsuDIMiLslDtJ_WCPfmpiZYXDTRiQlV40L7wutL7TOblb4OZDnCpxyGeATaAN0TfHc9Vdd8-BS4UF7i4ekrG7odNJS-g1FxKM3H9D7mhg0GKOzX7ZViAy7MYiTuOL_tAYzGwWGHgTE-6w5gDpQfrU9Kpg-YlbsZz66rucXiu2OLjlOSejmqi0enSnQf6WBvnRoSQ_AZKOf_k_8hg-ApeYVxGibkQiSIQm3efaFxGllA3TYbAqCE0Kn_2-PmNpFvqJ7O55c9dk0rfikejJVxZMiRznnisqQgK68Eld8wm3gLSjad8cW2H5NRCeZR5zramNOV50amx2TNjjZ5Jg5ByxyKaT9TA0Vt65oRbPsa00uJDGmOrel-TiCMbuNY3G0POZdawl3Hr0CSY39ct-yU_--_L1K84mhRZ71TvB27KQn-zcxvPWRLr8ioe_B20KoNw63ERXl4c4s44osE_4z4JsJkhjyrpE2APwZ51uMxmJT0CUXZ4k_HwQDsUxVozv3Tn1cDxW-xWEwbB9znpNl8VVLv7cSfI32yYYfQt4ObBGffOqbBHqnnoGpnxnTFAiCTrgAMT-k6JzF3yPLY5aFGBNCJrnO3-A1iCyt_3-ZVgRslBw8IG-1oaPK3ug2osB-2OdALDKTgdId95K0qkdON1JuAbh8Ui_gCRJRaY_nAJorH8_0WwR2uLtIimbpFm9KXuSh8Dem3kOD4hqdAUydb9Kbav6nDmKVb4rs7CK8ce9pBzVSXj6c-7tigSxbw6zT20Vu48u8yz3GlSD7FLUgZzqqUdNtRzab0FAVADVtuDVC30-Rdv2DN4VGqBQb6sjAvzu6mUwl5kmgmYxinPTIug3yYoYf3xHSVGJVLSiI5jVKC7BPbj2xt7Up2iRHDoDQnlwdtVy7HiFWTTg4pqkPRSpm2C_9rDNbdySIZcXJKPvxHQ8jNtyKcl2GmjWFDD7iwnZu6jXt-Nx0wM6XbSOqX7MHfQ_VDHHBemCxlSPRTN1P6DoWH_D7SgbCdS17d1n9yLQ5D81DiW_ySG2DEOeYGCrerTbbGxIssmo5A_IqqWhJru8D8SSmuIs6LXSEF2WeatSW8g0FLw-KCmVfxpR_r7lQ6Cw8paqrvihec9e3ZelOaMB81uQz5kLNxzgDvUvBlyS8cfWWFtuYiln_Ea5KAk2xA0AQivlIoY-dRO9IhLNeQUTqATuRQSNoI6FXcsbw6kxfWzomKk3oQBjjet-smNwM-4fTTPeE27zQzb9VVAjF8mcPZ5QO9Zq-XU9hFlY-WLQWFr9APVYk7-yIpOO54UVgkZzlOSM8tx7ry8ZHJ0f-c0U6sWbzOHr0NI5XtZrUOlFh9Wosv-y4IL6fcgtpjnO5-x9SEI-Uf9pgNHmHMdCO7nxFAjuP8UxdjRY5BSojaNPbpZ8nm6_EwAJbqxhcT-BK_KcV9jOP6GfHnNFbZNtWTtpqoI_h4tztTwTPHkSZaxAFNW5pwhG0vH_KWh5hQzyQdGkbb5q1KGbPv39RtECC2-fgxvZE6V9JYn8VUgifwKBHJHFR09MH_Xe-kOa-6ndQgX34DX-hHh3Ca1NZ5htOSrX8AqYX7RgFsxcJnI-1IaMNurBQ8xbEmpH5NZ2V5ZFRxYbu8Q2ZIAd7ppfZmbc1v27xJGInmfkjaFy7ln0PCN6CVZnlAODSkAfzFVEMV53yODmobaUdX0QbhROAkaKaRiDiAe180z7dAL3AeHgxjodq-S9_AdTLnvfrXunWdT5Fov_ifbrQKZWMl3SUw24qEgCOaVqPKSB45c4cTXIiZxplzxmTjjyWTtEFTQkAQiCvIfdXzMSGfJH--JtgStTaN--1UNbqSvwAZQut4wGuUBbNlgC8k_aTCsHk1_z2QvwfslxW3W4_Abvr57ee3z4nNBCyjZE15_1wUiZxrz-ui9r7a03x9k_40LB5rMEnzjSJYKj5RblQFsAAiBilYsgZk8wB_hBGKTq6Cr8LsvDv0mdvMC497oHLXwC8kiZyO8j2AbCQO8LpyrndphP7S2NZ5T-4bgzBaF82ZaUTR-qLbQuxImIbPLC22DMTx9YSCV6zk9kc1FA6Wx62XCd_CCtxcBtvHj0hvWuoOT8bY4z4mWysqywLlPk-x9_zOgMtSe0RewNFycmyB1PPSVJwFk5hNSR8h0Faxb1Le0evfXPofg0r86iG5VTGOKHLoZmful0mtgc8MEZ8neCjpC6QW0sOoRMSPnegt4Jj7Y7m7zQWlzfG8nS6UdwX6A3TsB2tNbPaQier-dS9l_FWzoMi076myZVoD23CVZCfYBFThktkH6VGp.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_02ea6a6af084c1c3016afb9d7fcc7887d1bfd9066edb7fac76",
+              "index": 3
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Evaluating floating inputs**\n\nI'm considering how floating inputs in TMC2209 chips can lead to unpredictable behavior. It seems that if they're tied in one direction, it might be manageable. However, floating inputs\u2014like CMOS ones\u2014create an indeterminate state, which isn't ideal. I also have to think about other inputs like STDBY and SPREAD; they'll need to be defined as well to avoid issues. Ensuring clarity here is key for reliable operation.",
+              "format": "openai-responses-v1",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52IXcY-vu_ZoDo_wA2rf2Mh2ossDqoIgBGuIUfsQt2BTs7cFvRNd4nniIY1NMGTsVqOI7kV99D0cKvignncxKqGOSF5hOJqWKAIiKIRJe-pbkgyqddTcDBipuTkH3UHVFmtYV1fcZZpbcfmvnSqhhBLLs-lkQEVfpQ9a-IlobcEzuPwiPRASEpQJgfkhQ08wzZO8Z9BvAvYmQqq5FsnHBdmdCIkgjmYIItKAVx-U1ojBm07WAvMkYm6ZkJgMbwyPVKCJT4AH0osv4jDMWqS_Ga5s3UqcZfYzEpQ_ya8_c0EvaHCn2Bn4mw8cbkXYVRSgqFcQmWju_19LLdHoSJOcqYeylFGowO13CiNTVe8KyQwn9MalVYjH9XZAR-1kdlZga5XchbPjWMCam4mzRHVnHgEeYVoITgnzDzt8Prbt10g2xyB2m3dCMpz5NhIPA0eTumyPupVrfT2NQgoLHO7JGRqkTNeOD3ulFd8ejpqmqeCaDJ1oUVjUOl4izSsggCZKpg1o7muih1xZlXwZpaFKEfajBrYtBRq7vRaDgZ4WY-9MFfYiSBFQHQSBGA6qxYQNliESqmGnvOeJ8gi9AVAzE86KVXQbTGElPrT3IfLOxG-fm_eXW22zx15fgLSN26I7MIlHWt2BdIluKdt6Su3FgowM1U9AYXMHA8MMpB05Bb6K9k1x0KFNPBBe-tBoUFDbXVRXVt8QwTitLbS_OG_w04B2MKdFVFue0TJXCy0FNOtZmK97V-lqCO8pAEdcNlEd0LViG4iaXcSbk_3Lsn-uBeL864SD-McHZ0vJS7NI1GopvwTldq_VRHDhqK39Gd7QNKnRKo9JHb-PWWWXnqtiK5Y302C2VpS6Mh65PF9Psa2RuxLqcBu6woLT2RHrIvbVoUY-8-YeXZ0RXvlyhOUbxRAzNM_QPQ6Xf9zRgNpOg_4Hmy8BV8bAIt3ba8aABR8NI6sHnwit5VqxqYtSup_kMzEJxi_auULIyVLq6ortInBWtSup7kdjD67iTDIF_G_qKr4WJWAbgdYt_4jwlDckArsmVUd9JWOi-u2860IL2lnEw_h81JJMeFHVdBi2cheWb8aADwM3TiXICShkWQInWkCUnq3aYWH0-sJYWyGiUpGXHQ-HVkcECEcT5jnAjrFWH643YjYdrmqkeWZNQJOFj1YQBgQ7VpRQwhP8c96njFOpnVLGIQCu0WcA8zL_Z2pSeFPXFdBHlXRI6nRVAa5q4mi4hH-pD8rZATXY99V1hf9UAxUaYJeh6CSUkWr1nzK3fvSXPxBls3QUkHjxPLtMx3prVkXR5cNOLfJCRAzW7rZhuk3K0xKzhKfELxkL68P7isJiiSz-8CaWD_Y-4ng3aJd-eCDiYaecEio0YIvcn559XD-fvZBt-l3tE1As3Anhno_hADQ5ddEwfj0_CuvdHCY1VYy-51EWlAndJKlKAT5K5Qp_hp45SRYD4zXS8E_oEmB2foZVaPXyeMq6CZpmZ8WXsAY6KSNBVZ_8ZJWjNkQqyk2UoE_MGqlv-UmrzACg76xPVj2BRLBI6EgFNlokqRe1OguB6kD2l46rxmGTFuMsSEH33ieF1NKeB6tRlWXQHM6d686TncQ0Mb1yym8saqlDGMnK0xaaE-SV4DOAoqtl1kzypobxXEL0B-g4b3Zi9ICbMPPO8G_ZXZL_OOObdPrZID8A3ECaDEskBJhpxxLF1A__zNGuraoJ88UbGnvtW8Nn1XXf8kBQe5xjcevzfdQ_YOiXliiBglwZxvjMM_gvanWYRvouGcMUGGTziUQTNr4nCoPKLMHJFaBQiFE9VbdDFkGnpcmBUmteFZ6tKmPhaSzA0FKxTACHSS-ndUIbcqqnoNQ9pkTtUPdhbsMD1HGm-rXlDXtMF2EGRpSzwYyUQlpeWj0YJbPholynQvC3JHoZIG24x1aOuvWbHgn0mFT8RKorlmVKTiVjXw7uu-kMhZUuYrqN8DjPt7qC8Ri7S-XBXbqdq3FYfFYUWF36cn8g3JZ7AgfmaqX9EEiSsC5FV0lwVfsMYPyH3oXXNwVqD3BxJtITL56FmyF6EJ__Ri6HOOagjA4C-Szxt5YaEwubPfricXygS9-nGDotenJAz-_6kAyKkJwURnqwv_37YWEgDuJVWkvp21HPaxym8OZgWm4E4H3rhhimT-ux5ex5QbrrVEvJRZU8KDmynm3q2OCLJfFEHuM_wniv0E2v4Ba--HeFpDMpqUca0910xtUoIudqnFbTSa2VkQVfyy4AsbK-R6lKLuZqA89aPzP09flauMpazxYWESHUPBf4_WNWX9rM1jtlx-74ZCRVI7G9qh838d7fuHs8efC8y7XUK_9tfuiP4Vkf0gopGCz345DPvp6SbmKtJBDI773Pa-MVa17FZWm4Ax5VLlykpAHSBbGjHm7AyeyB77gjlCvfnxKabazdN31FSpFzWTy3B2lkHVi_hkBfxhXP-zmQnhrpowoFsuqVtpzp9CBtFe6umcefo8PvJzHLC0nO8ogS7tLnu4eDAaPfnw9-md8kZ55EjqykesFdCz6810gGTBRfDTHqAcJP8wQ12l0nSLlkEVptJlDCNOhjsrps8OaScPi8f2xfYJM7wlfXoS8kjNnXe_-hOoohRswn2hSn_Wkhz70_Quct60hJ58T-QSnSxvvfUHDuCwUVZkG8uHQoVbVD4VrKSNKk6gRSb2KWYsRfvO-y0K5aYWK1Nmeo0AV9oqafz98WmeEuzubgr5fQs5HQpfw_GAztUP7ZaWHKUfPu5yNn06SrMPo9_GrfSpyWXW2F3syozowoKqLP0HfOvzBcX7NpGgfmUcEAyYFvUNVzTFE39npei7KjZaTExu26QoXQSV5txMvAcNlWJXe918An5nRQyr8RoU9IR8rQRzRJXNPygPFG6lCFtdU33H6hm6jjjd1pcEEoBU_8c9fOVnLYMkTARHZcZdq_Eh6e4WqwttfY5zaCojw5bzHAErqO3MXYfhSGcWIlQenBOE_sZ7qzTt3Awrn8CBwe_66JCOVBluHUvhuMd2e5B6iS1xLpojGRJD5H_UNhmmxdkOI-_zT26_wXlxrFCJzSx46bwvh0zMM6h2BVwATUwAkTfOfHsEmvnfidb7NmaNwZST1NZk45_s4y1WW67e9yEpuZulSS8KL37aekpGZ4BOd_on52wJPLFlLbf1TMBuSPR4H8xl17tuDJPtRnhS2m8XovTsmnYF6NCeBZZu5Kp50pbfEp15qy0_-ZBPUlWGr3kZMjHTKgFTJI7-f8MvjDLYtAaZex7xWTLU_OPVex-8K49njsoAoP2cTwTPxLRTsCbML7khIal_fwr1--8pYN5GH7M8mMXQ055XDLMuKgXCXPFPKzNRmS5-4qrDXaJBo-ErtTFGiQwLe8R-O4qLDOMKI8ebLxuwN9Y0AoHVIxIvzdWufgEM53__Z5TFu9ezaau8qkt7IuINxfF-nkm8yrP9aozCOfZC73-7tyTR0e6GKmiiy_fWJfpJBroCqKuIFxrnIFE9yg7B49sSFKyRYkf3tC8niwYbkGN1lDODma8j4XMAHl9yZ2mbHg_TnabG3nxczxB93v9EwIQp5f14Hx8qnIt1qO8C7GlMMEnG6Y5f_J6w1M7tAx3B5FuodbbtVRUxcPbe_gAHLE44guzurQrWHXsUlHsLJ8DwEEJAIgfz4OLHmrvdM3hlhEqdAjpxEwthB2ubniEQr68RBLp86-_8iQ1S2xblGgklsnXX89CVmSv4jIIIz5Hhg6MSvVxCf0CSBCY56BbS474Fb8olLWn0qEqxTg01W8vhP5viZoTRR-HqounzC4wT0dUdHb6MT0UwSpRYK0B1r4v-IN4FAPElhaIXuu1LRVqW0hYwci9_Q4oiZhIk1-Xg2dRHbtL_HFOAONNUJ8neewPCaZlQ75GcEeB-cpRLYtsZLJAbkBeqKm6sDWEc56Z6aB8FUOxijnpGtFJM7OhK9-Czy56eXaTaYoovzWPkt5TK7r8StNhx3ZaeK44pJ87QKd-TZ9CjUjtagDBOzCTtOyxYFZRJFF0CMW3LjDkeHG-dbgTvz7RbqSnXe5LojvOn5J9pwK8qyA0afX5FBZK82vhhtVhlARCm5ZnXwcxP_6XV5qxHxokwY3scqedcEOYAXdGOH1tF33NfuYdz5NIAKT5U_Xjs6JfTt0OEtWlzsBgy51Q3IVSRzq96qfNYpgf-MlQ1obf7z7KFmM2en-ScxCEcUvWz8bIkgJQMWrIqP54COBsKHRxFPH9M5vyj3k3i8UziZHuy5wtxH5kY0ppTRgX0O4_FuGY_52iiNRVbl5OzsOnLX0HQg5Ns3GOWj-vX0zidafQuf-s4jJtna4l5rWIMa3XjxqkOLQPWJn7FaVj5hyvLHNHDBVI-eZVedUthhEWjZ_EUuCgdZHs9dDkC64iOFXZFSmfKI18kRMUGcRGRxn0FR2dEE7iOADvlB8MitVJYvfiVUqFc0vRE1YmYQXJDoExi76OO8qY2FH8ViiF3-eS_Q0gE9EL_Tp9G96ltQapLbrzJ9-C8pwjZkOuOe2AW7MneoSKbRLKe11db3wvpLUZsbEXfnFztm2XGLWJceMep1TQ5p-b3dokxDTOIVP-YG6Dnen7KoWzJQ-CX0SoUTE0cik28chiEShZuOcBAfsqlX4NSfpg9TMJSxxu0ezY3OfC5beOP5eGzifGuMtp01yhfELwXClIkjiu0cL0z1GKYfbrUqztpfRbTka05AdjfN9TD-psSExlD9AfavxA4cpBMuTgwJWjlWVFsaHUy2W_KJ_T5LvITd8WgcfdpxHYlqiaQvWm-X2eL8mo-chD_GHMBnhwKqyXypw6jMndXi7LojOwbt9B0MKxWiXdff5IWy0AKWbo4HUhH7devkPxkSR9-C-pqnanDv6nx-tHTrWfODBWOvYKukIvQb2XRPZMOhMcPoKetCkUIXTFbVXSTEeO0D32wtPmBhFzinbXLPQqBUFi1-04cyW-YzyvW-mnytA0WiLzz5qt9-mcwlLue5SpNthNMRgT3O2ZSYbYIKNhsIDUgtj9iPPYWB782lMrPNW5Qmn6LUuqcleXbkx1asNfsgEqAniONRYRrC0QV3J1Wdk808RcQHRYhAA3qkkpDlhMJ9KKxVZb2wRvcqFhuM8byEczjga0n9lLX_MMYi_DnvswWP9PLz9-oOWnkgNIVw_eJenYBAsS_ytXXDQvQ6xMDJbZVvNon9gbPDjZORrnVcF7HfJkVl1YNiGVR0NIS2-7JuVRHq0ybnbLDb3HOLkAG5ldL87xYadh6fYykSfrwXeklzOoMLTe7ClfzAxJbfekqXck4Px97S5n0s25NPku_eQhA3KYtvW6YDUqNIQPEY5P-8vBNOCqqfOXttsMWAsoabfQRahP3scbhQDpQ3Y_JdohyAOopKqXeryjRElf2T5sGdyjjMbZGrGWFa6h_k3bjtFRkufXpccmzKiwq4B5wMVOyk1rwlhJu-Qg5pTfzRFpD8OBgt-TdsjyudTJPt2e1MuEuBkQTkRY4bKa3b77KXwdKutOQ3R-zFkiWCD8SMUBUFTYDBpZ_r4m-YP3pPUTQ2Y4zcHxgJ8Ktk32ee9lRG-lbChLvYDxEhEQISP2z_sDaYn1U359qDF9uzbZiHK5-GBwGNh_tW5K9VD8SM_NOHOhtqueROH9FdCG4HAQAfPI_0RwNCjiMTe2LGaqSbPtYQxU0jt0idqBbsw-rUUd6nLi5YZDJ30D-y-ctbreKhHapDTO6suuXhGcuy247y-Vks472cpKQeKMlMCu8OH-WfSTqRBBf8iJknzeHPOau5JM24GpOuIV1H3J9OEzp6nkTIAlWlBu31VqugHR8mhhDgmX9so8lHQ9gkjALHQ9XjoSOa_Wo34rI5yFPEsczlf0IWQAK49qLINaHzoA5zbitC_pk0N2WAXMECKjDD3cWAwKnImxx-spFtfCLi-mN6vZjBYrV1Wz6eDzDGvATo9haEyhv-5T0LwbdOBU6QHP6mJG72N8kpu0BicfrOnhFUYEJvm7GQc8XchwrXB8j9CRLiURXy1ByG146IZbc5QMdG267L-rj8oeKQwLyRkv7oKTzXK_olMtsKvJm4m2NAvwACV0oGT4_9QkItmvcM1hRHhMG-5CQnh-pKgUJE3dh_eJAQ2jVTXyjQeFSJq9y8HZgwYji9MwKhGXvGJ9wNasO6IFFt-d-EN6pGmPbGOvCaI0yyWxw_MbAdmtw43QGmk1VrmtLoxu_4cawWeoME34aYYlBUi_0-G3VaCwAeD35GsiwNYKF_8hJZYS-kNaIoPEbY-hGtfiknjRVqk7G2fBPdGTROfh9UHotpYmiTzBV26Tx2fGpX_a5rSyVwLOu3HOds9MRmKNB4dzr6PZ52hNYhXRNx5KMm_GG4S1ESF7P03sKGVUpDKEFICZvIdmbXrGr_hAABaa8bmfsnLlJNazJPXuE4aZxO-UZaDWx9O4jeI0Hd1-8gYk_gHvY50d7LBRirYjlhGu363oIKHzaDtMN3hw33jBOhjI5q3rYb8YovuAPIqjBxn4Sqk--gDCNtfi0AbLFs6HOjhW9CgCngHlVkDbK_T8wnYh8wqdxTtpjPggnx59roMQkjPXrrTNbS2GVAtnFBepnupKdLabzfXroYxYqmyLRnkOOaudqKpUC6PvsTJ4jx7kNWwlndW8v_nV0iz6auj1T-5EezCRDtninB5J6K5pV5wAyDeFrmms9_GFnw6pPyaH2pOqbUZpeiEnGZZexIeM98BMxtpqNGzCbyWsodLSBMf28bSEXwfNoXsngjt_ojzM77eSwjV57dDZqipAo4wUvS8SCdVQTugzX5U8vSIsj-86lt5SbTP2cndq1vvjFGyNaL6Wh68c887s3BZJizKKJkUBFAm_Kc0F7g3_egKzS1nMpFsXDRx6jMZSOnTHlWyFjo0R518DtbwvJbhX_skEnZyrVUbr3Qkgph4gJ9R0Zz8nh1RkNxC_OEvJuwtqSijV_yi9Y9GjupHYno8ViMlBKwUOBKqr0Gqu4afmLaBrgty8qoHujR2s1a7fuNswUGGY9KoYM2wYY4-2Pv90UZSD8q2BbxpEgG_hvJM3OCdXcflo68tMW-NmBvKwSSDpIWIob3nVFglNFGo0uw-77XLVaiuvS8tKJWdNSRTbg1LO4vjbPZI4RkO-OLs9d0t0-Uek827Sm22KnhImS6T9XM4ZWtXYMvcykpf3bFqfiswL-zI2fv9lS7M_4xcb4BLo1hGUa4NuuO7aEWxnBTv0TQjrR_0y8uw0-8XSE_mV5H3K_ah9osWWMdVjVueVK6k_rf2m1u4MQ3MVsvqBEojNWYP-9st_WdW3CuYBEOlJo2bFB-prwWhTD9gLinDMlljIIyP5oE-Bb5jhRBePyw7cxmzCYr6xRW5V1k6nDafZWuIhhXL18mChoMLAWwC5MoR8-JnvugJdp5nOP9IZ-fByLbNzSI2PSyfvMEdceX-ztwH7thLpJpal038ita3swNuuidQhuEGZfpXeu2Hs1bBbMTG7AY2lhN5KQxMM6O_5ymF8DuSxfd66VasSGfUWMjhLex5alxvz_HoLh5n1M0g2JNcpYta0E_8xK1aobfTaYLS7iJSpUVWmWr-lFihmawrh_EBsDgLY1IqFJmWENMmx_NGqjw5ZKIqyHDLJjeGHN8qdEP5KE-s-xDa1UbW8mSMpd5DgHKepUbEnaN7w==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_02ea6a6af084c1c3016afb9d83564087d19b11c0a4b6391133",
+              "index": 5
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52Medyaey-_4lze7rPprfWBFF6QmVB5j_acwtK0xWdkNCfVdM4fvMYDYkC1vFeDA7ZhqEFeQcCxgWxFFFHrTrlYNg14YCeLzoUcKn_yHw5WXTrK4Ws6ex7WzJegDknEFhgLlCl92FUmajytvQP-nH6Cn_4NACVal2GoTyxMJQmqNlL0YPvnk7PmZQzAGsKwyNM7Xtjl0WyBOdpuffFJxq3z-JGq7zUA74igsIKh1yNV5ZtgBodbRYnvg00dKC44E95GeUajG2hY6-Dcfgt1QUyC0_hUZiAh9ERdlSlbrq8i7P_0CJjU96KUXIa0YkOJhbyDI3XW3jp44B6r85R166dlGezh3QahRUr9M8PFFGeG1xTrowG6Q2P5SDz9TpY9Ux6s03eh7W8LWGys1dDd9Xl9kMtOtTd0ffcZ1gLMyvZJptB4krjJqj446LCfv1S6plTbFOKIDeUjA0uWw57QEa1ZeK8A5Ymtl4BcIKxYMBz-BygPsCRnmfQjqpO-D81y_9M1GTLVSmMwa5VCDIm7AkpAGhbCkh7nTPBYA5-e4O-eldi0WwRVoVEP5iiiTNTt9ynvQJzEfZHO2LjQJtP9XmtnMYncNADxPfSnMQ48x4CS9gIzypY8KZXXR2uvL3wbgDhRMsOeE0U22iuXZKfPZzO6wtPRc-sTIQCrBWRoEcPSbKTaJIMS4a5oKHvqu2MC09VDR8syF38r_FnOWUwi_l3INDNiPnfG544GUUHs05C4y17KuS3SGzgUFX5_L7B6TH8GkNWU71vgwvTKIYEcie5j-xtJVOCYbx4J1S6UlBbmAmKz4YfL5QWUCAeY721ezl8FjezcJkVLnEtqDK3_86BC7afOJbjNId8uZ5YNXxipM11xHayqG31Kcs1ec2UHFZrt9bzxHS6sNzvG-58PhB40FwPMpTCfQGpe_RHZIAMf-ZxJj49VUuu8HcioarXNG_HkIfjz8Fq8dbc_vBD37KTDTIfzGXCcLfOPUI7xCFXcha4Fsg-emVH2nGzranH9THmWjtgO-ziKJmAl_KrfhF7q-iAhpD9s3RHumtPRtxXgVKK5xkHDMW2p6lo9qzSnSUYR50cbHKmLXSqzxpN3fUOXI6GRJrgk04PPIATDmODxcFHNXxLKzq8t4bMy066di395ohhZ8RtMReK2JcnIeRHGS-xTYQeOeU_r44WevjTWNrIuhCups8kk-FGrLpMOveYiZdaOGFqMPQl9ALr2owiZWzKx-fG8W94rjlfLw9Lhfc8RyJtd_0JoSDiBi2Xp7bc4etynZtjZ2oERKkIOgza2PxIh4Px-MnuaMcQhUVs0M6UrWaPlWipC1zKpzup-Zr9LHPmuB_UEQa9bZaTwx9ZqEuUb1kdX8EW1qDkI4ayC6D75SVblkjJbSoNVbjun579aKF2VpVHMutXr3XrP2lld5ec17pOAFSwz8lXUhX9ACP1csJUp-GDerOGVNDKkGg1n8x_R5jY3U6pRDSAkPsnruydR_4lKmF2JlMIlMPV7fXcl_vqyNgzQJdwqQ-whfB21yEaTqNU9kl4t1KJY_pwrqtCj4tfOaXD99GLxVzwHDIqLERBPxKHf9SqngauAjV4VPghGqkmRYYU_zFWWLjyZCAttfWDddyfUF8ckngilhnJEh_mRaxz4J_qyNIE7FY72o9qn4pXJrtSHaWAlWyHrZIA6jRzVA4NZ4cazbgnCnQ-CtC6fihudCTO5j0yTmpH_wvYHt7SwtnCyC1M2h4GcpyVR3fyNuli5A9q8O1L09sCEY7648OmISTGc_8VSyyMFKXNGyiMpxBGSSSDmCSUEHvndheEakKlOG6iEjM9L1ECw5qKx9ifCT-DTT9kw1XxjYD7EaAKBaV76-HM4TwXmZO_bOl2I-TIgk6X5eiTudRVMidipZVYP7vcDnnE1uekw-vCdFOOOEKcfxKH0I976Jo2aqNC5yBlq55LuUhLXTj2RAEWGUzLhHf-9poAhCL5muGeHgxA6q77WeSO2jKwtlBO4dHh9wZT9uk7np2UXlm7S7z_Ow5DrC82t5DjrZBM-sm7K7ZpOYBQAoz0a1j9_a8hxicwf6XW2kxMGAamUw9YK6YAssWiUI3HGfsPNnM9Vr9ZYpULEZx4yqeh90BmIC9aM4rjeU3pGbU--1NHeDRxWOmik7NZE0cJhav7pp105eZe4j_f_EKrTwhtHacA1SOu7j_UaeJnDbS4oShrLqVyL7JFawXx46laj7Ei1mok1FPWEnVWdy_panXsRHC6FtfE3vVPsV9GhVdC6IEP6Z_JuRtpxAKgcDd79rP75xYT-vmUH1LCmTGAm2e3TeY4atk3qW5qQuRqXE8o0kjeNXIBKYNx5LNkMopPzx_JAH_p7WXYjmMcALmwuyyKPD8WGa42AHSNpEHaydN2LGdAypolEL6oRI1Gr-or_baOD8AR-ltvXvbzEf0GsYNevSafCC-iEB9DtFqzUC9u8KwkOufn9IJrwdUyJ7cyE9F5rpsHWFccVUxU8WR9kL-aoE31SQw5I3MzNObopEkgnfEPUkhryOHQk9X-w0_LJB-uzUu51vfYt3PuQ1574lbn3imSOBiK8sV17Rtnu6pLuFLs68_QWe9TznEOXfuZ84HATp0KLHkX5FPzneA8DuaVGsA2uZqhvDhNuTu76kCCb1H9pMVkDIu_YeSsP1XtOKZSQ0bASMsEk88DayyKsmH73POuyw-saG9pEE94g9XY_rPpb7zWQiODxThr0F_rLVHeFheAWjWsnb2D4PBC1XUFUSECN88YgCH4Agq0eHQkxoUxIHORZteXmbPY0dbkjY7ytNSTtFa1c1e0herRtU_E2YGvQ3NaJ-MBM5fbUvIm1tWRnrX0kZXOOw7vSWTRj68F9Sg2kak9z8uazQ2xGNSKpSp3DB15wvt5O_trmvnQmu9oufomLuoAUA70pyCipR0VKW3A1G50n5agLLbQy9AG2w0GiJWDbfMmhhXHwshTwxIhXgPE_-SgQyrHNhCoHyYDL1DSUehJy4KOZgohvsoCOVrUAp8EXvVMmqhmYoZ0UZ8RHGqdQps0tjk0pkeVwSJby92CHKSVg12JPmbdRH8JjAuzNjIReBfxXoD0UuZltyfz7y_cVc7flmMoFS0pU3pgjb0CXs_CsHf_qRSyv9INOIfgDUJdqB_uXo_8BNJnEjNauxdAhvlVfQioFLO7-YTrF2OUqbHuUD6j_EClOAHGeCOUXOT8QVnIHPoJEFPYyZPWcFAbKdjOJZ63z20gHPMVXFVohht-x53wB4lZiZhZDORgaXDr213m-83Y0xYNMevbwiryavboBdSELQ4iva2MVKTcjxaQkzUjtg4PlWZD92RLdj1_dUMVLWQz-kUr2Du9oMWsinpkIa1VIfIVHpA1gSw4r3Z-Y9yynbrKUiQdWWUpuTgNtJ4QDvlq4h1fvzIV3Yme6d_NcRaB3co4WaSqcYNj49Qb-lxmNmtKbjqW5q8ohEeZvNg_0pICSd9w9Khmfdh7TaQi5IG40m07lUAFJ-c3WV9E5VxqBIvyiFvp_fOZI4_g-Pz5IO3H8OJKYp-upKdIoOKHVY3NAkVIisAsyrgN4LQaNBrgBiOIMDjO5MAwpwNRVjYAAsPDMeOhOzakPQ8XrrQPJxnJ4jQH-sellGoBQP9qiROygzMEz4eRHQO5J3t-2GJwpz5_sK7nfyLJnEnOCQ-48FcI_vSanaPoFxeMb8UGDXsmPlhbqMGJ0lC_uGnsgWrNgqDDyjgIjpFuDKVLOqIsL5ds3Li8STTcpgQcU5fqN75KTzdbsKZCmE-4Tmlh2zyVdn_-SbtXlqUtIBtg9qbPxnSsuLOwb6ULOd9Ui_7RbGToGxNuoTCL4D7XClaZXeW-JYQHeqc0V-lkKkHX6QlTttVGAY_KX2k_WN09YIhHxhFQTUJ33aDukmgje__t79fuyT_lxu08Sy3tBbjFYEG8wJarL7LCIuMPw3O0Bt9gk5Ohb6G1Na7V5mwD758g6K76SBaUgT8lAfMdg1GCc7wnHc2SwfGnGb8kEZTE4C_0MNaKfmppwSR--8t-jBKN97_X1Tqs-IsR1Qh8z7QQnBB4A9MqzLLbAx0IQPRwjPc0qbdZ6WzD2NaTEOIcjZCrAHf4t_qgCd38Ym_6wxlofZIRVNBgFPeUMlQ5gL3WLlH5rLyLnMmsx8pBLJMne0HFaM9eqiuHDY4ievmyEKxEnK9xQutfnJIZGEzLrL8jq2QdFRPuAdq2kUxpdwe4Ql5C2nsNTCs1dN7DRn5pL7ebwp6L-GEjDPgBctrfij_Rt6BKSJ8tiPdtMJ1HBlgKjpoSyg3s2_hv0F0NMPGeg76yOfzCpR9lftBdyaU4Pp93G6lqiNpHEkMzV_BdoGVLW4M2iZX4m1XjKS5BHg7_gOi35HjO7hirARNb_29FPEwvkRoW6DsfgYWRwyP21-7xj5KgSl-0ndqgEjzQCzGww7S2EHpnyFha4JSw6gFMOlnF-iM-aLiOSI0a8XVxsRrOy-atBw6icrDzr3kzSFmg-Cep7ZrGMXRDI1avrwZsAe9SiwIRRl34HMMEBQhuLJH8Xaxjaj0WfIYsJKUC28eWaikQaltScTOteoroUvBlqOnzYc6X59yNBL4QXbGZa-xgx7q4w8h9UyIUV-KZwGFmQ8wWlDMDNqFwchVfhzpMjuCeFz9CAFnGgTgddy6vFwWukb8UkdmbD7NjHxCynkmyBzB11_GjdbmVwDCWPsfq15KcgEC4oLfR8SbapOnjttjm_IwZXRHgKMfNePCxnmA-0IKLHQCXXOxOLZbTVXkWgi2PtZ9mrZLfZ8u9dUTrafm0IH3yr6Qg5W2JzKeoiMme8K-rrbuqFKXwp8hoZ0f8mA5c26qt6APl8XYvMpW3u5_9rZXbuotywRrQ6r-VoSwAFBSK-01cXsyW6Yn8-zRsrpEuA47oBxlmmcW1TYOHmKGcyd4NMZLkJR8PX05y89Q3wg9uKFYURVCQj6n8WngeUA0JIOHldU1TXY0YmV9TTE9EC99UZ9eMv_1bgY3GEq_HYzzOqmSJvl8yuuCJSxwNHvyrdE9AfI9L6TuON2W0essxDQqrlN_2pnwF0mQXL84XocmDjeG6va68bCJtLo_K7KkXrLBA0uno5XUkKmYKwduQ_4oDEK_hqZhji7xSi56py2Yq7nanlYk0FJBiyT48K2saqF6TU3PamUhmdDuv2pHTjEtLSL89QvOSdzSn3pOeLvJX1LmgpEmKnd83nGUXkPblvQUI3u6WUsvdgINnWpi74Sbm3mBgkW4OjOtL3ciQokaG3Q66nLuzd0qibAkVDt4QR81u5QOEQrF2f2ELCUfbONeMtgeDEkStYpGx43Pv2VPj2KOpB8VcoQ_9MLQCgPCS3XcVTlu1ArBDkfQc_p1NB9LHNECb4rMKAWhC8DVpXzokA8uy19LnB50xRXE5yInHGqC_5ROwOJq8pgLaB07k_swzUh9Zpt2A_eavWxKsCZgwmFwKV3rw82Qosr3QPMWEJn_9lRSLHDVJqhHqupMwzJIcTQp6UzaGcmE87Ny2_Zo6d1soAhL0Jwm13fiWiNN4PyZ5y6ryDZcwD0ac1f69g8kWJSfzUkMWcpua6sCADGgfpzzPRqImwsCYRv5AJW7UCJA-g82Nf1IxO1r8ABRIHsDWPc3ODmW8_E8oWFdMFMMPOQAcjq8HBWRUHwGrYcEIa-sSR670T1Fz0qwpsKMG7JfQkzTY-Z9TDDV_lVYM7goPuNcTHtEbwpXRp1gZw2v8IFwsclqyOqDH-xuYI-Y7N9ROYvADJrZyLhdaUh8I9FhA9WWJ4imGuER1nfh0k99L4i_hz_2v07_LYV9XoGM-fTFSfuk-UcnyUxUMV4LANWaaQyXN4LYSmvwjMPTR9OVccEl5bqAGfLSVPMjXK0Blf70Pl8RyiN0nrlXRe807dkZFDgMeCKMQojq5u_dM2TXSE1RrEcvo5xJa4Z6N56Wh_z0m4qgrrzAr0zqYLvN7_eluv14q7CA7hbbnzPRHamxI0H1kFUoS4pzOgvj0ocTjl2GF6QxP9aeLAR6NQ2tkuBIM0p351klnDhOJF8ujv-3hJug1pDlBnpQj4lusck1B8PziLjvfByREISiK3LWFQ9K_IU7k0JHm_B1O8onK6Y0LRNtz60Svq2-JPTFC0n_FKl5noukxCZ8Srp4uTkQb3iHFtiS_LSOWNKxe_ngI4QvVMgqbphzPoqqfxW5MfakC7ZClSdSlgSQstoLqtuxaWYJoPycZHu6BmK4h1WCpuKRL6Ng9ydU6iSJRPy_4AkkUwzi9Am00kl8DtqXaIW9uy52NR93rLiIgcS_OAS3znwVQanlDhhxoNcSU67ew4cc-f0JktDB9y6PYKErqnEGTpDR-fETf4xSHU7tAbr8x40veYCcVgmjpn5C9NoV8ANxZF2hTjTal36sbhPizKT4cpoETkpAyxx5rNT7iHShEkDPuqHlzE4yk39qhNXT83SxuKXsnKmTE1C3nOPtTo3Kt9v8ekdO0nTTO0wmMk0bxg43LaqN6YvXJramIe8U2JZv1poktQfxAdLqJjLMAfzeZD0LV35hUqlC6DXWLG0YySuL-qov6IbDrC6idCd25Z1Rfw-3GwEv0qVhr8DY2OvHQVpCv0Fg_JvKwKjs6FYO15-BYv.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_02ea6a6af084c1c3016afb9d88fbe087d1ac7012320aa933d6",
+              "index": 6
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794874743,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 2911,
+      "prompt_tokens": 131043,
+      "total_tokens": 133954,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 1980,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 131040,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0178358,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0178358,
+        "upstream_inference_prompt_cost": 0.0163803,
+        "upstream_inference_completions_cost": 0.0014555
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

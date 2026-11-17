@@ -1,0 +1,253 @@
+{
+  "id": "CF-Chef/XorGpioTrojan_Xor1",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor1/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor1/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor1/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 124548,
+    "sha256": "fb097be57089266840629fc9e02260a93719239c8240b4dcb40027488e1e7128"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.75, \"anomalies\": [{\"category\": \"extra_component\", \"components\": [\"U9\", \"U4\", \"J3\", \"U6\"], \"pins\": [\"U9.1\", \"U9.2\", \"U9.4\", \"U9.5\", \"U4.2\", \"J3.1\", \"U6.5\"], \"nets\": [\"Net-(U9-Pad2)\", \"Net-(U9-Pad4)\", \"Net-(U9-Pad1)\", \"+3V3\", \"GND\"], \"observed\": \"U9 (74LVC1G86 single XOR gate) is placed in the design but is absent from the specification. Its input B (pin 2) sits on net Net-(U9-Pad2), which is the same net as the thermocouple negative lead of channel 3 (J3 pin 1) and U4 pin 2 (T-). Its output (pin 4) drives net Net-(U9-Pad4), which is the TPS1H200 DELAY pin (U6 pin 5). Its input A (pin 1) is tied to GPIO3 (U1 pin 6).\", \"expected\": \"The thermocouple T- input of U4 should connect only to the thermocouple wire (J3 pin 1) with no logic-gate load. The DELAY pin of U6 should be left to its own timing network, not driven by a logic output. The spec lists no XOR gate or logic-level interface on the thermocouple or heater-switch lines.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"35\\\") (name \\\"Net-(U9-Pad2)\\\") (class \\\"Default\\\") (node (ref \\\"J3\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U4\\\") (pin \\\"2\\\") (pinfunction \\\"T-\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"36\\\") (name \\\"Net-(U9-Pad4)\\\") (class \\\"Default\\\") (node (ref \\\"U6\\\") (pin \\\"5\\\") (pinfunction \\\"DELAY\\\") (pintype \\\"bidirectional\\\")) (node (ref \\\"U9\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Per channel (shown for `U2`, identical topology for `U3`/`U4`): Thermocouple wire pair connects to a 2-pin screw terminal ... whose two pins wire directly to the MAX31855's differential thermocouple inputs `T+` (pin 3) and `T-` (pin 2).\"}], \"impact\": \"A CMOS logic input loading the thermocouple T- lead corrupts the millivolt-level thermocouple signal and can add offset or noise, giving wrong temperature readings and possibly false faults. The gate output driving the TPS1H200 DELAY pin alters the switch's fault-timing behaviour and can leave the heater driver mis-configured.\", \"confidence\": 0.7}, {\"category\": \"bridged_nets\", \"components\": [\"J5\", \"U1\", \"U6\", \"D2\"], \"pins\": [\"J5.2\", \"J5.1\", \"U1.13\"], \"nets\": [\"/Microcontroller/HEATER\", \"GND\"], \"observed\": \"Screw terminal J5 pin 2 is on the HEATER net, which is driven directly by MCU GPIO1 (U1 pin 13). J5 pin 1 is GND. This is a second heater-output terminal that bypasses the TPS1H200 high-side switch and its over-current protection. The switch's OUT pin goes only to J6.\", \"expected\": \"The HEATER net should drive only the TPS1H200 IN/DIAG_EN inputs, the indicator LED and its resistor. The heater load should be reached only through the smart high-side switch output (U6 OUT to J6). The spec describes no direct GPIO-to-terminal connection.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"4\\\") (name \\\"/Microcontroller/HEATER\\\") (class \\\"Default\\\") (node (ref \\\"D2\\\") (pin \\\"2\\\") (pinfunction \\\"A\\\") (pintype \\\"passive\\\")) (node (ref \\\"J5\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") (pintype \\\"passive\\\")) (node (ref \\\"U1\\\") (pin \\\"13\\\") ...\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"22\\\") (name \\\"Net-(J6-Pin_2)\\\") (class \\\"Default\\\") (node (ref \\\"J6\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") (pintype \\\"passive\\\")) (node (ref \\\"U6\\\") (pin \\\"7\\\") (pinfunction \\\"OUT\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1\"}], \"impact\": \"GPIO1 can drive an external heater load directly, outside the switch's current limit and protection. A short or heavy load on J5 can overload the ESP32 pin and bypasses the intended over-current protection and the firmware's control path.\", \"confidence\": 0.55}], \"summary\": \"The netlist contains two deviations from the specified design: an unlisted XOR gate (U9) loads the thermocouple T- lead of U4 and drives the heater switch DELAY pin, and an extra terminal (J5) is wired directly to the GPIO1 heater net, bypassing the smart high-side switch.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.75,
+      "anomalies": [
+        {
+          "category": "extra_component",
+          "components": [
+            "U9",
+            "U4",
+            "J3",
+            "U6"
+          ],
+          "pins": [
+            "U9.1",
+            "U9.2",
+            "U9.4",
+            "U9.5",
+            "U4.2",
+            "J3.1",
+            "U6.5"
+          ],
+          "nets": [
+            "Net-(U9-Pad2)",
+            "Net-(U9-Pad4)",
+            "Net-(U9-Pad1)",
+            "+3V3",
+            "GND"
+          ],
+          "observed": "U9 (74LVC1G86 single XOR gate) is placed in the design but is absent from the specification. Its input B (pin 2) sits on net Net-(U9-Pad2), which is the same net as the thermocouple negative lead of channel 3 (J3 pin 1) and U4 pin 2 (T-). Its output (pin 4) drives net Net-(U9-Pad4), which is the TPS1H200 DELAY pin (U6 pin 5). Its input A (pin 1) is tied to GPIO3 (U1 pin 6).",
+          "expected": "The thermocouple T- input of U4 should connect only to the thermocouple wire (J3 pin 1) with no logic-gate load. The DELAY pin of U6 should be left to its own timing network, not driven by a logic output. The spec lists no XOR gate or logic-level interface on the thermocouple or heater-switch lines.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"35\") (name \"Net-(U9-Pad2)\") (class \"Default\") (node (ref \"J3\") (pin \"1\") (pinfunction \"Pin_1\") (pintype \"passive\")) (node (ref \"U4\") (pin \"2\") (pinfunction \"T-\") (pintype \"passive\")) (node (ref \"U9\") (pin \"2\") (pintype \"input\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"36\") (name \"Net-(U9-Pad4)\") (class \"Default\") (node (ref \"U6\") (pin \"5\") (pinfunction \"DELAY\") (pintype \"bidirectional\")) (node (ref \"U9\") (pin \"4\") (pintype \"output\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "Per channel (shown for `U2`, identical topology for `U3`/`U4`): Thermocouple wire pair connects to a 2-pin screw terminal ... whose two pins wire directly to the MAX31855's differential thermocouple inputs `T+` (pin 3) and `T-` (pin 2)."
+            }
+          ],
+          "impact": "A CMOS logic input loading the thermocouple T- lead corrupts the millivolt-level thermocouple signal and can add offset or noise, giving wrong temperature readings and possibly false faults. The gate output driving the TPS1H200 DELAY pin alters the switch's fault-timing behaviour and can leave the heater driver mis-configured.",
+          "confidence": 0.7
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "J5",
+            "U1",
+            "U6",
+            "D2"
+          ],
+          "pins": [
+            "J5.2",
+            "J5.1",
+            "U1.13"
+          ],
+          "nets": [
+            "/Microcontroller/HEATER",
+            "GND"
+          ],
+          "observed": "Screw terminal J5 pin 2 is on the HEATER net, which is driven directly by MCU GPIO1 (U1 pin 13). J5 pin 1 is GND. This is a second heater-output terminal that bypasses the TPS1H200 high-side switch and its over-current protection. The switch's OUT pin goes only to J6.",
+          "expected": "The HEATER net should drive only the TPS1H200 IN/DIAG_EN inputs, the indicator LED and its resistor. The heater load should be reached only through the smart high-side switch output (U6 OUT to J6). The spec describes no direct GPIO-to-terminal connection.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"4\") (name \"/Microcontroller/HEATER\") (class \"Default\") (node (ref \"D2\") (pin \"2\") (pinfunction \"A\") (pintype \"passive\")) (node (ref \"J5\") (pin \"2\") (pinfunction \"Pin_2\") (pintype \"passive\")) (node (ref \"U1\") (pin \"13\") ..."
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"22\") (name \"Net-(J6-Pin_2)\") (class \"Default\") (node (ref \"J6\") (pin \"2\") (pinfunction \"Pin_2\") (pintype \"passive\")) (node (ref \"U6\") (pin \"7\") (pinfunction \"OUT\") (pintype \"output\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1"
+            }
+          ],
+          "impact": "GPIO1 can drive an external heater load directly, outside the switch's current limit and protection. A short or heavy load on J5 can overload the ESP32 pin and bypasses the intended over-current protection and the firmware's control path.",
+          "confidence": 0.55
+        }
+      ],
+      "summary": "The netlist contains two deviations from the specified design: an unlisted XOR gate (U9) loads the thermocouple T- lead of U4 and drives the heater switch DELAY pin, and an extra terminal (J5) is wired directly to the GPIO1 heater net, bypassing the smart high-side switch."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 56943,
+    "completion_tokens": 5009,
+    "reasoning_tokens": 3110,
+    "cached_tokens": 0,
+    "total_tokens": 61952,
+    "cost_usd": 0.0081988,
+    "cost_details": {
+      "upstream_inference_cost": 0.0081988,
+      "upstream_inference_prompt_cost": 0.0056943,
+      "upstream_inference_completions_cost": 0.0025045
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:23:59.666510+00:00",
+    "ended_at": "2026-11-17T00:24:22.419759+00:00",
+    "latency_s": 22.753
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-17T00:23:59.702Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 15438,
+    "moderation_latency": null,
+    "generation_time": 22675,
+    "tokens_prompt": 31685,
+    "tokens_completion": 1040,
+    "native_tokens_prompt": 56943,
+    "native_tokens_completion": 5009,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 3110,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.0081988,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794875039-MaxTxrD05ATABETxhPRG",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794875039-oun3P1H5X3NF7Vnpc2Ie",
+    "upstream_id": "msg_011Ch7YjJzrB4z17RrZZUYtN",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Ch7YjJzrB4z17RrZZUYtN",
+        "is_byok": false,
+        "latency": 425,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.0081988,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794875039-oun3P1H5X3NF7Vnpc2Ie",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.75, \"anomalies\": [{\"category\": \"extra_component\", \"components\": [\"U9\", \"U4\", \"J3\", \"U6\"], \"pins\": [\"U9.1\", \"U9.2\", \"U9.4\", \"U9.5\", \"U4.2\", \"J3.1\", \"U6.5\"], \"nets\": [\"Net-(U9-Pad2)\", \"Net-(U9-Pad4)\", \"Net-(U9-Pad1)\", \"+3V3\", \"GND\"], \"observed\": \"U9 (74LVC1G86 single XOR gate) is placed in the design but is absent from the specification. Its input B (pin 2) sits on net Net-(U9-Pad2), which is the same net as the thermocouple negative lead of channel 3 (J3 pin 1) and U4 pin 2 (T-). Its output (pin 4) drives net Net-(U9-Pad4), which is the TPS1H200 DELAY pin (U6 pin 5). Its input A (pin 1) is tied to GPIO3 (U1 pin 6).\", \"expected\": \"The thermocouple T- input of U4 should connect only to the thermocouple wire (J3 pin 1) with no logic-gate load. The DELAY pin of U6 should be left to its own timing network, not driven by a logic output. The spec lists no XOR gate or logic-level interface on the thermocouple or heater-switch lines.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"35\\\") (name \\\"Net-(U9-Pad2)\\\") (class \\\"Default\\\") (node (ref \\\"J3\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U4\\\") (pin \\\"2\\\") (pinfunction \\\"T-\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"36\\\") (name \\\"Net-(U9-Pad4)\\\") (class \\\"Default\\\") (node (ref \\\"U6\\\") (pin \\\"5\\\") (pinfunction \\\"DELAY\\\") (pintype \\\"bidirectional\\\")) (node (ref \\\"U9\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Per channel (shown for `U2`, identical topology for `U3`/`U4`): Thermocouple wire pair connects to a 2-pin screw terminal ... whose two pins wire directly to the MAX31855's differential thermocouple inputs `T+` (pin 3) and `T-` (pin 2).\"}], \"impact\": \"A CMOS logic input loading the thermocouple T- lead corrupts the millivolt-level thermocouple signal and can add offset or noise, giving wrong temperature readings and possibly false faults. The gate output driving the TPS1H200 DELAY pin alters the switch's fault-timing behaviour and can leave the heater driver mis-configured.\", \"confidence\": 0.7}, {\"category\": \"bridged_nets\", \"components\": [\"J5\", \"U1\", \"U6\", \"D2\"], \"pins\": [\"J5.2\", \"J5.1\", \"U1.13\"], \"nets\": [\"/Microcontroller/HEATER\", \"GND\"], \"observed\": \"Screw terminal J5 pin 2 is on the HEATER net, which is driven directly by MCU GPIO1 (U1 pin 13). J5 pin 1 is GND. This is a second heater-output terminal that bypasses the TPS1H200 high-side switch and its over-current protection. The switch's OUT pin goes only to J6.\", \"expected\": \"The HEATER net should drive only the TPS1H200 IN/DIAG_EN inputs, the indicator LED and its resistor. The heater load should be reached only through the smart high-side switch output (U6 OUT to J6). The spec describes no direct GPIO-to-terminal connection.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"4\\\") (name \\\"/Microcontroller/HEATER\\\") (class \\\"Default\\\") (node (ref \\\"D2\\\") (pin \\\"2\\\") (pinfunction \\\"A\\\") (pintype \\\"passive\\\")) (node (ref \\\"J5\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") (pintype \\\"passive\\\")) (node (ref \\\"U1\\\") (pin \\\"13\\\") ...\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"22\\\") (name \\\"Net-(J6-Pin_2)\\\") (class \\\"Default\\\") (node (ref \\\"J6\\\") (pin \\\"2\\\") (pinfunction \\\"Pin_2\\\") (pintype \\\"passive\\\")) (node (ref \\\"U6\\\") (pin \\\"7\\\") (pinfunction \\\"OUT\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Drives a single **heater output** net through a smart high-side switch (`U6`, TPS1H200AQDGNRQ1) switched from the ESP32's GPIO1\"}], \"impact\": \"GPIO1 can drive an external heater load directly, outside the switch's current limit and protection. A short or heavy load on J5 can overload the ESP32 pin and bypasses the intended over-current protection and the firmware's control path.\", \"confidence\": 0.55}], \"summary\": \"The netlist contains two deviations from the specified design: an unlisted XOR gate (U9) loads the thermocouple T- lead of U4 and drives the heater switch DELAY pin, and an extra terminal (J5) is wired directly to the GPIO1 heater net, bypassing the smart high-side switch.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794875039,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 5009,
+      "prompt_tokens": 56943,
+      "total_tokens": 61952,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 3110,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.0081988,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.0081988,
+        "upstream_inference_prompt_cost": 0.0056943,
+        "upstream_inference_completions_cost": 0.0025045
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}

@@ -1,0 +1,336 @@
+{
+  "id": "AcornRobotElectronics/Control",
+  "model": "openai/gpt-6-luna",
+  "request": {
+    "model": "openai/gpt-6-luna",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/AcornRobotElectronics/Control/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/AcornRobotElectronics/Control/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/AcornRobotElectronics/Control/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 528462,
+    "sha256": "d150a133ce3e90d7002c31049587a5d1264481a4586384df25f3720760465ee9"
+  },
+  "response": {
+    "text": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"SW6\", \"R34\", \"R35\"],\n      \"pins\": [\"SW6.1\", \"SW6.2\", \"SW6.3\", \"SW6.4\", \"R34.1\", \"R34.2\", \"R35.1\", \"R35.2\"],\n      \"nets\": [\"/CAN0_N\", \"/CAN0_P\", \"/CAN1_N\", \"/CAN1_P\", \"Net-(R34-Pad2)\", \"Net-(R35-Pad2)\"],\n      \"observed\": \"The two DIP-switch poles are wired across the CAN channels: SW6.1 and SW6.2 connect the far ends of the CAN0 and CAN1 termination resistors, while SW6.3 and SW6.4 connect CAN1_P and CAN0_P. Closing the latter pole directly joins the two positive bus lines; the termination resistors are not switched across their respective CAN pairs.\",\n      \"expected\": \"CAN0 and CAN1 should remain independent, and any selectable termination should connect each 120R resistor across its own bus pair. The specification describes two separate isolated CAN buses.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN0_P\\\") ... (node (ref \\\"SW6\\\") (pin \\\"4\\\")) ... (node (ref \\\"U11\\\") (pin \\\"7\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN1_P\\\") ... (node (ref \\\"SW6\\\") (pin \\\"3\\\")) ... (node (ref \\\"U10\\\") (pin \\\"7\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(R34-Pad2)\\\") ... (node (ref \\\"SW6\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(R35-Pad2)\\\") ... (node (ref \\\"SW6\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN0_N\\\") ... (node (ref \\\"R34\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN1_N\\\") ... (node (ref \\\"R35\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R34\\\") (value \\\"120R\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R35\\\") (value \\\"120R\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"two isolated CAN buses (CAN0, CAN1)\"\n        }\n      ],\n      \"impact\": \"Switching on the pole between SW6.3 and SW6.4 shorts CAN0_P to CAN1_P. The other pole links the termination-resistor branches rather than providing proper independent bus termination, potentially disrupting both CAN buses.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R36\"],\n      \"pins\": [\"R36.1\", \"R36.2\"],\n      \"nets\": [\"VOUTN\", \"VOUTP\"],\n      \"observed\": \"R36 is assigned a schematic value of 24k, but its sourcing metadata identifies MPN FRC0805J240TSD and describes the part as 24\u03a9.\",\n      \"expected\": \"The sourced part should match the intended 24k value, or the schematic value should be corrected if 24\u03a9 is intended. A 24\u03a9 part across VOUTN and VOUTP would not implement the specified 24k resistance.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R36\\\") (value \\\"24k\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(field (name \\\"MPN\\\") \\\"FRC0805J240TSD\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(description \\\" 125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor - Surface Mount ROHS\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"VOUTN\\\") ... (node (ref \\\"R36\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"VOUTP\\\") ... (node (ref \\\"R36\\\") (pin \\\"2\\\")))\"\n        }\n      ],\n      \"impact\": \"If the listed MPN is used for assembly, the output is loaded by 24\u03a9 instead of the intended 24k\u03a9, which could severely load or collapse the VOUTP-to-VOUTN output.\",\n      \"confidence\": 0.94\n    }\n  ],\n  \"summary\": \"Anomaly detected. SW6 can join the positive lines of the two otherwise separate CAN buses, and R36's listed sourcing data specifies 24\u03a9 despite its 24k schematic value.\"\n}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.98,
+      "anomalies": [
+        {
+          "category": "bridged_nets",
+          "components": [
+            "SW6",
+            "R34",
+            "R35"
+          ],
+          "pins": [
+            "SW6.1",
+            "SW6.2",
+            "SW6.3",
+            "SW6.4",
+            "R34.1",
+            "R34.2",
+            "R35.1",
+            "R35.2"
+          ],
+          "nets": [
+            "/CAN0_N",
+            "/CAN0_P",
+            "/CAN1_N",
+            "/CAN1_P",
+            "Net-(R34-Pad2)",
+            "Net-(R35-Pad2)"
+          ],
+          "observed": "The two DIP-switch poles are wired across the CAN channels: SW6.1 and SW6.2 connect the far ends of the CAN0 and CAN1 termination resistors, while SW6.3 and SW6.4 connect CAN1_P and CAN0_P. Closing the latter pole directly joins the two positive bus lines; the termination resistors are not switched across their respective CAN pairs.",
+          "expected": "CAN0 and CAN1 should remain independent, and any selectable termination should connect each 120R resistor across its own bus pair. The specification describes two separate isolated CAN buses.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/CAN0_P\") ... (node (ref \"SW6\") (pin \"4\")) ... (node (ref \"U11\") (pin \"7\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/CAN1_P\") ... (node (ref \"SW6\") (pin \"3\")) ... (node (ref \"U10\") (pin \"7\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"Net-(R34-Pad2)\") ... (node (ref \"SW6\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"Net-(R35-Pad2)\") ... (node (ref \"SW6\") (pin \"2\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/CAN0_N\") ... (node (ref \"R34\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"/CAN1_N\") ... (node (ref \"R35\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R34\") (value \"120R\"))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R35\") (value \"120R\"))"
+            },
+            {
+              "source": "spec",
+              "quote": "two isolated CAN buses (CAN0, CAN1)"
+            }
+          ],
+          "impact": "Switching on the pole between SW6.3 and SW6.4 shorts CAN0_P to CAN1_P. The other pole links the termination-resistor branches rather than providing proper independent bus termination, potentially disrupting both CAN buses.",
+          "confidence": 0.98
+        },
+        {
+          "category": "wrong_value",
+          "components": [
+            "R36"
+          ],
+          "pins": [
+            "R36.1",
+            "R36.2"
+          ],
+          "nets": [
+            "VOUTN",
+            "VOUTP"
+          ],
+          "observed": "R36 is assigned a schematic value of 24k, but its sourcing metadata identifies MPN FRC0805J240TSD and describes the part as 24\u03a9.",
+          "expected": "The sourced part should match the intended 24k value, or the schematic value should be corrected if 24\u03a9 is intended. A 24\u03a9 part across VOUTN and VOUTP would not implement the specified 24k resistance.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(comp (ref \"R36\") (value \"24k\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(field (name \"MPN\") \"FRC0805J240TSD\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(description \" 125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor - Surface Mount ROHS\")"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"VOUTN\") ... (node (ref \"R36\") (pin \"1\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (name \"VOUTP\") ... (node (ref \"R36\") (pin \"2\")))"
+            }
+          ],
+          "impact": "If the listed MPN is used for assembly, the output is loaded by 24\u03a9 instead of the intended 24k\u03a9, which could severely load or collapse the VOUTP-to-VOUTN output.",
+          "confidence": 0.94
+        }
+      ],
+      "summary": "Anomaly detected. SW6 can join the positive lines of the two otherwise separate CAN buses, and R36's listed sourcing data specifies 24\u03a9 despite its 24k schematic value."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": "**Analyzing bus connections**\n\nI observed that both buses are brought to each other, which might lead to external connectors crossing wires when connecting devices. This could happen because they aren't isolated between the connectors on the same bus. It's interesting to consider how this could affect the overall functionality of the devices. I need to think about how to ensure proper isolation and avoid any potential issues with these connections."
+  },
+  "usage": {
+    "prompt_tokens": 182558,
+    "completion_tokens": 3869,
+    "reasoning_tokens": 2676,
+    "cached_tokens": 0,
+    "total_tokens": 186427,
+    "cost_usd": 0.024754175,
+    "cost_details": {
+      "upstream_inference_cost": 0.024754175,
+      "upstream_inference_prompt_cost": 0.022819675,
+      "upstream_inference_completions_cost": 0.0019345
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:19:19.141296+00:00",
+    "ended_at": "2026-11-17T00:19:51.123871+00:00",
+    "latency_s": 31.982
+  },
+  "provider": "OpenAI",
+  "generation": {
+    "created_at": "2026-11-17T00:19:19.196Z",
+    "model": "openai/gpt-6-luna-20260922",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 7992,
+    "moderation_latency": null,
+    "generation_time": 31893,
+    "tokens_prompt": 134758,
+    "tokens_completion": 1504,
+    "native_tokens_prompt": 182558,
+    "native_tokens_completion": 3869,
+    "native_tokens_completion_images": 0,
+    "native_tokens_reasoning": 2676,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "completed",
+    "service_tier": "default",
+    "usage": 0.024754175,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794874759-tjqx8hpLZTmn2Dgjn00A",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794874759-GSryIOypKgDG2hq2VWlw",
+    "upstream_id": "resp_015a76d992a2bc76016afb9d87620487d1b5aeaa6cb4658361",
+    "provider_responses": [
+      {
+        "endpoint_id": "05e94e02-b9c2-4bbb-ba55-4082ee9ad687",
+        "id": "resp_015a76d992a2bc76016afb9d87620487d1b5aeaa6cb4658361",
+        "is_byok": false,
+        "latency": 504,
+        "model_permaslug": "openai/gpt-6-luna-20260922",
+        "provider_name": "OpenAI",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.024754175,
+    "cache_discount": -0.004563875,
+    "upstream_inference_cost": 0,
+    "provider_name": "OpenAI",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794874759-GSryIOypKgDG2hq2VWlw",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\n  \"anomaly_detected\": true,\n  \"confidence\": 0.98,\n  \"anomalies\": [\n    {\n      \"category\": \"bridged_nets\",\n      \"components\": [\"SW6\", \"R34\", \"R35\"],\n      \"pins\": [\"SW6.1\", \"SW6.2\", \"SW6.3\", \"SW6.4\", \"R34.1\", \"R34.2\", \"R35.1\", \"R35.2\"],\n      \"nets\": [\"/CAN0_N\", \"/CAN0_P\", \"/CAN1_N\", \"/CAN1_P\", \"Net-(R34-Pad2)\", \"Net-(R35-Pad2)\"],\n      \"observed\": \"The two DIP-switch poles are wired across the CAN channels: SW6.1 and SW6.2 connect the far ends of the CAN0 and CAN1 termination resistors, while SW6.3 and SW6.4 connect CAN1_P and CAN0_P. Closing the latter pole directly joins the two positive bus lines; the termination resistors are not switched across their respective CAN pairs.\",\n      \"expected\": \"CAN0 and CAN1 should remain independent, and any selectable termination should connect each 120R resistor across its own bus pair. The specification describes two separate isolated CAN buses.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN0_P\\\") ... (node (ref \\\"SW6\\\") (pin \\\"4\\\")) ... (node (ref \\\"U11\\\") (pin \\\"7\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN1_P\\\") ... (node (ref \\\"SW6\\\") (pin \\\"3\\\")) ... (node (ref \\\"U10\\\") (pin \\\"7\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(R34-Pad2)\\\") ... (node (ref \\\"SW6\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"Net-(R35-Pad2)\\\") ... (node (ref \\\"SW6\\\") (pin \\\"2\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN0_N\\\") ... (node (ref \\\"R34\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"/CAN1_N\\\") ... (node (ref \\\"R35\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R34\\\") (value \\\"120R\\\"))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R35\\\") (value \\\"120R\\\"))\"\n        },\n        {\n          \"source\": \"spec\",\n          \"quote\": \"two isolated CAN buses (CAN0, CAN1)\"\n        }\n      ],\n      \"impact\": \"Switching on the pole between SW6.3 and SW6.4 shorts CAN0_P to CAN1_P. The other pole links the termination-resistor branches rather than providing proper independent bus termination, potentially disrupting both CAN buses.\",\n      \"confidence\": 0.98\n    },\n    {\n      \"category\": \"wrong_value\",\n      \"components\": [\"R36\"],\n      \"pins\": [\"R36.1\", \"R36.2\"],\n      \"nets\": [\"VOUTN\", \"VOUTP\"],\n      \"observed\": \"R36 is assigned a schematic value of 24k, but its sourcing metadata identifies MPN FRC0805J240TSD and describes the part as 24\u03a9.\",\n      \"expected\": \"The sourced part should match the intended 24k value, or the schematic value should be corrected if 24\u03a9 is intended. A 24\u03a9 part across VOUTN and VOUTP would not implement the specified 24k resistance.\",\n      \"evidence\": [\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(comp (ref \\\"R36\\\") (value \\\"24k\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(field (name \\\"MPN\\\") \\\"FRC0805J240TSD\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(description \\\" 125mW Thick Film Resistors 150V \u00b1100ppm/\u2103 \u00b15% 24\u03a9 0805 Chip Resistor - Surface Mount ROHS\\\")\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"VOUTN\\\") ... (node (ref \\\"R36\\\") (pin \\\"1\\\")))\"\n        },\n        {\n          \"source\": \"netlist\",\n          \"quote\": \"(net (name \\\"VOUTP\\\") ... (node (ref \\\"R36\\\") (pin \\\"2\\\")))\"\n        }\n      ],\n      \"impact\": \"If the listed MPN is used for assembly, the output is loaded by 24\u03a9 instead of the intended 24k\u03a9, which could severely load or collapse the VOUTP-to-VOUTN output.\",\n      \"confidence\": 0.94\n    }\n  ],\n  \"summary\": \"Anomaly detected. SW6 can join the positive lines of the two otherwise separate CAN buses, and R36's listed sourcing data specifies 24\u03a9 despite its 24k schematic value.\"\n}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": "**Analyzing bus connections**\n\nI observed that both buses are brought to each other, which might lead to external connectors crossing wires when connecting devices. This could happen because they aren't isolated between the connectors on the same bus. It's interesting to consider how this could affect the overall functionality of the devices. I need to think about how to ensure proper isolation and avoid any potential issues with these connections.",
+          "reasoning_details": [
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing bus connections**\n\nI observed that both buses are brought to each other, which might lead to external connectors crossing wires when connecting devices. This could happen because they aren't isolated between the connectors on the same bus. It's interesting to consider how this could affect the overall functionality of the devices. I need to think about how to ensure proper isolation and avoid any potential issues with these connections.",
+              "format": "openai-responses-v1",
+              "index": 0
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52PGwGXzZO2AQUOU9NjG4XhShZdIe1hwaUfpYQ3BeehRozQTrYA8Vs_etiVdLapkwXMoagxUKN2R4LbCtksRW5y3yAlcOIfN2QoGGCmtQg55zwn9Nt9rruaQTexZf3Ud6FgGcQg7IgxqS7U9HMZbBdXxD425ivCgq7yHCnmXoKeQEiTDp7vqJiqplFaiK9363aXvF3-wb2XQNkGCDmzvPVXjLSdkdVRFzdVkY41v78RRmn5liMQ16q9_I1pfyk8FBHDYbaLhnEYSEcvBMGWwc1WiKNYg0cAU4bV1e90hbzfTuumdd530E1ZKrcN1i-SUldl5OcVj85w7bi1tA9tmXXuzfLSGe76JXgUFzsL6HT5U5LqjUFPX1ALGV5pQwcL5v9TbMLocuzSH9rVIC0EtxTnsAprA12hU_C9Dtc9PwVdRlba8Yj85eOk25jl0RMhPkqUDw3_eLcmDQPJaIG3N8y9cUwoRiO4qYajzIO7a__Q5r7-a58buXTbLy9D4hmQGJFLAWYWJ418ojsmGgM4wj_xKRsmd106k0mlge98VsBl50McLm9PDOnHd6i_Zr_n7mABWp1kbF2YGGFElonyNqzaRbTywxycrEGP4qftov1lpEHRC4OpSdPMN2O4iz9IOCJtRhxbpT4bY3rS5dHZq-mSET2ylQlq8oYfogyaVQkffjLtyhZyVU7Izbb9F5A_z-QpW-RL7PsBQn5rEaFSWmCP2TPDZ1VkBKROtOyKxDRrVTI2qiw1LjRqPTRgFShjdmhAti-ojEZJZtvlGtAxygXS2fYspwwBdXCi0Txw9ESz2GuP0ExIVARQ6ox6RUVk-oyG1G6kcBY5WhUsI235fxa2gfpe5abSq3s3x0ynHfu2cb4VdEykyJFs4XTTKt6Z1FKYt1M_mNFhA6aiu_neThEAsHQ3yaMUcVwqHnJU2sk7JWNMVuWTPCJyejthKK2hLWIOAUszCESlEIq5vVABStdiZUuZMF9chgXneVk9EhxVpxmdORuU6iYnnVivBU9nYu4jDd8r1VAjjK0ySzfHl32A-AOb80X062rvqT5kLS6w60JNCD5gLHnluyIQqpKkTI1Id1FLEIBZuAnP6Zh6cRdypyYXnEv4cL6eTx3zOIjo5eM4mEiqcYmfN53DdN2JvbjwuCYrYxs2OFI0VUn5Rq_Fty7eWHCIbb3pr5IaivWziNc1GSnRg14igoy09UClXRbQiXYeEXSUcuBtL4KIho96lfCdaQPhu9eSNkbabwtvdpO3x9w_1YBkxn5IKHXZ3MMgDnbsbzxX4WtXUyOgjeKZSoz30kJhmgl1JkQwi7QigPx-y-Sgkj3zT68orraA6CamlCHcyiiRNYq-ly1mvd62A_6KS-hvnle-rkSfrJsaeGC7qKu8y_JxAdtPrS6d8FiTtkdX0Av0kyXcNHhjC4AC9u0y9cQBzwGqjcmJU4lFXyAbUB2X26LXcOrFFd3qtVhdCP14Mmo773CLMcmM2HKQXALJESkfXFVqK2elJrRJnqMaRJI0s5WwE0O5ofZJsRGalHV2tbq66B17keTMudYuAOgfBlakV7cGsbLU-Vc9f_QwfaNcQgpDqdH6C8Hq937-4NDRNVMc7w3kQ2sgO8ptqUGPUqq07KX-TxifByHueXDRFpDCabATwQdae-C7FCz6qXtyMHOSRsbrOX-HvpQBCP7DSwMG1keTK3m7P7sEG5gHg6_TNT2QLTVyFR2vvCIS4pzW5TvIWDWNnFL1Gf6HAYH2IH1juETQVtc3WJZlunuAM61DxzYafOUP2dHogNzm5bpTBxI4ckowQ9CGAfrFvvqFpHwLwhrIYt9kgLaSM03LP8JplErbGwcnLoISpaX9reklOYlYq5D_YWBCEskTgzOJJdZH88m8AOAbJsCzkxiMNsdUiGgAC53LLtyEe3KXZcINj1fcafwcMgtH8KCj06Z1EnPB2VEZ5dIN2Bont0ph3i7wzKtM9AZtjQOh40WxNYnhdTr3BSc26V22vf6AB3N3yl_G2POQhDD8FC5OsLrUkW3SmIOIYWJgAreVws4rTsRqFjlcyCpH43LikhWIFDlNmsqGusLDLp9VhCuUeREa9jskVIrXDUoS99AjynPVidoAebwSz9U7meilcQ6R9RLi9TX4M8rrGfr5IFA-hzMWvlYYmM87FNbgQAiyvD3RHDtM3xYFpH6yhyHIZBYxwbBLoWxcP0f2zSuSUgR46nPtUiUKOHHiBTzOs7pnnwt1Qcz9GhTyWFwF-Cs9hefkerW2PcPrW52ykKxhc-xEfTx0ArBQkFBNZc8Ho-QOmp_nejTSuyDShRCRVzi40w_P324KGO-tsSxNzw28xE3rMsP6mcUtTp9kQzXaQaQzhqFxNF1JnmWYzFVjx9hlhyMqgJvT1Ox0JtN9kyWEnoZB9FFzGei4f0MoVPAOseNOfuReu0P_DaM7jTlk5tbbxgSnSXV4Rd66cY9aa-EpT7lUaXpXvpmLqReQJ3QFiSfbJ0-_f-nMbfoT2e7118IH2LQH6aE3kf58Ia28-yOfpo60dFyZFntFosaazfRGfPJjl8Aq4JdKCyIpqGXq9GcqYHM4lAlvKxwnCVIUU5yb_zF5nZfwX6IRaBH2Kcok4bu17HFXT3ZkGOy-H_DYdRGmQ5dreMh6ojNWLGBnBKNyIsPBFeZwLoZmmfy9UDbzexHHltEgXFikUVoWjUMdJxU39lvdwGJ27rGER8mOcEMLKVcsrJymR09X6cmTceXkpkt25ZSanedbT2qEry5N9Z2okza15UK4NHlFOSxZRu7hheAUf5GZzkAvtRNEJmJ6pgtRM9rGV0hXa-ZNqIevJdMd59s1kI5fezjCx5i0KCG7XYqBuc0Br-7kTQoqNxSjL5c6ICGxtd0v4LpZzo4hejq-m7JyIhA6MM0S7iQ_nZaduS0dHVx3cOoKKE9vQdD41QnLtVWQHQVBWOMffhiRPGt49BeX59QMAe-Q-1RqxAMNUmplIlxHOh8y3mQxaYr9irtJX2y9k5I_zP1KBLpid5a8ZfTgvUM7zjlgc_5YnvinDkh8dESxLAhY4pEu6DWLqKpLAnjBHBjcgVGeAQsDvTtcgsdlnFyxtwFuPQi2VOL2pbxfJzGs5QychQgoODpfYDT93P2kdrjP2lutJK_1U_EgFp--fAfFC5tXNCv3YPXEkp4tHtkdFxFFwEv_hIXeKm8drCoVaJD6khh9YROL7PAdHYzfIj2tadz6o1rupH-hgtIbohztPGon75piO2PoA8OmlFN-yK16p21o39b0YQzm3SSNy8AiJ6uNcoUnAtcdLOm4srLzipCkbQgBBdXA3mb2ARPYS5Ws-1Or6S2LNrNH1tuH3AzhTlo-fV8Cc3JUNmfHe1KYZlLztyOIO59G9sGiN_fiUUHWmN9tFI64OsowUyOvMSqf5Qc9OhFuGE_JpBRgeDjJ1egV0r7BNc35py4aeMzqqBOhqvxxxXLtGsYUkcGWENAk-v0CGuZ4qAYp23G0ELBSkHxmKNZcLmWg9JJ1c511xY6oWT4jANGDLIaZZAlCWNM29q6OWh1X1u8No3aser7UmFUuIqi3DdG8wmduP-Ll5zkYCwT-phuURrwM131XvhmBW2mENsdcSWfWcrK5l36SctIOZCJg3PmChy1Cv1GEJAqqansCFbToXjRNsH-EyssBqcbK9dl1dp7aqorLEJnrF0_VZ_y7Il1Xmy6nXUEa-aNAbX6rNHIB-8h754pN5gixlllKpIZmZC5eJHU5genKBXBhsjoCGiwyvUmdmi7DlhA9tWVlxKIU6W04ReRwf05A8FdgqsdS5ZR93v4YX6lIT3Y7dTFQJRJECh3Vqr9fZBmb3nq_ewoiD9iVx2CEV9mGlKO8HP9Nulo4BfWIKo_oXwr5I71XvgF8Gl3ffsMjiZPV1tkMOOazWgFvnoa1jqd4XGeC5E3yLdpLLJdCxJFH4kpkor6PWy_s73OtGqOJ5HHzNK9Pu77wUNKH30oUmJ-eq_gQS-UCaTE8UTyiEJOuZwdZgMVymbwOQGOFeudkyO1l4IcNHlfBTVA1ajynGv0YzHakSSLcgjuL-JtBC8yLBSCsPAgnUZRi7FwFschunlcm6vuqOBiybvHSoLSZi07Rb3wdi-2D3Skz8juFwJZcwJU6FxdLnGkGDqbpDPbyTSMQx8piFBGa4BSimGFxZVVNU0WJEZsfOAnalB75-2TJ5azrBR13Dy3LkiyPNJchjRp89BGBlwR9z4dipWFn6voWf1U0trlIvPVd4TtfJniX73dSLDIgaUdJPnsc0_bnMEuI9AWAhUB5OUXxXiSYFqHh4BmsHBcdWI7eHoNAWTY99_5loBjln9SlHqJoQi9VAFXsU_v7Qo1Woywjef6LOTFVmGCRilnb3PpfTQyyoShQs0W1LPrQyg0nCcogNExjRL7kAmbXEk8Un14Rowx1A7PVaEB28vEBDbnnRBbJAp7E8x2GcicVfF27DsNqEZQm6A_4XV3qRwJcOsG_0Cq0-knCfjkuyUDfkKEYr7At4_R9Y0ISQBOMnHQ761kdzaMcn9yEyHxuT6triyazsQ2hEAPhg7ebI0_Kj12UojSFCGqj_fxolisykIKBYyN6cA4G2Bq34b_a4vWW8ihPyvnMPEWJmp9gyhx4GqeP8I-T8akYPBKN6_U5P4edhVLaceRHpzMudCDTlO4wSU-5VX7G8JMlAzaGNAJU3SQtC3j4LlNX01kRbENvKk7GBZSpaXDD4HD5yn431HAQC71VxXC4wxcOW8s8tolGBPsNDR8fl01mU-AiI9ZzaZUxBurRBxJy4Qox_Z9e6YxVcAVsagpcAJ2TE85HEOnP3glcmY4v2WC2EzdqY6TmCKWYRRp5CaYUdyzCM89s441_fRg0r1oQsXogfp41C67W52tpQVjLUC2-0e1pvdhsfH6J20dFd_CxY1Or4AqUEQw9mIzgRcQ7izNbaUDI0BLxQm9FBF-fxON6xazPDDHj8oT1sWtWk04gCBHqRo_LH_X765rjrsVW0nrrx8cZtumWW5-Z6LJAvlYoRM-Ldi8rplF0Mc_PBanpOWOUfnILoCP3rn2ZeNkT3i76z5ZcSzd6Git9jf831rY5A2-TlfP89UHbbxJRkZGsgERGwByzYYo2kWc0BQyA-XQ5oi3CIRahqXmsVbjQWrpCy-Y7r9oB5lrx176J6JTqUYan8L6ZEcncZtGmLiWPDVQwkZ8VcrwX8OucFB6exmF2oQoSV7qfukwGp9inE6uGO57sT2Cfco-_L7ppGgBn6QIL8nPS8VhsFzTla1gwTP2Q_UkR4Bw1ECakNYT13a0-aDYeZ_FeYOCZMzNd_23IFxOEbHaiuMEzdGD-nHxgyapDynbh0LU_wxl0xueetPhPHAr3OlfSbfZCcv_euz7oDJO-hcJn23t8XWDaborXX8aqFJUpj_jZqvVWzkcy4CTSpDQb6EicHhtEbDsJltOvGeFdBN_CTbXR32jA_DuVCpz3usleTu-a2rwOwQmj9iayCH9snPAYEqm45xvz4SbiRGASC4uhuY4piDbP0lHqoDs4JkX7UnboDFhWnbj0loNXSEmYbrGawyhLWkTRKGoAh-melixc3v5NDJKK3DWWFqzrTNSlg0HTE0BKMnWvZdRRqC9xs64GXPv8eyREUpdKyQepTidQJ4EM5etxEXHSM4yNK9O-IPh5WUSMtHtW5zTnVRXENKFnOkESTJELH7MC03tOqMfn37Qe8PvazjIkO7S8tZzo-NQ1prC3vQdOnVFg7KYbNfmsh_l2HTXSLuC0TclSLTD-ygjqGXQF8MtnlsZ0iajkRSWDVXNPQDW8ohaLozbQtzdprQXVJK-KRfO7fvPKAPir_eyHbK6d6eXXSRkYKaGE6M6xoNOd-n4234CUkwT4nw18I9f6x75LT-m-Ca8vgy74ijSATNB-n0IdpVuEU03U83wxXlIPQcHQ8mrQ3JlM6EGsC4qEYrvBu-3kYyioXXp4KqaQuaxw2XtwPytGvZrKOBw5l3pkUpEUMxjEOf4lebyGl8Kytc3qILS-8QLXyWtnuFWivh_wBnKnNpXrju4n_mfJDFr2DWvI4je7ao46WZtBjeiKJkt5J4Nx7ha0HVttyCiFt3PuC3ljm7yaLekqOff3VxAJJ3SnoNW8k4QxLcM5r8WY0y6uk5ytw5IlhQiDVMJ3qIgjVxmkC4ZliK2JQQeBjyKwQFpo4UElvoSXjtJJEnSKwkoPFgRyLzWLXEPyXYVB_gZ8Gm0vE6lXh_IEhXL5XlZ1_MGHW4hJ1vEEM8kxvhgGInKzT8B6CjdR5gRf5DnwNUaBvcLeBL7utMBCtZ5BJqT_hGy6f-42YKSpyy-1Y5xREYvOKoJQnB7KhQJzp-gjfC6gF5Fx8SeuQjnKg5O0j4i6-KJM7k3wKsagO2gUKIZds1MlYOcEKUx178jNRb95s2tHBw55qP_HYerQ7wkjxpz2vSsAkjmQEQC2iUdEsAqxwYJLvenySGfkUYEnyd-eKmifVY2uQOrX-HTRC_ZjyMveYVJORUzB5QtVP45r1SgLwzy9alDNsE52UvdaCnetMydfOnETtJn42wec_SLvrrE2cWvcZXZhwovBGO6PiOCjGmv9ecpQa04uD9xoIekBRIBM4Mh2z7ribHxKolRl2Md_PBvgUAj5yeaJv5pDSPo_yMPJIRre0ada10eypHF4WX2vvlCpv_GPMTgVt-2-JrHGXUygynNyVua8iqMZwPuCaCMlYx0gTqVL62L8JKRebNQOyHzsqOh7sdKU-jUVmjYrQjYFew_QlqRajnqAJpI7ukXFLPKkB3dkcdJ6hRq_7HlcAQ1y8bcQpGyXfFajonbt-h7ZDO3hu2YAcuzae2NGyhuirNMQEVUlderbrjhxpTzZjolZYiax4wbVfBtPijkcQwuGXJDc-td3b8OPjPVXL8bCTkKF7M2Lfd2njCDq_d6UHDTNgZWi4RcPrT1nSY8idMxuiFamB9xALTzhjilw3zqqSjhG-W5yzTsE5AtVXJOYPDZWlhrsnPByb_YxZZL6FSUbkiEZ9pufExnwpVhQUSRSn57GeLxl3_J0fyb9cQFNx0PkRzxfzi13Q02VSK9Y7WyezpR6LCZyDavUmbdKU7OnuQWNy5RAT9qqnKxzQDGw88gLJUiS_J0YGh9fAkLQpbZaQQduJ72739mq804LZaSgGu6qKIE63qnFsNbrWyrSgcKvY7ZBkaWF_QJNSHxQHWb4gSt_wEbvp3AmFuz6NeSOQk5OPOpPKwpHIHiFHrG2KGflwEAeH_MnMWMR_78nJ1VPdI5DPDLpzLy9cIR7LdlzEBkWaAZ9ZxDSlHuZjK46NnuZ9zoqKRRhTqjB2cbO--Asv_cSqJbIxRq4DRCdv9L42pB9KpY73JxlTQCRgeS8ta-m7JQfuvEhwQLEm7ZQzt4AUov2DOg_XyMmE9wR8bXPJ4PhKFHN0UtNQeQIr4oKZZU3L2RYFnSdV5JHMHRKIfvKNw1U3IiJIyy58BrmFTMD6tRTDxO6ZzH8kdqhHCBz8eaNB1cX0cZpXOARwnVWRtO3sKSo6x5b9j6DTRp2XNcu-wJ94Y5VH8ipgGIk4UH5eYvTk8iPjyVSYgh6NLX7RiBbMiHXHg1h7ExTtyVmJ7-cjslghPrWvue0D0ujtGXiAf4P0GoDsu9C2lDjgu-n9B-VWHA1ZzRLEGCBBgjj9aVyBLy2CH0iicuH_vSKIoTg4lLUvzePLhSqYfNJix9hIb0u3F0_SfjQkHF4kGPtcMecRxa_IsVwqP36a1A9R-7EX5-cjlcMZmwmCcOMonGPD-pj3FjkhiPdMqlrIraN9xU4WUSGdehn8_AK9VTFCZVAZ0tHo5MUmJ3Dg0k2y5JIfzSmkEvnxYU7ua9RuJ0FYMezSIGVcSZETHREJlJFsgKoWstmuNdx5lcE6qBAGPFDLAyXBxtMPV3PzAndaFZWoKQOJV0-DgInHgXl9sQ0h4_YiOCzFAgPfl9QbuGNyHylD_JihZKGDOBoM9vJ70cZ29Nx5SdU8Q==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9d89683887d1802ef8b3b26fe597",
+              "index": 1
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52Sq5VGb2LEGg-dRBKt9nP1_X2KHpJ5UeerMNC0aEmHIQzkwJtOyrvVgPoNOTymMv28xpxsXHNYM1-p8d40LiEyVVdJyM8LSTXurUSwlBTZNZ8JwLjKlBVYGrKHjNlS87fxRrxFC-gVH5_-PKwEQN0W3db61rd87Yq3WRzKLxOWlCWCghBM_KgKpx5v4NRstkb6ZVzArd35R6DZ7KeoYgwmEt2p5-QT4XUDw1zrTsPJq8z7X1FpJMJnVy-pJpc78qpHzimmX9QLjP4_Tjm1Aw4eaCTuqmcvd-3VtZcveZ3DbxBe5mut4aGCQlKhJ8bWBU1xQN2CghZwwMlKKR2oH1QEYJ4lvhTHshyWZebray5dmeqMQSdFCpZDBqRs2XapmPZ2SpgIT3VnsNpBK9_ninD6eOXFFWP_hqCcFPraXV9lqBK6g8l8FTEbNXtFHrgAVaFdqUF87AlcE5W5VvpakiW8Lab9vMlqUjEJzrQ5QzSn74i9ygo4oOkKLxxLo5-XENGAbr2qI38IENu2uFW5dSHd_SzcAiiH1lWQn2SMSVgZGR9_s61Lnwowq1Y_7JsI77xR_COQ77orNM5FX9dy2FagkOU3SET5uq6OSECswY261CCXVYlKPtYYA-M3mOhy39uCQFYKINjvn5K3x0bJWOZfmvQNgnR6dUOcY7s6hq_xsOecW8fGWgT2eu2Cew53DZpRvd5SAQVHllR9G6BY8ZZpCknAaI8UUodTxVYO1SqSP8f4lS4PesaSJNhzgI6A_fKZ9A71leisuJL1zyt8UTamHFoSnothdROuJtPXalKNwfH-C9g5my3Al6WQUFDQTQ9VPgU018RQccd8icAMO7M5Dv4uYgoEDGhVcplhYLkq5FCZP2xy2mfHXzBv4m9A9xXAYVbp1ZHU48npByQDRksmm-ze3Vl4UQZSMmSXOmtUpR3jsaUXdVas_0ioDsxA3P_V6HWNr1KTk4BQ8SXpq_y0vquBboWpt9mnEGa3iSzbQ-wKagwYQwfd7M2zmFMGoa0KAjo7oNtQHUZon7Y_3UIi4LFGQiR8ZU2T3hT89SGdVB2-GaSxavlZDGtowyBZTfrbHtJFC9FPB0GOiYOMAfIzm7c3Cr0ensadm6eQ98jks2AuZjTQtSyx9XNMPpmqIxc5gsg-w9xjuT3by4DNm9K4DpBzJFPm8xqqjNmYEEFIi3arNWT9LKsNbmMRmwZnp9-SzAys6qWneqQI6mWmzENg8zKwWSZ7iY6FhIVi-cRTUSmTzQhtqxWrLP4JU4caFegZZZDWH34VyKh5vgRQ9aRWfFwZPYAYwZUErZ4kKzovUVS3-5hJloSQGzHqnvcfjCZ4HemH1dJLdAiCANRut5Fv7UUqFT4rVLXE2rsYK5AXm43ph-Nl6n8XFHWOk9u2V2Dn8GBL021RAkI5uVzCRz2QSz1JVMN6tW8BAt60w0bJ_apQ8S7Oi4L6NBaqwKsGtesa5ys66ArGYRC910dt9W4_6Re5FdYAxADsVWPaXGEZtyGVKTvpf5yiDaXsoP8qC3SrwBlgnnxaXKDEoAqdtNYLUNH9gaQ4sPGGSG9iYKGVKRHgtJG5KRCc39lfeWnsBfR8C0aDrHyu9YA32mIOqDwxczV8gJevK0vBkmjdf060QC9N5cBv7omfRFrE7g7HeOv7xjWg6GsQXTczhR3T5rJcriRtxGl-dzvBeQ6r1EhnQijinldsBJTtIKYuqkQ5vCHgUV4GXRFkp87vUpJV2kHda-Gnd9dc_MpChHdkadke5uwQBeq7KFdN9f8WArsz7PXymUtC8XwzlWKDc7qliUCgTQ9dRnErnjgE6L5QWD19vHmvURkMCQ6C1LMjg6C8yTEkQZSgy4tgOjYa_L_THGoi31z_PL4-OEV-gW3jemmCcVvMVXRhKf496q6MVF--h6BZy_r8Q6gqXOYX4jY79lbKijokOUM7ErTt48jsXrnGalHmDRlg-TbW_JPDpNvY6CTZ0HuRahOyEfFfR4MQG30pbg7xlGVJ7SfIc3ZgT0wrtCJcQISpLrZNlcwz_wYtSDpvPZYJNn2yEuag6aextUVtxp9LkA4bCXELf9SmySH7fPGGvb4XIA-oBGuy7LdnsYnVcGwHc3oQFO5ndCKVl0ODri_WZM-1roIH0YhSmGatGDrIR26vHHeuWZYvcjj7TBE-sCsisvGa9IJJsiom5XihKsG06O3A84FgmPocP-BxZkP4Mjsl-i_ose3YZTiiMCeqygUbYIVyBc_io7WwbFWO1hbh67aQkuhQ7xI9iThAnAraNQPcZABUHlMr65R-oF5o-bmEXyxeyt04wqQuBaUxw8vxujlc1TaEGYvqrQDkY6qTBhgBRiGY6ZwHIIRxDSR_DoNEqlJ8xCpDEqAKQ9HVGWdaTAObB6uyLtWDhexgfP9c0Pt4TBieXvFZ095wpVQa0SSgFu30_xXH95RvD5lv6iBm7Kn4Gh24xCKyN82RFX8QdotWcGENmSEGjVqlMYDfe0O4Sijx8XSAPZbADn09UY_a01bYQrxul8L0BpXT9ESc5NtUn74hELIsyrpvEY5TL4xCZ052wapq3Qy_OCuUMEv4IOsBUJ8lzmoMA_khzPK9g3GLtNRvRqzrcWJouNAx41H1mU4egO2jnWXtzvEe7_n0-s4TRlVMGDyb8nX2O4tLPqzNg6fN4IxgYGX2vsQoPiSgGNeiYQn7UO5aPmq3e5QaDXGsV6wWP8o1kxioBWxfaK0xqlAoQMeDczxapOV-sZ0sf8ePsxzVUso35nQ_SZ12pJ-L-tf2jMUn3aQxgRxLu2oJMtN7B4foY9rjXIdPpXYImql4ZSKLnGOB2Kr8pOzQDhpRwGi-bbLxga1iddGwAiwAf1bIVlnJZavAoL0JU3KGD-7TfC80bJKFeV2UH3lE7OwG_xM3IBFf5-Ic2I2UQIVVdHlj9CDR6fa49d9cgbFskEGUDLwEz_aZVQ_hDix1ed38nB1F6V6OfrDuaHq_s3I7kh-LReqVcbvi4t6Ytd-VPqluz3eiYd7XToYT8iUU2U7YxvJxI8W66XniuBNdEnnAo0-jpaRahkFi949m7XSwToM44DkhqPC7dIQ69DmFs-0O4L9WUIs4ED6Z7SBjhZh5D46_s5LNH96fUdLyqVophtTQMsIYalUyE2Qn6PQx0EM555PgJAj-EqlL-biD6gT-TijoXx8Z1w-W-2hbTPBoaUx0S1cWs-144x0cVM0slu6srxDVzxMn-bAvHnGqx8dKIEuuxsRgogFFKbXzI7_73rzDY5geHUHDXqzJXPd7ABEhhb0oghomv9xjVpfqa2be7BwXrAgvyONpay00Ef1rEgtIIvIUOcvNpR7gzoF-R12d_qmMilrF6b5nmQB7Wr3hxbfRLnTh32UdWW2T3lBJ01zCOIyE61X4J2c8XCkF3GIzU84L1Kjnr038c1O3yY5dZMEn2bjQC8FkBekHd2Z_j9eL-2oAlHePz7EvcqpOpEtIGeBVQZtNeyhMwHiWqv4DjsM9eWBOUA4uKzAvs6Asd81P1bbXdEC_wW0Qy8F54v61aNAeksY1WK5xTjcHLxitY_ei8KGIGZxCMgb37d7UYgedczmuqXsIIYyxBrk1-MGiSx8bANkkz1DD6Xx9XLs2aOZjGd_kfBArupTPhboCtYd301TxLm46LJqdex9odIS7W8eac_k3Q6pSYHgpsLCIemvWZCpHufd3JncjWUYPDiI60qwQM0tDxycvEYxYW8TYV10mwvXl3yr_LYPaQDUfSGeUGGLUpxk3X6jD5Znj-_i4JJy_iM7V30G2im99SZW3JZuBATH4KHh4AMOwfhAtAbp4So5jfJeUBdQ516xh2DVbelCKXtvKRsmrlqU8Tsmao1tuzHgds7vJG23Ph0pNlXRbJswDbmtvzs1D8KR2zAVq60m8RrWM_gvRM-fnjn7I4vbSLSyA90SAQZJYXhKj0DsSB0a6t9GBkLW9SBYsh7yAVJIr-8J0NXcPr9yeqAdwNmnApr_JMZKtTj5p4uEzELRq0J6EK-XWeCDKXXh8PL6JTOuRI6681dHI4O7bv8M5nAPUTGJh-d0aWL6a1NIlytlXu0iKbcv36suzPvx3fWgVxKZAhD33hyINR_7xX1dpOmAqt_PZlNGPRXFSPVZpFvu6PE_Hql4HnsoIS4_dC8B-2U5nh0Gqc7F7TR5wnuMyR0jidXUpop54xrEp-Quee9X6JAWkMW7Qh_geelrViYRo2HmVA8oY_x-7eIrD-_eajQbP8gFkp1OOb9izu9YdI4Jid9GtROrxE5FNzaxPSGT8dGZFjklyfAuu6ekRZ09xOMkMLxLnKuh4UXZi1Ub5J5aLYcppE0RPorssQqVkB0WsnC7izx3Lmv6qxNRWeuYHm_S86PizKtc3eDCQBjP-6oQg3u7UbWwJWsN1yu9QRAeWRvyouQHVjLw93tqa7-OHJY61hx1mj43-vNl03NrAgt7UmapBLR_XczfrkSnHanq0z4GwibKDqK6pQXCkLlWUByMoJcx7MNsajEtQQ3VPxrvD2q3LOUJu1l2tQQDwop6S-cu_4XDEd7P4FGeOGUuGapf4VSAFL18gLNEfh0Rics-rrWGWIm8eDvLSbG3aa4-5YqcXYjIbiPoLKGWoB77H7V_RX3e1OzRPiziFEs19evrzzSvLVRMLd6HXsH6-0iQAZlMmFfZRNLFUdx7H3-8qF1rx1JoNwcgCq6_hSsf7ndVqtYKYkSK125j8htD5eRNMFB-S4V9lXY58sry9mOwL_aBA4czHPDDLUppdRnJN4Vilk1EUntK6XASzm21rJrAdJf4rcN_zrzz1Ke7QAuguqOdiGNSrMQGGZS5MSOJwtyN9Z4CCHwmQN1w8DAwhwLAoKz4JWdzfNeVq3WF3GHUxg_Zah4hXbVh2nvhBBQ3xrSBtqVjNgzvtOY2eKpzlnWGEQQ2IcXNJkAIJqlgtQBLa_EzG1_PADv_6CBEFImtuPxQz70TwFZ__ekW68TrTVadexc3neA3zIx-Wu4TEE5Ut8fImakmAGzb9-M-SqYriUMdiJ-LDJa4JK_jrZlpI8RpEycZz03wlHYs5KtV-2ZqB59nOIe-waWMidZw_lgxtKyFTUD7qL8se-7BxEJmPGryrinHp0NOhT1pSzbqlhjyi93PzFAfwlmiL3OaNgMO5Kb_-pZxBoafbCzJZvi2vRV3wm6QiXOP7clRX80pgzLjjDsnXU_AOxP0oGLYe3P_jauWvfKhfQkzFhNGkbPqYkn9sE0frNlaTxizn7hDgLFKyxFO1B0DSdnbUWyN5AxYJ-_XID7DUNRjvV-IsrYYXtthT3NtKsTEtvlJNp33Fo9D5z5-AlHv4YGHDpi4f0_zqI3cS_R885FzwPi0XCEX4r91eWkklJbufnp4xEbDFLlos40kQlPKg6uP7vHSJoLsXocjIrHcyZtOzZWNmquDih1Bflbc67q7eqyzdrtJQgQwfN_8HObxG2FZInmDY9-gQRfEvE5LFOWpiYMuv0kTun-e7aF599z9gDNac5tKqlg1XnbpuIhNn4CpCcr_9ZRhKdrZJWJCGtpxvrROMJE5xXci9jEslkC3qACaPxumVYmbDkdQRy_WINXKLrH0-IvNAW6djQEi9MsF-JXCVP3xB3A4g5aDaqoHUaengLDj4GeJcfzx6yoEDPvDWRt-gp_jaDNFbvUL8038O4s5clkXcPoE9QjW-DR3V2Yd9LA_JuFLDgaGT6_-1g1OZhJxzU4XUH304WHuxwF0qKe0sC4IJhW_ELpZh4siWZ8VxcGdsiNKTpOyqGnmc0hrP_pw5CJNjnPBg2TfmV6NwOb2d9k__5jtsbe9_NAIveM7CNa71uUwB7J9FAzXW6Sjzese_i1sO24jVUN47v8RWX138ZPi2n4SNvM5SvIt_ZppJ0O88x0Crhcdm0PgpG6sEen4hKmCTCdZ3HZO7uFqinPdwA3op6l8s4Hg_26y3fXIWCneerQiTvOjWuMIFpp2BwSk-ysVkx9D4vAmaxIkJ2tUUhV-cEx2HvGJ4maw-S-dLictulAmAPQWAx-s2NxDWXzcquSYFCY1yLtXbmfIFrhq6xaDsG9Epv7Cs4tFUgfB7A37t6zeKRRO4pZ8rqmXeOErAHHi4zJqRePx0yC3HQfiSnKt0t4rfhKuYh2n40wf4l4FZU1uOiPtWODbQ-Npf9sC9fuD5t2l9jGtMpxDaZSbWTbe4aoC7nBiIX-GwAkqmHDS_ROVbSGXidHl0KYBrrM6_0cHoAho1S_QgO8WsDUW_IiGS1J7t2PMaNwKHz9ZvKWNaL1qZe3Oe-3byEaZAIWw9L9_RFJYwUCme4NxohY-r1GPiLF0w7-sbrBgWUd7vYW3WnQUgBzbYvV32aRgyUnISHBiiduZMABUj4H0ODlCrMmYVqLi7SgyTbUeRXzF2gFne-Qy9sVL2WyZW7l26-Z1svNVxYG-ZAXTlMVsCjIVZHhf45bHMmFF4pnAxaKOXMNOrih-qa_V-Zws_pNtanHDn1NndcfzFEAl4jeoXMrUJJ12rhMBSwnd7jvLmPMmSLvlauEP6C7RvvNzIaaLf1LnT9OUOmnBdeAxG6brYDcwjh-DLJ6GT_x0pLfpYbQhXvNiDrdB82rWvOi_GHOK6tgEpG0EL4_-Gv5VDEo8zD-X68YgSAAop1e0TlwkC18oCRQ7vPQb8Oig5PYsaykgBe2Vqb2NyWdC0OiG8GVJuAP3P8_h1TiXMLrMs7W95L2qFS2vPv6Acbd9Wmh17DDQJbgZdIKI5SK4D5V4VFzxjrZSgsomLFLphy8r4P7UOeY0Y33j33b5VFzEo_hS8RDPBcZsb0gqgn5PDbn-1VzWrmc0xEVL7TSUji2AZBEtHL9B6FfwSuKe9mVsibaRwJevi9UqRtJOfzZBy7A76QbRlmj933ZOMswEow1vV34WNlJ4YSRy1L2UyUllQ4Q3u0F5gcjU-RW9JkIj0WfOpjcSEbMdHz0YGo-XwA59E72V9gG2HBFDxa2MYZEgQgHi_7jtlBGXqF_tvruiB3cwD8diL6GsXl2sqPIKfNK_JbAmh61fPPKrF8qkLX-YYUAoEa905S8_YN-oLFnxSvvSsCJHdUdwYk4Q6cMuOtkAhtEL1byfNxJMr46wyJTn6CQfXJkmFJhSdhnO7ovaj_Qqj11F2kR_TJioP6-NUUj4iU1XAsjjpuyJSbhqyD17noD6HUO-ujdA2jSrtESLcxDT9EOfflSKzIJtYiiCSqVvEBPeHSHoCwoBv2job-L868oOD0WJhswYSx3eCqi9PL_KsL7_ooDsFiYTGVoux5HHsHiBPEecjrSCwggm32H2xqQZfVJLSHJ7lzjAjTnG0pp2yqywhfbWoCnqqheLDZ2HjiAVpHY4MBnvOwBYNesm4yIVJakJH2aC18fmpA2b5YOYYYVWMdvp21Gw7ZTLpoT6ylcNWCYR8X0UQDjiR_H6WD_PZLLpHlFHrKFyCxhbuS7bu0vQZ4uope6l6B0KXYHwxhoVQ6gR_gVULnkSLGBi9XkVfDo7aWzXwRDf1iHOTMh7DCl0CmGeKk_q9Mcz8mgQYQgvnWTFsMQgL5jSgSFCrAiaS0ajC8MupAT7ZMLmREa6uwSOf8UbayBftezavZqFpgkbF63uUBA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9d8f47f887d19db398808e1e2fc2",
+              "index": 2
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Analyzing circuit connections**\n\nI'm looking at the setup with U13/U14 SC16IS752, I see pin 9 grounded and VSS connected according to the library pinout. It seems like we\u2019re selecting SPI mode, but the wiring has MISO outputs shared. For the CAN topology, I notice that both connectors seem to expose two CAN buses, which might indicate a design anomaly. I need to clarify if the connector pin mapping was intentional, as both J2 and J13 have duplicated pinouts for their respective functions.**Examining CAN interfaces**\n\nI'm considering the implication of J2 representing CAN Interface A and J13 for CAN Interface B. It suggests that these buses are individually distinct, but it's odd to have the same two buses at both connectors. However, this could be an intentional design to duplicate the functionality. Importantly, this doesn\u2019t mean the buses merge; it seems like bus 0 remains separate from bus 1, which is a key point to keep in mind.",
+              "format": "openai-responses-v1",
+              "index": 3
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52YzIcPG51l-HN2imiw6tNqUxxg5OL01cnuP8Eo3FgfOTMF6J8OIVhg4lSJziFPU_S0FomaHJW0ObTbXwPkzILfp5ITKB8nFG6c4JLg3v4otG7b6_M_LQ717wLaHlTtQa36Viov4Ls1a3GNqd0DvLOggnWQAMG-mBhAdcn-4fCkrHZPzL38031j1vRUL1hxAHvc-kkeijQZoW4_kB54NNprIREpjdLzX3atJeg2lsocmyBw7dapzPIwEY_KPiOUkD-O4gyZULRUk2gW-a2mbhGsO-gnJfPknmRByrOTlWuTxV3Pwakh1IhgLx8nnpxXOUvXOIaqbFHAmoAEar4foQK1C-niMcqwjfNrSvcuDNlkg_eeQFTFPOiJdjtbjDfcFPk8LgQ47XVqIEIM2FBs_TxmONb4TAXH3oz8288AWi0FGFtJGju3FaBNAwDPb6NnvIxkRYuxW1fl2rdmMDdDMRQ5My-0XNwGVaiXye24XgLfN0LdFA8j2inwC19mfbFKCGbGuaeROc-3k3fV2FBFigqFbUf0lDrC17J9IL-JDjLhOiU-s0uUnwOvNUcGELJ3ht6UjcMmGnlwrk1s1cgmPR1uGbSFu6EzOBnfnwqT6edmj4rFEnnrf8Nt2vgyk5U213C12WY7o5AFDns1W769yIyThNp73Y__r3kag5hnc8EU6kzPR01c2j5zemjsnRT0DNhgrJvhKbQo94j05IJ5ul6jpJ7wi5yDBzb37wKny9aqlutCIw7es8xA_oWBu7lQ73pMyV29WXJWGD4iSUS8BkFcFgGLN7iC3VKkiDPzywnBlHG3CIGfJKxFIBRYuCocIqE_wI7rEZ52sARykPtoIUTq81siMlXSr70St46nhpGeiUJsU5iqIECew0k34z3rElNJX6W9HJiOTcrVDQcya03mRQLkoZi9Tnv5n5HBAnMgn9-fz7pvaf-QXQFTMRQeDPhPnrlLwaR-KDBXB_UmRP6qOOppVQuJes0CmKqeUhMfwr_9h49_R5WucyCVpNdWDVQIqTISrrOLcgIl6rWPW9BlL6Ij40LPJfg18JGZLzWUjfe6asFPoud-2A-5KBf58vIla7vziW2RKaiok_CcbBKBtN23_ustz5DQ4a-jZKc232isz_qgyakTBdcPk7vFEAL7qTEYyG6bg_MASuLChtl4B-2SENZSNsdBzeDLf5U0tStKWOh7hZNv9Y9Go3IVnZCF4xbxEvl68_lI70SRU_pSJoKX39skiDe7YQXJN06s6bG5AkOv_BRSS2ZXMjXoEe_RiCRWTA092OjkyafAvp5dUSbsserd-OuwvRY3iAUcydA2KYicOWmOaaZJJmprTi8YljrQwlBhBfkFhw3Ii5JOFN36OeHyQKrKdwCcNA9oaHs6HIU69ANVS_cZHnS8E4Kd0EeGFlkQC2Cu5u4ktPyiQDlfFY2Py5mzii1bTPo01HU7G3v2XNq7k6ZFPapfqL7SbUasSfWgaq99NK0nvUXg72po5wmKT1FVpLo1RfHzTkGBjJyfB5jQOmDxg6hHtUJlNGHLJXSM2ke3sU3FYbULzXs8yE45otKR3M7nPgpD2DMzkR7yM7xn8c7Zbw5V8RtbuJ_uh0PoYvPkhVdcjukouXNQCKO5xz4BgzpClCnbG7CmddCO-UHnV7zykpI9HPz5ACDYyFZ-D0c9WdT1C5teavNUuAeR4SO1VqAk8I2oFiqF70weSCCyQbNegc90KVck3OP32fdXcGRYpcy0N2D9VZj1hm8YYtpTyfAOcxXeO-yxJ0eXTEvpuW_GYgKFEw8InJmSG7ibIAcZ_X_nvfeoh3FK70sNFPj2SCCR4JJtiJvnQ8W1ANZ0YW0YDssJathAo51pysg9Ybw8JlvgzlYqNrJwBSvhfdW6498BAhdGer9PZ330Tf4-OorLpqk2pKXFzAIvQFbCL553wUWQWFqQwajS5Pl9QYAYnkYu8viTUulI7ltVVrJgo9Z1x58jOSkNXsDoxbaaD9VD84kyV7ICKh5t3S4dQvwgVDVmjd9psARMw7znaxiw4bCqDFvr8gw9Q1CTgospSoC6CnxmZMoN_wtSTLG8ra5PCxSo75MBp11SeR7OjMI7HhlUE5aXfXDDD0xxWqaNfw-NKnzya-D2RArz7v3I4AIOxplsEm0LpNnY3FTcBz8CHjnPtwUiR2-Tv0OFDT6AtLHEsT-Hw22u0ai4FTcM1yMrKcwXWwQGe7IwUTf9nSyMKTB9yKEsLP_q_JrVcTlm_MV0FIF9l9ZS5eEnvM5yyTCKIEecr0AzWbKpGU3UKaL5izAKxuQKcIJmLbr_5w1xxj_z0lOIiQQwt3ym65om4PyKFHe8GR20ZL799oL7xOIZU9aYB3itgsEZZtAKIgTE9_g68PvGsxKO6FRCCJO-OzQnzs8yk_Kt2cPhE0_W7SnXW7zICLvuxVCskZnRIH-3XjP1EHb4_4PxLjkQwa_PXCy6Pa7uWpE9YsOGC5uCPCRLnKGvPxub9zvtBEdApxckzh7BumTF7W6grBSLStbnL8xHlSMmK5v5tvH9hUw33N4R6UXwoMJ3Y84bKRwrhmtiRjcnTC9ejzg53FIDM6zzfg68EzZyNa66smf5hMG-oQoOOVv1OAlBSDyENa_1H2GFRs2b5UTqmTlzk7gSBCkmzLdvmuQSohDzHBnvSLhIQKUSh6-E-z3e1qypOaNHBZaqekbt9nNAMkLJho6HAqjGQXnTUg_y6Mz9h9_8ZM98YzFKlaH8qgiPb1FbKzInCiVGOtC6edZd8rOI0XWBaeI51WYTnaKxpEcnM7O-EYveKqRSHioHBiAp15JJbHu46wZhzm1oozm6PWhNVNukR7Ge3k0Cv9-7Ld5Y5HoEOuH3uWBidoEdGqc42ZRGlm2ZnHJYNpUQ9G_zr2abwhYcZBN9qDlhWkRR4b2RvlesbbiXT2TEnysf3KxDvSpQA9eC3UGPbK4kAIw-Dkoj8j-pCZXQy8mqmO3KcXPXCyNzppMEVZN2Guw9DfCrKSRfhFLndYLhZxg4MsNGOf2_uzd4JGcqsdXMJWIopAVGh7QdkJNfj3MfukB56w0ihxgrlbKVpi6puX16nY4rZpJAJM4X6pa1KqMA7h8iK18jNlqe04pYM-1ZaieezT_0nxqtSUJAjYiGrdWZp0r0VpPlVpi4EB3oiBxRLP5TwAFCgzFZmWYZvVPlteVd_zVZ9ZqNwxobbnfEDFYp09fEp56rAyY2q0W37MCAhMNrYCTDCElkHxKLG14ZOCTvO5iddQckMpt3oRmTNuLfaHpdtLuZHPdP--S-uDOVGe0ttII-9Rq4ZYbkRx9TmYnb_3U_y2rHdh4ph4lN_ytm-WaXL6JlULeRZEif4dkY6r5BTEd2OdM3WE15Bm7e7yHLhTYCaxO1vMDuen8hVCKqN87G7MGCIN8-wUjBC8AcxaomgLoYt4PQbpKPnzxmxrtV5kTsKFJ6gZCNy_P9krEMQ2ySIZo2gFCG2vpzwye5cS2TuEi3Sx0PPUjBmnJwRz9hvKug5d6EqcmEHmTKIvPpfT1kLQEzWsvTJbaqhQoaTJPGZcU8bKS_VHybQnTSPAiWynG0lAT_guI7HtdyfQaf8TfIEWx7Dyk1JMiirpbnkePsfesWLSl_21i1aDeItKlK1QTIZ5zjlxODhEGkNLHnLsbTcvsyfwT98M85KOWMtkOHs_HdAedbHlWaszc37jJWw5btB2CeR9F1mkyjLZ-RXHUTrye4w-USSr5GwlsT7pImAHztb0SiNxwT5QZjfVDfcXvn4TjvxrLJk52YWAbfqrkG4YTo3FbeNV3lmJoDh9TWUnUQevih9ZtuoTuCBSvempoRpdF4bvx8vP6PE6t4-Jqp6y-F8Inq3X7Y6o6_FPyw-4DxLUF1mkWjJtT6VUx9e6BFdgnx6XT4HB5XQtLAy17C1YVZFGc6_B4-qJMUQnO_q34ERabsfo0_MJRR7PCYFblGutiNzmhGjzL6aVpcEZcd-2OspFyiZE9ZPW4JT-cTZL3Qmdx7GMfDWxUlBPl8vZhk02FmFsvYdbPIrqjmnb1bpXIBZzt5QRLrm5oVMpu0g0RwWLbZ3PE88ja3f55N_7txadhg53dkjSWBIYQEe542jjbLSELGvzVQlsgJZxv5VElVP0Mae7u1Ktxs2lKYlc581z6iFw3QKh6L8acYFiGCM06jEEL6SDRS_sDHErTBUm8z1zZim5wHSJDhdFG4J0hof4IKJFEkgGOixrvYtWmEsM_V6oahS76Dp6mAiu1BtI3mDi6t2WKCGW6BRKhB3INFZrHuwAdFzpoHfGFsvPYheH6lbATIda-yrqNz0_PjrtctJQ8dJFowPQVjPMPn-A5YOp0N06zAGLrOc5Jr8BKeZa3xsApvaucHxlzkdxypHfvcR-QYkHgQeNvVvUo9C09lpCPwPcxlWmBsIZDL5cR3hrUjDy8I0qE7NoEANcUuvGXjHWj7fNITZF1Zls8Y40M9HZmElt_RhUC8kwkpBFgSG16QSw-ApKtY5eh9QA9WFnSNrung29UvY7LELc2qUr0HLra0DBfM4cT5zu9aoQrvduHHMy1FrKq75XGZd41e4O1DhE3lVwTw-X8H-rxlb6jVn8LsYAJ3AjtjpUuQcNeSMtyAmt-DuB-HkMn2U7SCmd_-I7WKF3L-9M0dEzWMeoMNFLeSJOI2Rdn_FHIkpgRm8hVLUQ7NoELCN_tUNbiZHq__uHt2m0ia17S9f7wO7BIf2kkDW2OjJnCNlb70lDBeoY7SqqE5WFMCBfSYmrL155EU4ZMOqUXNRnEN7rWeCG2VVqy5CGYioBVarPt60dAyCgHLjX3hyJakFP6vjNyvZYis12alpU6aqDMVWcamGZtFV1vr0atLDtOiYjZOm-xpzVHzb-24XwG6svVyr8k-WpZisY4jf8Qt6it5NrAMgh4fbQqBSEAabfvcRLofgyv4CdDnVeIHUaQhHKO7JhpBkMSXbP1QCQQpTxKFMwMurDKXUMtFZ4L3_J_fLq2fOAkbN5-ls3n_clVvfzDFRDutXGUW81hOxpcWCICRTUBLdbD6VlzOY1TBRJq2wPXGWIAKoRipgHkPE5DjB1UOt3lKfsd0g7m7JMpivD2prWAPo_Pej80jzx9_g5YH7_Tt5OrTOY3ni-vwK--JZI48jBfJoiGAm176AUQW27aSlbNoAJ-8dKTV-dJXNQS6gufOWGRmfZsljq4twOC5GBbOpBEXcP61SawntwRYbH7jM1Op0eMgBaL1TxyluCC1kkNpoJ0HJQG6nZUtoQ0BwRJMHEP-GkSSwLqwx6tgnSdFZIjqMkwrlCJ4an4ZPSuZpYFoLfWeZgPQajcXpCA1KjcWPEnCLaJyQygT05W36psu_nxKmy9QM6DhUAqLhHSBO4GAPA_KdYAx35ag2ew3Mv0aI-_GIRT4abelhiAU5GZ09ps_q9LGll-ioAu_24I0amU0sax5BJrztSE_0NufZhZ-U21AmuH-Wsvy_6KSTck9zmnX28lqsdlttL4qbgIlVlhNUfl1QkPvYNsNFl1Rel_094tl_KKuIl3O8XEnw9r8snLawE9Ny6w6p62jwVNVJ15KjDy0LQhIsiwhO9Ze2xudcxCjJt8Fg0DlGJ0QR1HyMOLU1FaPDMUACXxt9kJ_CoNSWhBkcQsLqV3X4GdKYRLGgfbnks1OpiGFi6gXm6JWR0VUjpSMlqM2JZhyD71FjBEf3Q8DVS_hOya5kJxxcNNGO2XHkcvGcYYagastgIWFU4rZElc5rQQ4emex954y6uTrQASXBoI-DGhQT-agaKihkWKcJX65zaZ9XG8OGJmlx7Tef2W4UiIm_OKXFmXv-HbE4mbIABASRU7izPiF41DtxJ2d8rol9JLLXAKiiFFEB20_-Zj9yC4YbxrlRSusgbYvKOiawj99hKgbGQjmgKKN2eSb8zwvrjhFDFComlhhBskeqBQrJKNODkOdjqd4zkaD9YuAh4v0eVaIyjs7boLFU3H7IzZsN0Yf0kWUb-XMSuGR4vntWjNW7zgGKICL-QXB7oBzPFmcBATVsamiTjPPeRUCsVN9JkjKTrZFqQXOxWMFwJZ9bNjL2FPl1uPky8RmmTYSGZZwh4JGWPVOAXxAaY-Rc8T1c0gDuCScWwju4IESeyTduyrrbLPjxOI_B1JAX4o-_RvghLvgWtfFvWblFFEW9v-O8dugYl59ngEPNHf8Iaw2DrqCsXtzkJ3lWggH8o2dHmlI5FBge_vHnaVNanNSNOs47TW1qL2CoSWdtMJJ7VClfhvcGGkgWNEx25eoimqy6oD2ogCKYEVP8h2cwcPXQM_0qHAdP1TXRlZySyVIx29NwnIoqPbv-av11euJS46VUCMwFhIoA1l6uyABdKRVr2yGEYcdqEZvqKPCDts--inuluI2XGuTElECTGUVeKCXHxFQzHNniE-yfhL7sgeWwu65EwjkRee-59tC47H83XCm2teseatFwx2IPKMaSxD5OEKbPpH4s8rAGS9w45gsKR0WxoHSS3KIatMxPRPZOe00XibxuWX5oRU9dnYJIVh096_n4xq2q9CfwkUDgP8-Wtbx0aunBi5ca3PWW66xF7VL71mZbkj8sbP_Ulqsm76-nU_ABhYKXBRfUi_Opd1HST7Jrzzz5NftLHKNObl5JcV5pL8jJh5A7DgUbbP9SaF8D1ShODICkkE37yK6aYAQEkiuUW99cdGtc6gqMIyQvNvsTNUimCU5uq4oMJYRlFwAlolb2MTVCHh5y4MVQHoNbsJHtJUu5nxTnc1RVAO3fcbO7xwKEeve79eUsiDLkzYUphx9Lue-RibJ8uiR7IWN0UE6rPXbDHd1AadXdi-K8cnfL636NFonnYPKHHDmHm7EtvEINRDjYUYaVnVGKhCyywTa-Q-hxnGRbFS-I657p1iIZEFHj2X28eiJHVUOntM8WQWoV69qaiBcrP-WHB0KMU80tgMap85fu2DXP37_2HVneIcVjmmBKVbInJOuP8qzU6yqLIibknVKqUIx5DznQ_KyUjm3NlyKPaKXw1LUm47IrmZmhrPyffMzGlI0s6OXjqepAdfiYkMt_Gn4ROaVa6MPBwNLt1XicwoCbLirDe-liuHj0zmCs-wtPyXyu63MxSqeiOpDyTLadBJjRvPJ_x1UcUuswN0TsYJuIdA4SZFZTcy4BpndN-J7Dr3EfSRjAveAS4ScmyKYpNoWXeKEz49kkG-wKUjjUTvrKQRr3g9TS9XwcykYxtQknvHA7OAHUDEe2oDPNomPphWCjRcM9A5QxAPUylJUFjqqvBq9I5q6TyKSzQPK3_pVsE99uLPPpsl6cLv1_fF0batCx7GhmVxPCzCvc_yTD4lEiVuL3qbSv9-6KmVEMMmIBMf7DqXXrq73qbwWP2m7gd_Zf8b_lLhbLDNT0VB_xjk22cX5rFgoJDneUrJPjaHUg_3aPwATUSWq9ZTdMnxbcstfQcfZZZa2crK8_u9Hn5TF2czI76M7XtlULJPqV1AQRfDfaCYcucmNzqVy1wYqKharAStG-_yP5BqbK2cmGj4j49d_4yhWnKAbkdhs8XkCZ7zizw8WiQPF80THljUJSg9YV6bIavaFgUOOihQeLVjyY59R-SLoVBg5KBRDUPNYoC4KkadSSnMWpDUZP4usDtvbMZ-TunxDPgFAKWxawv1hh6yuwfZlp_Wg-bLuMRBh8WdVpxfjozcImSBuHPIqFZAO005b3GUY4a8yJJFXD7hQOWr3dMRuq2SvAKx4UzqLq9Tht_o-oxmCaKfl48MypJ9jOFcwDkoBnixsNEBo5V1odZ3a2x8KY1OtxexwCNt8hn3PK3FxNeDqmA==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9d9299f487d1864c7eb1a913c82d",
+              "index": 4
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52aO4UzlANMxnW_asz3qXSyJmQyexz-L60PfSkCL3Tx-CsuDIOs5HfVGNQTQ92LXyEqVWGh_KMUml77DpZnPI9mIwAFhWYtPvpthMk5bJtnoqJNKedo8xGBpDRbJNvVkyASer05GdJ-14psc2XNthM0uV1WO8FOFDECSyxEh4qV2YdE5aYT0gikfl7VEdKBbnE2G_NJh7RrpGF4VxHALTKNGXovEkJPhVRGphmsosFAJuLXrGKaglKcQXtc7hihiwF4QYZyfib55q-VxgJnsFMIHlNrION2cyFb62wFIlf2F6fOztq97agR6TGkC9koF2-PbPmGVzjbFmGaUj5heBvfQOZBgv8wlGTDY4j7nVhLzN-uX8lSUqfm_wTx1R-Rkgv98Opb6ovBQ9XV9lXKCoshPK1lrFyMczAOh8G310kToiOBjBlFqN4ftOHEIkYzz3NNCgSoSWys-gh87eJjG-u-ku5ogOKHn3fzUGoRl7Tv4ekKdRY4DvgnmHf5fXW3XSBkwBmolwrX--g_k9a_lU2nFw8plyyMSBHAoQpd24s_cRfWHviBAcbOT0w1CpPTHJ8u0lhHKQ-PBioXAVTxTpKa3szrylP_awpFb84LBxKF-Irof65aK3tOzRE-qQbHzJx1hwiSwAehXz6I5XC_sw2knYZsXw5PT1Sj8ia5v7ZwVuEklPAQkcSamyTLfWG8OQwAJele-1yq4CSL4qOjXJNw1y1-Y1_DQApuBU7IYOqNRaAcEapjF-dUb9eW3bLVGnRJ9Sndv8AgbbmNQ3NqsayU3a3C-tlOWwjGLEHZ2tsYfUFuOXQYfx9lnCmyb7T2MnTeiXBCwy40TkWiDgRg7Oe95AXrDY5EGsGgzYMHffvlOf08U7dGOio7x5uKVdPeek1ghAEUCmvYRmfHVP6OJBU-EJ3to3zvIiNeSAxwT29FnONT-iCn5L2lNse9QmGR9KySP6M7rwveg933lCLZLqX8hA_uHzh6vmX-7oqzp3DoiEXkq82-uZj82evXZ5mfYAlgs0dJMELP3OhO2kL4nWczCsyYORrjezFVTm7k4gFMjICltSZ0gEh6-1BmD-Bafrk7VmKOugrFklM9OfEmw2Fu68A60FKj1m7-otW0CYgizxyl1EGy8059KpBqVOOh1J0p559kTTcfHaQGv54tzostPvV1VjK7g3idJOuQyvGV1WzmKrfoKc3awi2G76jl20wskk5IZRgI8Qas_wHfLGAMmbr8TpyTloOLAHMFoY8w249BSBGmGFOu4-FUaSqSpSePk8qHQnxCMkGaM11VyYFnCC0CceLgogIHLbtR4x7At2jEELfttiAJSlPcWbbis_T2P-eduQYfjdCNEZesJrBiZYXyHxLThps8YNElaFFe0IkzzEXe2kpe3wFFgl7P8WcGHbQh7w2wOlAgA8jnVxWWEYHykN8dSaJz69ZkzWm7jaAoO82N-5SLi9kGp7-BWtLI41S0-7texzhB6kxkje-ueUAfJKRANdPLtk96ni52Vr0T922GyLv8dkB2Hga21kYnpsbW8MyO5Pc_uJG4SlAMGnO4eO4XGH7FYRry6vD9YQm63UJ40orNoaODRbROp86gwTCNB9ZHawjTb5_X8N33g6T64-rkRG1eJ9RcKg7j1V118QoTyP7GHDC7VwbVbUdaPgoZddX94dsRHbXq9cu-n-YjwfbaevhHeFAHMNsGnkqLhRcPoq3V91WjRgtChzJKrH4VGuBG4klZ1sRvGA8LVoipBs1213xRlNmKtixq3StrejHBEgKN-DoVtPFi79NnQlbtwkJLjGE7b2hXzUWHyaES3wZ5uj-bNpIJ0ZNCAtZnea8XE0otnlMyhwtA1R6JGMxhnMbo9XAvEOFGwtebPsLboStpnBxoF2ZnGsk2FKyNIenC9-JY4PqtFOM8wxF3QubMicDmXtv62vtFs6zwdoDVElb0qDyH0cHnjrKGFLj45o6GQSpMOrGw6AIpeg-HYD3Bhtkm4hETLJ7F0_jSw2IhXhY6FUc_Jwkzk_kheOT8c0JLcQcoB1W8VBsaG9ovk-sTK8sVlHAQTF0Rl6PD-HiP_GE9B9RNEhjcBTH0u2iwc2GUwaU2fn1ug1eMON-9UCYjU2fKhoS2OrrdNm46hJctRECPAcWvTfqB7sgQhho-O8oFkd6at_hLFJtkJHZtl1NEgW5a9efRxNW_zhL0_yJLthezsMk-vmLeKtigGnVB83DcEtrfH1mbcktM39kTGxQ8KwQdvSSTWfYzMRe5_f_p4A9voEcwacIMv4lVtByp6j1dJyvZgHZ23sgJ3NND7R4gsb4z9SJsn5qGaYXQ09W-PS5azEpyUwdCGyTCrhJPzVTs5vlYS0mdPmTrrTx8oEb2-kvzr639ye_TQfVy1DZGUwYejyYGL8U3u8XmDSytWTTjYAOo10vacEkYIG-weA570LiVZ0N3U6dHSeW8oBmYSDG90Zc44jW9HZM_EI2lfr20q_3cd4D34SvMrMjcrbY735w0vbKUxPkGNWiRDpxk8haCXzwr5q8ylOrZxS2tuBqLrCPVy1R42siWq6D3YSK9vZwB1VkFEP2YopqmKKvZ0lcY6uW6olwa0DoM9duTgt2XVUSBPlYVsGVsQxVaSIu-2zAku0cQ-kA-nSivHDaiKqKEl5FiBFdNHM3DUcHgMeMp9zbES33uf2xVQadvEDLwMDuEutaSVAdvsjGc8kQbldD6SkEFXmRYyeNjpn8I3AQ7fWpdTYJB08_watVV3KQx9yDGxviwvm2noqidtgocONoyOEsYyyAjYCg5qEOQ9IKtICoYHSN66nP7RTnnUqznVpK_gVfLSxDnyQgRUhc5Iozvn-ygWH2WJRT9dOl5Sod6l86O8XQhmC1fgincUAXBiBtvFeHuCrv19L1ACbPBL0GBz9QIPcS8Q2azE2NCWswdi6FoOu17uxKEpFKvSBt_Om-85TD_qq_NrX5RdiVFWEH3-bU8vnOkk4gXyc1dZrEKNAKeVZTzVFyL69ZN2Yqwg9WTkiFPbt3KiqJE96BAimldobo_72VlkDa5Qj9aaaxr79fbtPyNXRWh7vbPb3CtFr07UfeXHf0pnL0RpB-1hFFJExYmBpT01ChwlK9b4Gjr1nPSHMb9cN9DHMxUlYAxpiMGrCmSp1MEgpJeiCW7wE0MkmWBl5DaH_SpgBW_YXngGz06ptuacuxl4RHcQqFvd5M-KqxqG2LpQuV19T62bfzQ3KOle2iw3QXj0Cx78kHfOws0qqARs1vZQ083EMYdEetx2UDofYuDybZTGrOil1psUonm2w2aCr3cIQMrKxHJyyvtcS_4W8kTXcJcrrnkQJ5A9fdEBN601AIBvgyBKldhwmctVvvJHbphEeO2GVmZKbPTkJdvuEG7Sp-2yauiUDZxZNKa2GYREpIhndZjydcJR7Qz5AvwYbpknmcNXKpgnJ8sHU_z2Ljj_CrpKb-QhJuVP8804Alf_Ard9_P6ZLGaEWlaB2aedvgCELsuuqwGcgaap-BBa1ZC9Lim0-_EdFNkhwCFXWxbUepEbevxxM4iYhCP9LKFPc6Ud9-sAzksxraroCosFU_rcpfkiU6tXTJ_OC7WCeV9P_SdxzdNGjVA-C3To6mxQ1MlTzOWhutGfGPw8ZKKKiDMovtSlNUw5qz3aT-r-D5D_tNICvCEjIMPxkuMftbMpc0BYlAfdVySrouFCBxDynq5uoDTFkZLgRui-vSsCv92qh3jZ5JzschvqKfGpu-JYTszOypMG4L6mQNo3Yv61wLgiDf2TnBWwqMdh0tu2A3P5o-kbBoVsS2x5TN86jQXvJsmIypvKReh6uQDrGUnRm3zrxC5Tc2dF4OO0OOZnUIeCOOrn3iJcKNzc9AdF0ErsFaKA9eGKEQbFJ51Reai59QVNrO3Un0zEbLoM3KSJP9TOAm58szn-r3o4trwLBzNb9QfYOV9FUj4CWjAYfMEYoJ4PlLnBlzPRYTlBIeIEFyyWxDkXeV8TdbxJd9arIyo4x_jaQlW3bcFg4yTcElSxXIBi6oohfR_Ij3uXrj-NHZSsbHvU7I6MiCDenTJjB6puVovg7GlgC_VUXWapR1oEbpth_ZL32bqDy7eGyN-ysM-fwhLJFyiGUL_Xeu-y7r5m3Q9OL0FFWG5vIyV0CrNU3O9ICFrywVervjSquqk_0sYeZZrHkv_mDLGGvLY2eYfBasx0XekWeew4YiBIxA-WpPxgoe97q-XMpgcIoqeAsT3l-WmVdwCY_BHZUFxH-ssjt85D77pVQhb37FsHsGA23WxUd8BPThAjcsc8Ugv6Lm6t8qHmo5A2UNPu3dlSTszaV6WpO-O9b2O0tnmZtuouZ7gd3w80bCPhmvykHpxhKhzDIkc8geG9JCfvnU0nXvHV6KE5diFowZijeUMg80yiU029smheWT5fD51UAy1W0_wBfkxoWUrFYdiBxa6UjKgH0UjlBe65SknjzdE84bNbWbg5LLooNA6EI0q7Mfw0A05QBvRKpK456fb1nXHC7l9Zuu47XZPaVjqyOoGeesUCNmU5gfCmnzM-yixSUovorfOhAiAF3FIzHhMNUr875Pt3b4gu6mZI7XKfcqXgIByJfyOanE1WpGzD3luPD_TB-8_8bDN4601iT1UiPOnURr8_fGkPdeXhb3ThIEstJVEEY7i1XZjXs3WMpBykLYiaYcVUQRQcXBDkKGU2OFyaBj6hOzO_HxFnq6OkP2ZHkFK-8r0vEhf69vjLlR9yS-bZBUzr2OC-F_RvGbbLd8j9tJt81Z73rnJoYinZjduM9cuV1HfeDtT12O56XALx7H0M9HS148wboNeJQw0Tt-eKADh9p2R54o2JwpqAvvUvRsHVGI7cPtHdQ_rGEIa_hzrBGkeY9KS2WOJmjrL-BWpFOxBw9sRh38xO3U16gWnz1hn0_pG4qljAh9ZYR-P9wQJjz5QpoVrGyILcB-Jv6z5Wqg-ABft6YKPrgC2ucEx-RJ6p8ZJiBFlhtPS_ScdH3g8T6oqJpyXnVn3gmUl8iB7VLcg-TbLObrjEHN2A-HsupZv57GuTfcDYVy7svkQzc7IgiMDyWciz91BnrqmUgoxiKAygF78VZyqYFQNXXcozDT7SRQy7hywjkuqyinncdvrB8Em7AGpWWTGqdVEHLE4sO1zffYvXD_Dq9ik_UtUeOcjhu6Xyj9fHr7aba4T1KkAGjjQf3-RrTzoLbHC4hQfzuUE2SO82r7kOFBSvXvAumCBJPUOrnHgvs7FAn0LgI8pkPdQZr2SIw7mylUlvAcRYOMVWQTfrxJYYWYpkVunyrFWrs92s8Og51XWnJcdjFddt4L-5MdIxJCLIjHc3RPsF_aQnVQI_7gxFw3HD_jzJ_TMfIJTYZAbQ1VpMNjPE_dflCrSH95M6RbfbstkZCAD8K2-scAPccANCsEHnf-IHL7nW8zKnJEMpPFmvC2S8VjldzwBAf-JfXixEmvDVfKtqoSUSfMWOhDVuJKTrDwsBP_k7g9JuD6-p0rnnqI14vBmajEFUHIqjt22BVK7iiRlrKJOg5bbW60Gh6bAoLRgtikTR1vyh5jiAVbn5Eu6LK8ffmztWjS1idYDE2MF-7zAr8sLMsuiVan9j_FLSTncGS25_mBtrfFP508m4c9Dn3ewu4OPbamZsdcxe2e4Ug_IWE6M7I-8ecsnplZtb4vfs9FsFDoQfYLaUwy_M9A6817-VKrNreK4O-R9biJfYGejJ1rViTbOtiLuu3vjcZpgp-obl7AqoiryvHCfg8TxNp-k7UwCr9y0HFfmGwuU7b7xJPEwYVVU1g2w_7O5Eok8qUUBgFthSo_xguHqg5QKiyCaUL47jJx8k-0Cqvn70u3jcobaC7mlTzNFN7xDaNEvDJBnylB_CbjZ6IrwDUWACRPAlUjl1BVqBmPzUk6x_MFxgVBw6-8bCFYVDkpAJtpkhK7iVaXPKn8TfgrpPHh69EqUInbNAdA8jy-wfw2vzA3Mnf8ptiZKdRNQKJMMv6H_T4m-hkaIF_Qj6ElLd78-2cYaWln-N9dnMC6hlWZ-0uJUffLlL1PBEkUah38tGGJa099W8Ep_1zKu7a-NLHcZ-dc-H_tOYhCMS8-Y-KPBpkV-xTcXVFy01fkWUYQpDNyPVHn1cD0l75jUBVdmcESdR9BatkqZEzyxVwhDjdiQjeX3ZXHCntTG8APV2_ZVU0h0rZVy58IRWx_l9J0D3O2Ld24gV36SCppn4CVlGDtwGsz96Sxv17OKlTPPYhD2SLfh8qXGoXrCIOzQdAx8N_qN_bFxtaxT2GiJnXOLF1cX55Nzr_HxpPaHnxXIJVkZDdaCWm4oNflCa5vFL-AeAuvXYFqdg7SfIaD8wnfLWaodTYRpcEpThRVLMWP9dLstGM9Xlqw3Vi0XtDoibRC1O_FPlkIzthukQtigtWzx0GxTgh7RQ5oEYTK58acS8u1H8GPqr93ZMQPEuaqqitWjBcxty1Nz14ka5fnEaMQThI9tZBMk-ADteyb_r2cIrQCLkspFJclIM3A5pzHara5Dkv0rCTU2ViVJZQbKzT5Ea-DHMMXP9OoR9oem-t7N7RORI6bJr4WAiSrvqFaNsTQjRfEQ_m-YhO744G4vI0yQSVdaKH06tzWZ7F6cUTFpdhZRj1hhfKfKxvHafrtHubjvd8AfVHPpwvJUL8spQ4L5PpwHqDXc47_zfNb8iqlPo5qG2nYhtdRHqwcO8lCy9Yxv2Zp-mMI_DAdkiAaAr6kDJxQggAlwteaP8rBr_3IN3PCyOA_42e7vmSURfRaymPgricMVNwQHOv-93g6RD5HyPXcNvhVMq5CMeX0YGS9a4hQAGUY4OgUzcLIl5t0kiQJWBFtrtpnWf4m3Z9RnDGcwco03LawG8ikjBoxqoYkGW8YUo7TySg42eREqBDFvqkiDnKExF8Fkz-Qpw43Eqsox1qYyqxIkXdGXzZXdRENdOQ5QSczJitD6cqNguEQBfBnGenwiX6xrVDGRbtWRq3ad2OTskdApdxkJE50hDv3rh-qnDE3-APUDAl4MwuY5rlPus79w9atCL0JqyrcKjMAZqMU920_uq-pX921-nIa-KQvU5z3X7-VAblf6hJD_olMqBB-YJ61OH99btGLjQAAkM3setwyltcU360c2U7_xudKD26jvRnl-QF29hItgEtIN14sgTnhiUMWqpwRL0uU71_q4BbClvQdgfBllYNO9LAKAjyyXy_tZvHtlsdlFJ2d6Z5l3FwibFeLsA1ZwzdhkN3BFLQa7eXMM6Df9muZTI3rrB08-9D9csPHwfZmOfFRx_f3gQM9AEKfl6cNqj3SpvwF6ezpTIE2bQgMDzk5lgnXn0F8o9mic1QfAJDcTbirtJ2uxz6Wifm-eST0XW9NEo_g75MMgNalPrHk1oXbCEkypXXTlWr-ONxiQowdN.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9d986a2887d1b83eee9fc233084c",
+              "index": 5
+            },
+            {
+              "type": "reasoning.summary",
+              "summary": "**Considering report feedback**\n\nI\u2019m thinking I need to address the feedback on potential report U12. It strikes me as a bit odd, but I\u2019ll keep going. I need to compose two anomalies regarding the SW6 components, specifically R34 and R35. I should also classify the bridged nets. It\u2019s important to note the specific actions that occur when the DIP is closed, especially focusing on the distinct CAN ports that are shorted. It\u2019s a lot to juggle!",
+              "format": "openai-responses-v1",
+              "index": 6
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52gpTWTLZBHRS9jsA8lzvgL_CI8oxncvWjVeirJSU3ysga-8zovwo0A7lv6mbkFZfGjan1XLvQGLIbD9UObKD4svGk8BGPPAxcBSpCLgi82wbdxN93y-zFjiq6HVLoyqone1VBjCiCVpSoDCSnRVEIqP52R7ycGZOSRNoaALK5j-OINCONfChVzbA0-nhDv0_jF0wrhJRjdZur9WWu1jwX0W7YqXg9uZ6FAqJP1Z7FJucvv4MEGtIr9ocmN5UcFXqvgPq4ouhH6HPo0c1rIGOR_GsdUqEup3pnGhUwjMdX5uIRxh-ahGsj1_9ps_DX3vKA7omaNf7utb5lc41SBN7eZecpj53ZEHgBZqdy2BsvuY1YbnLvscMi3v1fG-XknNjnULXdUF42_qz5MAoG9rTIYxvo_j6VnGIcy1SI6SfOjB_RDbBO3JaSknglaHhdQzNDkkE1Tnu8UOIl9EuwcqfyUPHLGpri0IDBcAaWmXvil7OELDjPNNlV2A2Vv3_qL0wPsfspi2HvGpQnvvkR-5nRfxTewEl_H-WdwhvcGSkVtBfo3X70DnSjntZ7tu4gryaMVy8JWLZu9jQT8Ygu5ZoiSk4rjMmXfKbfUvkup9J1jsASTgTYW0u2VCA733bvOQZupf48eKT3un-pnz77REhIG_p7BSJaYNNxAxgf1wAfIH4hsUFwB1l8fkBsWKIJQsBjp_1SyKew2QWcyj_cJPUssK29XZSZujwLztzP7tCtT3bJzDXspv-d1otR-DKbFxbu765BAiS5D7h00yAaJqlZyy3KB-dWp-s0a0Zk0WZR88CvJnTj7heB-6XOUso5vjH8-Xu6_RzNm3ziyv6Bwff9kJi4QZ-wT2_tmw2IJAQvYDERvcuwHgO2VcZcPLTHL3l_dyr5ag5MCOomioaWK9aWPsrmPUK8fSFfaqYCovVr94YCGNrUlp-OOX_hB4rFs3AcGlaL0sd6MzMp6diHhlRWO1s04Fw86Fo1fz8mE6ruX6T4dfF3mrlUrSn7f2aTfoibE_CYKNV51H2tHaCNqxaTeelw94aoxeBW8FmznY733frpXCvXj4Phu27TXIIltcKQF9AY80FfojZEcC8RiLKpcnafOWoBWv9htbYjELaRdYrtmZo6rdNlEiWkZ57zOdbV7k8wYHU9fHrR-E1WybBSX_ggwPABgDd-DLbegFr9o14Fzii0hZHnljyr5Xjc6FbZYZ8brDd5Vlre7cRs7EfVzCdtdQD_mCPV_KpLhaQdgAJaAL3stZysbQSxoMM_dmbgdboU2Th2auFwKsHTpIWqhLAKTomiDLxDSF3C2ds6F56AjOzUPE2a5LfcaYYp07Tnf4dzvqMbmkVrLdMgJz8NEyzlDtCp5vmFCG73KA7xrpefuQXZVezs-S0K8ayhGvQZ5tXOivw9ep15jBgvd9ZjByKrgI256dGZaairUuHLudbCGfkD8Irq-ai1I1WgnHybT1pLYA1DY-LYM7EKPfKDXTfLRTUclWeTGDKXhw7E84sgDiTRNURo3LnfGuxRvmKyyfGpF1FNphPg22-GMusEjrVhTBmARiRzslwH2b9osGuZ-yZw5h7Ejl0iO9dNqfadgrNkrhRPdtyKJDiv22hKTeTs7PncKW9AHwU896liv5RKG7HosIWeYnxngEzK_T6WfQHkSFuMZRVAW7PBEeKVZ0i6XuLMqtT7jhxNEU_XzU6tpna3N8xh7ki-zhiV5AIfFI_QOdfkNcCTNMmcw-bi5nnJze58t6wwTV-S5tsUnmko9JnSPl5g4jQTkn6jvu9ETzEKA3FaepbUMOQEHZE1KXI1fiJo8G8kzQ7cQVbCEopAWqztuRTLAdzljqpF-bSG-CMcZlYUGTJvWAEjf2IMXrKT25UTmdfxZQ_hGdpOrdAuQgAYgICZiHk9-gN42z41TqO2l-LgTwqAIe0z_auaYpoGoVfl-bg4FZvXJ3VYnQokJt0fieavrIIoJZpGLBedYilEMZfaCSHa5IzG_634BczhUzSfPGYKydHbSSMBY_N0Cc9ckK2tCr59xWiuoGxYfJaPuNk-DabENxh64T9pMmS1L4ll9zWaq8BUcRaDbZb8KWlM2dz9qDj3evwo3VF0fL9acWgNlAyt2rFO3B2ooWOz_JHp2FMfFwohiE_CrLA5z3hVu6ZNhP1o-GG2rpefTNJrzf-XSSDqWKyEZmqoUjqwYx3CYiNXzn_wzo2upaAVl7wQFB3O4WDlbM6qA-1yIMqIl_HC7wDgrVo7Xob-qzIcROyEXBj0iZm13G9Kso4nwFk02FcKNNuEdzrwgMayZ6nPIYW5w1ZzHPrJXW6FvPtwHNSYVNGsDlcC3BBf4EITZA8uy5O88RoE3QqcyjUnUEvAPNV1YZMZ73v287kwLhZk4QKqyzUIrBpSAOB15uTHNfP5DcZo48RqUVPxSTR1Mydzq4w_6WXIG25eBkPMfuAZIzeLs6M1mM_gGHb6W51Up-8HmKfZOFVUMOGiMePx7XJ30xcqYzG5QOozjw7TKxwLs5Jejp76tk9s52MknxF5U7bq7sfMifxobxBNiRkEH7LEAAWeXGuPyBO6Fe26GiVBt5fU0TBUrMoWg0Ib3-rPeHvjEU3Ra9x10Qqe5wxSNlrGAhTEpZihaOBELuZYpGdLi4Zihc4RLqWoIsg8P1OxTYSH3neybVkm2Vulil7zXaaV0HLTX2NsetKnJTLNedvWGVam6yYnF1a-KOgtqO9WyRUoesYQL82czyaVHDuom9xqhzCoaFIFjkNvG0dcO5fQzJdd1sBVo4lSbPjC3SqFAtuoLXImpqrqT8tm9n52h1Sb1mjoqcGLydWkEM5Hgd6R_sxR-69Pi7A9gN5fIoUBX0l687Nhx--g3xN15eR0L0JkA9O25I-hcvwArInOfJ8MNyc1hA5YjpaB7GoFB0knq-RL_BqT2TwNT3e372VO8UVV1RUSsr51pvoxN-CbF-uBz7qIMuXS1-a--BUIcJQY8RiwcM6DwLjeRpK_RGZAYS1i6Lrgl3DNf36liBXv5qTXTpGUznBFR2QJrig7JrBm8RQURh5EvH4m6ZYnygoveh8Ou6vbSX_XqJMwgcCmLIE5GNMfNsfPBiPxxLCtrFuKUXkV9QACmLupB__leT1_TVEOJOpYpX5a0h0TVNZH1DtaZP5oRa_ZjS14bzCboEad3E7cyQ9IqzhHhI7z-XOD6SMlh-gaYUP5ylUslL4jFAoZ-pSM7IKKGFaG1IpSsr2oLDzOIeujZUOJCAZc_qEPmWhgJPdvlY5yTVdCj2jPFTOKdz5vMRVRMENIVrx06kVQytLxm9XBVY5rI5CFqip5uMv4ko9AtzEEc1OWclWzo53rq--EBVxEniFq3-feam3TJ-kv-6HY0ZGksVGUpBCHR645LPAtFKc-evU2KKhIPF6xnAlRHeKwxvQb9PejW3aWc_fs68OWwA8yO5HktHRelPBRILb3H_nKWc-f93U1EwA5_UfJ89f-u8Ke3ERAqX4RE4AdY6z-bSwSNkyBeRLrHxM6opxuCSMX1Drr1ZxOdQMovnX4NYBWvLam2f2kNT3beqw7hfs1F8KYz8Bgau8x0h7w77aYMkynQrjvpXLL5-oWE8CPro_Rmt-9DTaOApDswiWRn5t9eTYRLjWrzia9zDiwi9ukrCCcg7yoFxXfG51f_XL2FscwWjJJ7ZbRW3wrghGZx9PwmF8rHbRzDQi5L_tT6QBcOUfOl6MDAlw365z1yUertCzbDhCI77Uo5RPzWozW6bxYaA8YHIRVCXccG_oN9o12nfkxbXlEaWPqjj5UZ-4KkOdeVc11mqlEF85t2nQ1wqb2QPOabkyha8WuRDn75ww_KVMc3dWIrNnkp5-36PnQGf4I2aJCq8ohD2K_C_VZr_ThyCP_pKLrwWzDmwYMsxkfkoW5HzmTS85SnEhGgtQmkcBY6AvJx0PsjH5QjgV-Fu0T6G57AnDnhsuL5ooCFetACcVq4gVYPfBsIvgJd2TaQEDxkBStOs-nfh55fR-wyyEYCFvT5b7bgFvRxruC6b3dklLvdVfUcqoMCN_RTKABWnOtH3lxkZyVLhjFcGuy5V3kGnbMzHGRMtInE4JNd9-CTZjB7ZDF7uYh63diyJe_bKsRUjHx4MxdbvV2_UWaeq-lpuaF_0hohJLeUPGPu0XaeLTeMaG1LOtvCVBIY0dpbTxkq_kMwZa1PWn56VmCZJLEV9jfG0IgUICdsJUdxRfl4WFz4i-iV-tr8exBqM_LjkLRsFME0qZ-D0z1CgYnC3Y-0rljVdaDT-WE0EHoKz8Dq2iR7qaEdeLdccxHYZl8wHGkS24j__JJEASWq20r1tmSgSEpWBOTa1qgRSurFWL7iVhtYeBrmZsqU5u0c9ctlJYoYPt6BRK1eNtIJeHAxZ4MmBV9BSLRCQ4532LtcF69s2QJiPtIA_hau6QqYfKkuqPWCE-bU3XXm2-dZt_1mT5mZo1T4GkM1hONFB1pLtfuTsFQPl13m3nH4uhj5fd30oZhUGE_RxM6UtSm_0-R8lQ1pGqRWiIblTpXlobyMFMCzT4VWc2dsANJwNJ23YaENijj6xFHRQFrWBU88gWdQ-nysv_bv9T1EsWE-ZCat3pX5qF0r6EyErXRe6JWj9NW-OZlDvfbQI5YNkJ2LY1OKk2GGEll0QRr8v9S5X_LTVUaer0Z7TrV2HxlaMglkQmLiX6ESuRpUZ1FJbZdgQrpNuI_rVmpzmCg1U78z9mYUpZBeEsvza1QlpIhlXf9VNEV1X6-geCVPxrZo22kdlEs4Hinc0-6fNoYn6mYyHDM6-nKSQHafTnbgA_5-ZvIOP3PZX6OTxHpYR-NUljZiKVtnn4B8A734TMLxXHeMbgUFJTyRMb1UyBBFVKFBSxIhI6kDp9Avq-J7tENKjq8-O0wa0WVKzfepYyAtrydZWdoiguEHDZcGA56krQxfN921VfXgpDyEbRm86QGkUm2wCcHa0hneeIVTym9I1TdYZ21rE7hQiS8rW-7mi9QfAIgyMpTBvwZonne5DQaRDWiJ3eBA6rhc7BX0JVlIcKKF1GFV5IFO-tFWCZjluk9pm0wszyodQnshpI15bqYRmvpjc245Bj7cehkIzmDoBQO9RmM3V5gnI5NSx82Jtgc604vlqanTBUsIzYAg9D6qF3-9WB5LoYnVQeexiRBWUPCjDL5ZxY59GPE_-WERN8Fvh7LIsa64r9Skur96vhIvYbN3r6ZfqJ2EVFAej0TKZV66fN5IVGOKMdzETjthTcnPbU7EBFICkflQarjJnQ2GP64PjVI6Y0kZruB4w6qjvSWiCcEXYY4Qtysb4_1-NC0ySUWyYLyGmRpCp8c1XySdyunRlTDP-uVgMBMn92vZ9NOttfBXp918J8EdtnBbm5WMkQysRNU5YiFCxlOoTUNUn6M26qaBiZPgCtckVyslysXLboqQz3LloDskK23wHMoHRfF7UWgRJROoxpAmfwVe0fNyl6UbspdDVeEyracsUrZ4F38KSauvHrulmiK1UVC3_4tVwfgnk8J3vnoU8nQSVMngKUuJgEX_5CBb-U_ZenzBJGE6bLnS4hov8Jxve-t8yfkzRm6LeU10eLnUFxqc7OttpAyPi4_-ZsBIGr-cwLJ-Ey_FFTALE4cZgjMQJuIhdQ3CdhxWzUfRvACWfbkpMI9zUhUEAiX73VpYtZdRX_hBcLFuvGM3eQSYizM7U8yycb8YDub0yLw1WLqgsIF_oOR34bMALJA7OtOl4kFxCaGpKgTEDbN2pEk6eMtrpK6wd88VlHjYI1H_pngpFhsLpc0OskN0nKEOpYTV6ZSMcTx8-8rmTE-NOUt0Q3Lo-c70-cxiUvKhwviOU89G-WQ4nDW3nbJDNMIqNp8sFzcX7Gb1Fv4ae4BEMIwpYNoHfllOyQqnZIqP-h2D6YW35LTaTc1KGemu1udJ6o2LbTT_21zjPptLtTur8tXZ2mGuutUbuEtqd6eRBa2HGU4uQQk0yS573UFdKMzfUPt13RAuErBx_BLKI0vEWWANLdiUHhuIfBKKehpMdhbbee_3Ct-upxlCcPGjLIqr9CYQLN8AWpRSOtT4QDyipw6xQGTFfl2t_uNEIMXrflBrB4QLo9G7rHDoLO87mxxM3gZLoRU8-ceXm7hi8R1A3IZGjhuy_eoUZ-XPEvFE_07irIYiu24VFNG510bdyRSLD15i4Mtb6BJkaHNjjxrK4fE0qg0jwRfw39LBkgMs_wYwvhSVRWEYUvPtx6-gG8rI_t_UdicXF-QMRXoa1n4cKEfFJgfiGiNvMdWsBbowfXJ1qpqOeYfiUragRZl7_IddsdG0xF1o0opvMzWFZTqh9lezDOAln2zGJl5Pinwn04gHl0VsWM1iWe-RFAbX9xJv-k9RxeBYVxNB7rez7tbnAtbzrvJZJBB1nO-xgxirUfjMgyyhhAPMJRMKKgRMPdWjZTlmvn2hxN1jt9ED0sruv_4pvqw906fjx2Li4Tm_Ymz4Kdy6-Uw8tsWCxGdiNAJiyFIotAmEAbeeuYb9LZ05L7Cb_G4KhvktVIaMHnOM5hpEVVjmVOfdJZJnB5EU_Cfm4h0TD0r5qLobw8hiKWGTAORTK_-5gXVXC9X0Lp2zxXoH0OQ7QPUWi-oVwTV7S_7QFRoslDH3F93vElZxzvFDhr0SsgX7AE7oO8pV7ZnXdSJW28no9usyXmpRJ28kyjeW7JU5DCqJUId9VNy8jqSHS3yzOKlPkWDljXLtek6J0usZ2RqG5tbkxfEkCcDe3mojsEp9_Pk7oQCkcix3WvkzjdViQaa8a_xgd2FGkuxVygyT5NGV4zKRtLa5vwNN9Lo7trTip__xpBNlBqu-FyHJA7MxV7XPKBH6FUk9XwH7wd_9IjxJ5ibef6RIm-4IzhDtn6fYxwoWIbdPjS3Uh-WIgqBbgaWPdk5fyuzoVC579HxHMBpOA3WehcWO_88TZ-wyZR13XRy6Ex5-jCxXfr8M9B5gta7dB0E2qmT1OHW24t81zDJuk81aULLX6ggPz2xjIuGX3mYQ79hB5oYNkZE2eerKzXHn_WaUzVKQgd8hW565DvML0FT5ZnlpSLB49DvQ7fz50W2xnfdaFLVFDfpdgyGWJRTbLkbVmWbnpWP1aM1wLG2GZCORnXLk5NF4bdiNQvn9Cmf5cWXOZAO15Bc3ykNzlsDeBtFPw_FdpZAc_QI99BUo2Ou1uXxvgoZQTcEA5siXbTnCIIJ6f00o2PZOjPH6kHJ52sjy1T5AQaJqKOuOtVeCy7EXr3aQc9ZdfOgPcvFtLAnhisSPe5t68DFgPXexBae5C3YEw98B7zNjSmiVUHAB7RriLlfAJayXfnzfLUYCTqrSbP5iK6AVq9rMsg-JVhudu4Hb39a5oFC_qXAoAeYX_EFmL0Onabw0b6gr964v3PVUBhwj3SoU6jxUoddv2ZxwYNBd2uhxuipGnr0YO8oWxMyMFCq6zpMFL2dSQr_mBWCyTXa4AkY37uxNyIfa7atIID7Kfw1BY8A94Yf3c4HtN2VAbEgcM_zCCbtpOXth1BlEFxWVrDYY7zknf5JpZveYwmc35-jrhuNepqW1GENnajg_ufAfu3lxi8LclOgJLkRmCbykeKfzQ9xpI68byPOrbDIeQGQbjCao6ukJW_pacyzl3py1O4TMp46gPixmbzWK02pdQLj3jAvyJmgfGCPTbUDIqi8I4gKP9R0q0IL0LkzmF44buIRBhelepKTEtnFmhJuK7J-vozuiKyxRePMeqdEMrCTS6NhYCeENS6kTocW9-WQD-J5Kyq6wzY_wAsaqu1F8dhZ6SXuaYe6NqRnHe2xMqrxr1Onh9r1SuheqLJmB2ab0U7pKKaAD7HUsGhH4gcDO-g2aY8DMkGJm2RHr2N3hBWerZvAY-QyYmPfsYqv3einG6ryKwJWTZdOe0aZ0BzyeNoeHy9wo1uFXwqBiLFn6Osvpb-g2m7P9eM8NQg9FvE2-SL5ZHv8EWtoXlnbewfc9ZOl7aHfg25rGWhZP6mRvdS9Z9cJ0frIT8uZfTgBWGxq4irNZE_alYc5J1VHd037kQyXNKmnBNlOz7bTj7_aILw==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9d9ab58087d19be60cfe5e558d40",
+              "index": 7
+            },
+            {
+              "type": "reasoning.encrypted",
+              "data": "gAAAAABq-52hh2Z6uK6cmgQmb8MRwnByKoj_usJ7C8kSCHMe4ucUicRetoXAfqfHypCPnXXOFRyIVpPFSnyZ3sDpA0Z6K-sqrFVW3Fr3iLT6lkOPXVtIbmVgQBSwGBn64oNXUP37STTghFup5jGem4ObXN4xYbCDD5DzJx9KTjSl7Jb3OovqRkWJ4m5_R9LewkM9k8lTMkKNGcfGzPo7CBZvUKHoqPgMLO_vXZjzkxbE9yyoHc6VRLLr5piC5xxIGapZ4atL5qQx6sGw-gYMC7CaW-cGm5sfIs1QyMyCl9XY1AtxqRfAtbYRCr39xBOWyzxe8uildBt4qIst3z65FDk8i0AyGxsT3BzGQ-rPiWKflkuZ8eRS6UA8iqi1BjTOxOLFNi2f_SMw8sI9BsdQxwM2rxzbcEjbgehZJmJgwD3yyRWjUTBDlKxAsFTeQEZ2q1YwpgcqqhAGUE7giAc81JBXqHVf1eeaiSxzFvEild2mD6batH0gV6LGh7xFFjDoSoHrdeZtRxJ-pP-jeYjXhPgYEvlNq1EhKbF81niBLqNnDRysf2y85M-BYrhhZtqYbnZ6K68jcNLHswx7wX6REdoP24r4gIP652A_HFExtSx0zKwnM4U10cC_JKl-dpzEyO95nBt3FOksNfqY_nzZ6Er-kCAHsTIB09czYjt-kfozUntX_i4hpnvhIFI60v0Wa0rcIvv3JqJI6tss1s2V27yNAhLFy6x8mkWAjShkU0VaacY26D9jbbv4IB8IDPH5XCrcX8N371u6DUgDOP1Ynetd4x0ejPC3M7d9lQLIsFctO_rJqpb5NW0PHC1qGyhMWourxkvcRtBAL_XnSe1xSaIP9uSbnf05t0DDu1TWuPjvgtbFbbWX29tsbUR978CusYjm6aTzKgFvfi-1UDg4OAN847-yfpf8siv2nDtKhYyxpRObuITu_39kGrVwanJJ9xOzeOP5saWD7wihstsYokMZU8znpzkJ9yTbngIrIdTQ7YNwMsfpPsW3O4P3E51sBL0pDIOxr5egUGLqVNhlVEiAwB9zNNSnFTHPb7FUkWbMLIMSngT7D3dDxu-A8eumKY7t2lRvYqppC8g2JhLqyrAkQbOnaLqqeyPCGESasa1KjSLKHGOPXPpUDfsRbWmKGe_RWBksouvMTuKTIH3DgDnpwI4C1g2E7ZLM5zhkjpCmIPbF2n8PLgXDBKZWWQ6eKBOAkeSZ8S9FT9PIBaCUlTlYUJIml7kBsNKHgKRJ3xZcHiXTuHKUqGpEJGCdxMROoMbJW3XHJ73SN6N4Etc9Z6N7E39I0Yc3btUGssp5_KdrzqBCmuEP6yHzKvTMo6WaT7vNBzghlIt5mzj_B02rBfGyK3bconYaIjy1H--KdNGrFrHsMpmcprwV8wk9QS21FlH_zrzXd6mZXaBCpD6LKhyMkbfyiaV8Dx35PghVnaloj9EqgkCIFGHiz_A5-V9HzBKqhozYI8H6zXu8iqMiAL_HcqZPZZliJLGTe7VSJvUJH41-mLh7B6COh5K11EX0664UZJr7RMqOHGawmr_Gj1UYifw9D5afscti4E1TntXEGyyTK4xbbUkBeYrEqCn4t3IytAhnI3E3VRzN7qYmtdIA1H-Tlgu3C9sRalbDNFcSyYyVGBcfJQ37Qyp_7pzBlS5u0OoTg5VY8FNRI8NeGSLvNIGChDtHmyRvbayo3XUtILV0lLGxm7cKxCCtL9qYbOsVKgxpBaPP5-9jN76Yz8ayhM8IVR5GZEBXqgcSFM4SJOcjDAtnyWQDxCkgfJxUIwaWJZ5VfMRetZReW7yC8teDR5KmN_8yiGVNmzBXCgVxWtQ51AUW2bNV9ahjkGlBYi9rl2FwSxBbBKtaFH0N_VA557tcE7PXRHu8fwPhwaCf7YHXnuEFsTt90GrpVFciBkvNiYRhhWRv87SF4WXa6JpZdRXHIfLvecbitwpfZ6f0jRx4sgwJTemLHrhX8d_v0xGuib1GMi0DLia2W2iEhdHU4AG3CFvMdIzvEJLl5ry4lDDwnZ0Q_KNmnSqFhL2OfX5omsuvEFTOaJAzPIh4rO13ThIicq9EABaXKsz4u0nnm7buQ4EomHfkKgCut99Civ1LnZDqYkYtKd5uHRdVBBxoGzjC9qolUN7KGTBvTDclMzTIvYaMFH3OuRhDH-JifLrAVIuYX8fAyXqBntj1tj_wZ_E5PmRg-62BVJy_K657EE-yCw7-fPUs8Wt3ewAwdFrpvVKp0jUICxaIYtRR7WcHtFZD-uWcC8yyyD-YTop4209aNcK0wZve5kA1qc8iXYpuvqu9Iq0ewKgvDfBBVHmVNZbva76nT-z_GRBGma-4IVY8jKhn7e9wCXoIdH9cx8Io6PgdNUiRTBsp0WkMu92dpYF3_yFybTAIME_EGSJatKyWAvy78Uuxe93isYbgSm16ymjENI6HTLv86dLtQrev_b3-NsGgsi5sayWV11GGnBVapBHJCH55HAMuH2uAncXbxbOl2Fzus27imf04z2WjSX2hz7mHIc2jP2jr57B0wPyRLvsd1Di79QgoD2hjHvVVUEhXQQOxdOEBha115jOO203unCire56Ax2raem_M4umd1jZDryL9jnuoZRGs37QATsGMKlwOVeiz1vFqr4tWHmrmGZzMO0jGU2R1R1EoFBVFDY_E8yM2-04BgSiBeuGM1PJg1irC0KVeuwIVstMCWYENTTxKVKWW3ASnBnyB_GMbFNRTm4Un6bCJVOgp3i1UQn3vnzLZKBEQFHnzIoXPqKaD69bk4LY9QScc1wcLjk1DUuqgxAyKkxPad_u7yumLbf1wAqBirbMpMKbjmM60JzmVm5uxpVbfj8IMGnJ2WOGaOZtgtntyXrJCR_jxkAIn5SILZVJqrQ9iB2AA4WowVcpv3Ykc355RDfU1IQJgFQX0TJ1fgnj6BmNYw3yBXHQB-WumPiNv-0fwjqxocVpJf0jGgwIw2w==.eyJlbmRwb2ludF9zbHVnIjoib3BlbmFpL2dwdC02LWx1bmEtMjAyNjA5MjJ8b3BlbmFpIn0",
+              "format": "openai-responses-v1",
+              "id": "rs_015a76d992a2bc76016afb9da0d1a087d1887be474c7f11661",
+              "index": 8
+            }
+          ]
+        },
+        "native_finish_reason": "completed"
+      }
+    ],
+    "created": 1794874759,
+    "model": "openai/gpt-6-luna",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 3869,
+      "prompt_tokens": 182558,
+      "total_tokens": 186427,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2676,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 182555,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.024754175,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.024754175,
+        "upstream_inference_prompt_cost": 0.022819675,
+        "upstream_inference_completions_cost": 0.0019345
+      }
+    },
+    "provider": "OpenAI"
+  }
+}

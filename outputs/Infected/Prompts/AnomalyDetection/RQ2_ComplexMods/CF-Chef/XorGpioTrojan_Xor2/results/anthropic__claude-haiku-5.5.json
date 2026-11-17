@@ -1,0 +1,244 @@
+{
+  "id": "CF-Chef/XorGpioTrojan_Xor2",
+  "model": "anthropic/claude-haiku-5.5",
+  "request": {
+    "model": "anthropic/claude-haiku-5.5",
+    "temperature": 0.0,
+    "max_tokens": null,
+    "reasoning_effort": null
+  },
+  "variant": null,
+  "prompt": {
+    "prompt": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor2/prompt.md",
+    "netlist": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor2/netlist.net",
+    "spice_circuit": "outputs/Infected/Prompts/AnomalyDetection/RQ2_ComplexMods/CF-Chef/XorGpioTrojan_Xor2/spice.cir",
+    "schematic": null,
+    "attachments": null,
+    "chars": 124564,
+    "sha256": "c74fb9e2b9b75bbe9ac9db17df87790806a793d31db4a3f98edf89192008b4e7"
+  },
+  "response": {
+    "text": "{\"anomaly_detected\": true, \"confidence\": 0.85, \"anomalies\": [{\"category\": \"extra_component\", \"components\": [\"U9\", \"U2\", \"J1\"], \"pins\": [\"U9.2\", \"U2.2\", \"J1.1\", \"U9.1\", \"U1.23\"], \"nets\": [\"Net-(U9-Pad2)\", \"Net-(U9-Pad1)\", \"CS0\"], \"observed\": \"U9 (74LVC1G86 single XOR gate) is placed in the thermocouple input path. Its input pin 2 sits on the same net as the U2 T- input (pin 2) and screw-terminal J1 pin 1, so a logic-gate input is loaded directly onto the thermocouple differential input. Its input pin 1 is driven from ESP32 GPIO9 (U1.23). The specification describes the thermocouple channels as a direct J1-to-T+/T- connection with no other components, and it mentions no XOR gate or GPIO9 use.\", \"expected\": \"Each thermocouple screw terminal wires directly to the MAX31855 T+ and T- inputs (spec section 4), with no logic gate loading the sensor lines.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"35\\\") (name \\\"Net-(U9-Pad2)\\\") (class \\\"Default\\\") (node (ref \\\"J1\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"T-\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"34\\\") (name \\\"Net-(U9-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"U1\\\") (pin \\\"23\\\") (pinfunction \\\"GPIO9\\\") (pintype \\\"bidirectional\\\")) (node (ref \\\"U9\\\") (pin \\\"1\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Each chip has its own independent chip-select ... There is no MOSI line wired\"}], \"impact\": \"The XOR gate input adds a load and a digital signal path on the sensitive thermocouple T- line, which can corrupt or offset the K-type reading and couples GPIO9 activity into the sensor front-end. Thermocouple readings and the over-temperature control loop could be wrong.\", \"confidence\": 0.8}, {\"category\": \"bridged_nets\", \"components\": [\"U3\", \"U9\"], \"pins\": [\"U3.8\", \"U9.4\"], \"nets\": [\"Net-(U9-Pad4)\"], \"observed\": \"The NC pin 8 of MAX31855 U3 is not left open. It is on the same net as the output of the XOR gate U9 (pin 4), so a logic output drives a pin that should be a no-connect. The other two MAX31855 NC pins (U2.8 and U4.8) are on their own unconnected nets, as the spec requires.\", \"expected\": \"Pin 8 (NC) of every MAX31855 is left unconnected (spec section 4: 'Pin 8 (NC) is left unconnected on all three parts').\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"36\\\") (name \\\"Net-(U9-Pad4)\\\") (class \\\"Default\\\") (node (ref \\\"U3\\\") (pin \\\"8\\\") (pinfunction \\\"NC\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(U4-NC-Pad8)\\\") (class \\\"Default\\\") (node (ref \\\"U4\\\") (pin \\\"8\\\") (pinfunction \\\"NC\\\") (pintype \\\"passive\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Pin 8 (`NC`) is left unconnected on all three parts (confirmed: `unconnected-(U2/U3/U4-NC-Pad8)` nets in `controller.net`).\"}], \"impact\": \"Driving the NC pin of U3 from a logic output can disturb the MAX31855's internal behavior, and it breaks the documented connectivity for that channel. The channel 2 readings may be unreliable or the gate output may be fighting the device.\", \"confidence\": 0.7}], \"summary\": \"The netlist contains an XOR gate (U9, 74LVC1G86) that is not in the specification. It loads the thermocouple T- input of U2 and is driven from GPIO9, and its output is tied to the NC pin 8 of U3, which the spec requires to be unconnected. This is a significant deviation from the intended thermocouple front end.\"}",
+    "parsed": {
+      "anomaly_detected": true,
+      "confidence": 0.85,
+      "anomalies": [
+        {
+          "category": "extra_component",
+          "components": [
+            "U9",
+            "U2",
+            "J1"
+          ],
+          "pins": [
+            "U9.2",
+            "U2.2",
+            "J1.1",
+            "U9.1",
+            "U1.23"
+          ],
+          "nets": [
+            "Net-(U9-Pad2)",
+            "Net-(U9-Pad1)",
+            "CS0"
+          ],
+          "observed": "U9 (74LVC1G86 single XOR gate) is placed in the thermocouple input path. Its input pin 2 sits on the same net as the U2 T- input (pin 2) and screw-terminal J1 pin 1, so a logic-gate input is loaded directly onto the thermocouple differential input. Its input pin 1 is driven from ESP32 GPIO9 (U1.23). The specification describes the thermocouple channels as a direct J1-to-T+/T- connection with no other components, and it mentions no XOR gate or GPIO9 use.",
+          "expected": "Each thermocouple screw terminal wires directly to the MAX31855 T+ and T- inputs (spec section 4), with no logic gate loading the sensor lines.",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"35\") (name \"Net-(U9-Pad2)\") (class \"Default\") (node (ref \"J1\") (pin \"1\") (pinfunction \"Pin_1\") (pintype \"passive\")) (node (ref \"U2\") (pin \"2\") (pinfunction \"T-\") (pintype \"passive\")) (node (ref \"U9\") (pin \"2\") (pintype \"input\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"34\") (name \"Net-(U9-Pad1)\") (class \"Default\") (node (ref \"U1\") (pin \"23\") (pinfunction \"GPIO9\") (pintype \"bidirectional\")) (node (ref \"U9\") (pin \"1\") (pintype \"input\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "Each chip has its own independent chip-select ... There is no MOSI line wired"
+            }
+          ],
+          "impact": "The XOR gate input adds a load and a digital signal path on the sensitive thermocouple T- line, which can corrupt or offset the K-type reading and couples GPIO9 activity into the sensor front-end. Thermocouple readings and the over-temperature control loop could be wrong.",
+          "confidence": 0.8
+        },
+        {
+          "category": "bridged_nets",
+          "components": [
+            "U3",
+            "U9"
+          ],
+          "pins": [
+            "U3.8",
+            "U9.4"
+          ],
+          "nets": [
+            "Net-(U9-Pad4)"
+          ],
+          "observed": "The NC pin 8 of MAX31855 U3 is not left open. It is on the same net as the output of the XOR gate U9 (pin 4), so a logic output drives a pin that should be a no-connect. The other two MAX31855 NC pins (U2.8 and U4.8) are on their own unconnected nets, as the spec requires.",
+          "expected": "Pin 8 (NC) of every MAX31855 is left unconnected (spec section 4: 'Pin 8 (NC) is left unconnected on all three parts').",
+          "evidence": [
+            {
+              "source": "netlist",
+              "quote": "(net (code \"36\") (name \"Net-(U9-Pad4)\") (class \"Default\") (node (ref \"U3\") (pin \"8\") (pinfunction \"NC\") (pintype \"passive\")) (node (ref \"U9\") (pin \"4\") (pintype \"output\")))"
+            },
+            {
+              "source": "netlist",
+              "quote": "(net (code \"58\") (name \"unconnected-(U4-NC-Pad8)\") (class \"Default\") (node (ref \"U4\") (pin \"8\") (pinfunction \"NC\") (pintype \"passive\")))"
+            },
+            {
+              "source": "spec",
+              "quote": "Pin 8 (`NC`) is left unconnected on all three parts (confirmed: `unconnected-(U2/U3/U4-NC-Pad8)` nets in `controller.net`)."
+            }
+          ],
+          "impact": "Driving the NC pin of U3 from a logic output can disturb the MAX31855's internal behavior, and it breaks the documented connectivity for that channel. The channel 2 readings may be unreliable or the gate output may be fighting the device.",
+          "confidence": 0.7
+        }
+      ],
+      "summary": "The netlist contains an XOR gate (U9, 74LVC1G86) that is not in the specification. It loads the thermocouple T- input of U2 and is driven from GPIO9, and its output is tied to the NC pin 8 of U3, which the spec requires to be unconnected. This is a significant deviation from the intended thermocouple front end."
+    },
+    "parse_error": null,
+    "finish_reason": "stop",
+    "reasoning": null
+  },
+  "usage": {
+    "prompt_tokens": 56960,
+    "completion_tokens": 4214,
+    "reasoning_tokens": 2616,
+    "cached_tokens": 0,
+    "total_tokens": 61174,
+    "cost_usd": 0.007803,
+    "cost_details": {
+      "upstream_inference_cost": 0.007803,
+      "upstream_inference_prompt_cost": 0.005696,
+      "upstream_inference_completions_cost": 0.002107
+    }
+  },
+  "timing": {
+    "started_at": "2026-11-17T00:24:17.246850+00:00",
+    "ended_at": "2026-11-17T00:24:35.924668+00:00",
+    "latency_s": 18.677
+  },
+  "provider": "Claude Platform on AWS",
+  "generation": {
+    "created_at": "2026-11-17T00:24:17.284Z",
+    "model": "anthropic/claude-haiku-5.5-20261007",
+    "app_id": null,
+    "external_user": null,
+    "streamed": true,
+    "cancelled": false,
+    "latency": 12760,
+    "moderation_latency": null,
+    "generation_time": 18617,
+    "tokens_prompt": 31689,
+    "tokens_completion": 888,
+    "native_tokens_prompt": 56960,
+    "native_tokens_completion": 4214,
+    "native_tokens_completion_images": null,
+    "native_tokens_reasoning": 2616,
+    "native_tokens_cached": 0,
+    "num_media_prompt": null,
+    "num_input_audio_prompt": null,
+    "num_media_completion": 0,
+    "num_search_results": null,
+    "num_fetches": null,
+    "web_search_engine": null,
+    "origin": "",
+    "is_byok": false,
+    "finish_reason": "stop",
+    "native_finish_reason": "end_turn",
+    "service_tier": "default",
+    "usage": 0.007803,
+    "router": null,
+    "user_agent": "OpenAI/Python 3.51.0",
+    "http_referer": null,
+    "request_id": "req-1794875057-m7HTG3il8xOsle47ICNA",
+    "session_id": null,
+    "preset_id": null,
+    "api_type": "completions",
+    "id": "gen-1794875057-F0m9FK9gLSV1E7tIKOLh",
+    "upstream_id": "msg_011Ch7Ykc5XucV956ejKUnCZ",
+    "provider_responses": [
+      {
+        "endpoint_id": "b6cdf493-3a61-441f-a134-e7944fddb980",
+        "id": "msg_011Ch7Ykc5XucV956ejKUnCZ",
+        "is_byok": false,
+        "latency": 403,
+        "model_permaslug": "anthropic/claude-haiku-5.5-20261007",
+        "provider_name": "Claude Platform on AWS",
+        "status": 200
+      }
+    ],
+    "total_cost": 0.007803,
+    "cache_discount": null,
+    "upstream_inference_cost": 0,
+    "provider_name": "Claude Platform on AWS",
+    "response_cache_source_id": null,
+    "data_region": "global",
+    "workspace_id": "ca86f8a1-f3fe-5bd5-bb25-c7f84854ded7"
+  },
+  "raw_response": {
+    "id": "gen-1794875057-F0m9FK9gLSV1E7tIKOLh",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null,
+        "message": {
+          "content": "{\"anomaly_detected\": true, \"confidence\": 0.85, \"anomalies\": [{\"category\": \"extra_component\", \"components\": [\"U9\", \"U2\", \"J1\"], \"pins\": [\"U9.2\", \"U2.2\", \"J1.1\", \"U9.1\", \"U1.23\"], \"nets\": [\"Net-(U9-Pad2)\", \"Net-(U9-Pad1)\", \"CS0\"], \"observed\": \"U9 (74LVC1G86 single XOR gate) is placed in the thermocouple input path. Its input pin 2 sits on the same net as the U2 T- input (pin 2) and screw-terminal J1 pin 1, so a logic-gate input is loaded directly onto the thermocouple differential input. Its input pin 1 is driven from ESP32 GPIO9 (U1.23). The specification describes the thermocouple channels as a direct J1-to-T+/T- connection with no other components, and it mentions no XOR gate or GPIO9 use.\", \"expected\": \"Each thermocouple screw terminal wires directly to the MAX31855 T+ and T- inputs (spec section 4), with no logic gate loading the sensor lines.\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"35\\\") (name \\\"Net-(U9-Pad2)\\\") (class \\\"Default\\\") (node (ref \\\"J1\\\") (pin \\\"1\\\") (pinfunction \\\"Pin_1\\\") (pintype \\\"passive\\\")) (node (ref \\\"U2\\\") (pin \\\"2\\\") (pinfunction \\\"T-\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"2\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"34\\\") (name \\\"Net-(U9-Pad1)\\\") (class \\\"Default\\\") (node (ref \\\"U1\\\") (pin \\\"23\\\") (pinfunction \\\"GPIO9\\\") (pintype \\\"bidirectional\\\")) (node (ref \\\"U9\\\") (pin \\\"1\\\") (pintype \\\"input\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Each chip has its own independent chip-select ... There is no MOSI line wired\"}], \"impact\": \"The XOR gate input adds a load and a digital signal path on the sensitive thermocouple T- line, which can corrupt or offset the K-type reading and couples GPIO9 activity into the sensor front-end. Thermocouple readings and the over-temperature control loop could be wrong.\", \"confidence\": 0.8}, {\"category\": \"bridged_nets\", \"components\": [\"U3\", \"U9\"], \"pins\": [\"U3.8\", \"U9.4\"], \"nets\": [\"Net-(U9-Pad4)\"], \"observed\": \"The NC pin 8 of MAX31855 U3 is not left open. It is on the same net as the output of the XOR gate U9 (pin 4), so a logic output drives a pin that should be a no-connect. The other two MAX31855 NC pins (U2.8 and U4.8) are on their own unconnected nets, as the spec requires.\", \"expected\": \"Pin 8 (NC) of every MAX31855 is left unconnected (spec section 4: 'Pin 8 (NC) is left unconnected on all three parts').\", \"evidence\": [{\"source\": \"netlist\", \"quote\": \"(net (code \\\"36\\\") (name \\\"Net-(U9-Pad4)\\\") (class \\\"Default\\\") (node (ref \\\"U3\\\") (pin \\\"8\\\") (pinfunction \\\"NC\\\") (pintype \\\"passive\\\")) (node (ref \\\"U9\\\") (pin \\\"4\\\") (pintype \\\"output\\\")))\"}, {\"source\": \"netlist\", \"quote\": \"(net (code \\\"58\\\") (name \\\"unconnected-(U4-NC-Pad8)\\\") (class \\\"Default\\\") (node (ref \\\"U4\\\") (pin \\\"8\\\") (pinfunction \\\"NC\\\") (pintype \\\"passive\\\")))\"}, {\"source\": \"spec\", \"quote\": \"Pin 8 (`NC`) is left unconnected on all three parts (confirmed: `unconnected-(U2/U3/U4-NC-Pad8)` nets in `controller.net`).\"}], \"impact\": \"Driving the NC pin of U3 from a logic output can disturb the MAX31855's internal behavior, and it breaks the documented connectivity for that channel. The channel 2 readings may be unreliable or the gate output may be fighting the device.\", \"confidence\": 0.7}], \"summary\": \"The netlist contains an XOR gate (U9, 74LVC1G86) that is not in the specification. It loads the thermocouple T- input of U2 and is driven from GPIO9, and its output is tied to the NC pin 8 of U3, which the spec requires to be unconnected. This is a significant deviation from the intended thermocouple front end.\"}",
+          "refusal": null,
+          "role": "assistant",
+          "annotations": null,
+          "audio": null,
+          "function_call": null,
+          "tool_calls": null,
+          "reasoning": null,
+          "reasoning_details": [
+            {
+              "type": "reasoning.text",
+              "signature": "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.eyJlbmRwb2ludF9zbHVnIjoiYW50aHJvcGljL2NsYXVkZS1oYWlrdS01LjUtMjAyNjEwMDd8Y2xhdWRlLW9uLWF3cyJ9",
+              "format": "anthropic-claude-v1",
+              "index": 0
+            }
+          ]
+        },
+        "native_finish_reason": "end_turn"
+      }
+    ],
+    "created": 1794875057,
+    "model": "anthropic/claude-haiku-5.5",
+    "object": "chat.completion",
+    "metadata": null,
+    "moderation": null,
+    "service_tier": "default",
+    "system_fingerprint": null,
+    "usage": {
+      "completion_tokens": 4214,
+      "prompt_tokens": 56960,
+      "total_tokens": 61174,
+      "completion_tokens_details": {
+        "accepted_prediction_tokens": null,
+        "audio_tokens": 0,
+        "reasoning_tokens": 2616,
+        "rejected_prediction_tokens": null,
+        "text_tokens": null,
+        "image_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "image_tokens": null,
+        "text_tokens": null,
+        "video_tokens": 0
+      },
+      "cost": 0.007803,
+      "is_byok": false,
+      "cost_details": {
+        "upstream_inference_cost": 0.007803,
+        "upstream_inference_prompt_cost": 0.005696,
+        "upstream_inference_completions_cost": 0.002107
+      }
+    },
+    "provider": "Claude Platform on AWS"
+  }
+}
